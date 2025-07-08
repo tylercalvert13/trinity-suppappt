@@ -7,7 +7,10 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleMenuItemClick = () => {
-    setIsMenuOpen(false);
+    // Small delay to let the anchor link scroll complete before closing menu
+    setTimeout(() => {
+      setIsMenuOpen(false);
+    }, 100);
   };
   return (
     <header className="bg-background border-b border-border shadow-sm">
