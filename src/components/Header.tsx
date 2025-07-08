@@ -6,11 +6,17 @@ import { Phone, Mail, Menu } from "lucide-react";
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const handleMenuItemClick = () => {
-    // Small delay to let the anchor link scroll complete before closing menu
+  const handleMenuItemClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    setIsMenuOpen(false);
+    
+    // Wait for sheet to close, then navigate
     setTimeout(() => {
-      setIsMenuOpen(false);
-    }, 100);
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 300);
   };
   return (
     <header className="bg-background border-b border-border shadow-sm">
@@ -47,20 +53,20 @@ const Header = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-80">
               <div className="flex flex-col space-y-6 mt-6">
-                <a href="#services" onClick={handleMenuItemClick} className="text-lg font-medium text-foreground hover:text-primary transition-colors">
+                <a href="#services" onClick={(e) => handleMenuItemClick(e, "#services")} className="text-lg font-medium text-foreground hover:text-primary transition-colors">
                   Services
                 </a>
-                <a href="#about" onClick={handleMenuItemClick} className="text-lg font-medium text-foreground hover:text-primary transition-colors">
+                <a href="#about" onClick={(e) => handleMenuItemClick(e, "#about")} className="text-lg font-medium text-foreground hover:text-primary transition-colors">
                   About
                 </a>
-                <a href="#contact" onClick={handleMenuItemClick} className="text-lg font-medium text-foreground hover:text-primary transition-colors">
+                <a href="#contact" onClick={(e) => handleMenuItemClick(e, "#contact")} className="text-lg font-medium text-foreground hover:text-primary transition-colors">
                   Contact
                 </a>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground pt-4 border-t">
                   <Phone className="h-4 w-4" />
                   <span>(908) 224-5410</span>
                 </div>
-                <Button variant="hero" className="w-full" onClick={handleMenuItemClick}>
+                <Button variant="hero" className="w-full" onClick={() => setIsMenuOpen(false)}>
                   Start Online Enrollment
                 </Button>
               </div>
