@@ -11,7 +11,7 @@ const Footer = () => {
               <img 
                 src="/lovable-uploads/4d760ca1-c0a7-4a63-82d3-e45df96bc6b9.png" 
                 alt="Health Helpers Logo" 
-                className="h-8 w-auto brightness-0 invert"
+                className="h-10 w-auto"
               />
             </div>
             <p className="text-primary-foreground/80 mb-4 max-w-md">
