@@ -7,6 +7,10 @@ import Index from "./pages/Index";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
+import MedicareEnrollmentGuide from "./pages/MedicareEnrollmentGuide";
+import HowToEnrollMedicareOnline from "./pages/HowToEnrollMedicareOnline";
+import MedicareEnrollmentPeriods from "./pages/MedicareEnrollmentPeriods";
+import EnrollMedicareYourself from "./pages/EnrollMedicareYourself";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +24,10 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/medicare-enrollment-guide" element={<MedicareEnrollmentGuide />} />
+          <Route path="/how-to-enroll-in-medicare-online" element={<HowToEnrollMedicareOnline />} />
+          <Route path="/medicare-enrollment-periods" element={<MedicareEnrollmentPeriods />} />
+          <Route path="/enroll-medicare-yourself" element={<EnrollMedicareYourself />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
