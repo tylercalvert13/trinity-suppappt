@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 
 const Contact = () => {
@@ -47,16 +48,21 @@ const Contact = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Date of Birth</label>
-                  <Input placeholder="MM/DD/YYYY" type="date" />
-                </div>
-                <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">How can we assist you?</label>
                   <Textarea 
                     placeholder="I'm having trouble with online enrollment, need help comparing plans, etc." 
                     rows={4}
                   />
                 </div>
+                
+                {/* TCPA Consent Checkbox */}
+                <div className="flex items-start space-x-3 p-4 bg-muted rounded-lg">
+                  <Checkbox id="tcpa-consent" className="mt-1" />
+                  <label htmlFor="tcpa-consent" className="text-sm text-foreground leading-relaxed cursor-pointer">
+                    <span className="font-medium">Communication Consent (Required):</span> By checking this box, I consent to receive calls, text messages, and emails from Health Helpers regarding my Medicare enrollment inquiry. I understand these communications may be made using an automatic telephone dialing system or prerecorded messages. I may receive up to 8 text messages per month. Message and data rates may apply. I can opt out at any time by texting STOP or calling directly. This consent is not required as a condition of service.
+                  </label>
+                </div>
+                
                 <Button variant="hero" size="lg" className="w-full">
                   Request Support
                 </Button>
