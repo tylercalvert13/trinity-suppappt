@@ -10,6 +10,12 @@ const Header = () => {
     e.preventDefault();
     setIsMenuOpen(false);
     
+    // If not on home page, navigate to home first
+    if (window.location.pathname !== '/') {
+      window.location.href = '/' + href;
+      return;
+    }
+    
     // Wait for sheet to close, then navigate
     setTimeout(() => {
       const element = document.querySelector(href);
@@ -18,28 +24,43 @@ const Header = () => {
       }
     }, 300);
   };
+
+  const handleDesktopNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    
+    // If not on home page, navigate to home first
+    if (window.location.pathname !== '/') {
+      window.location.href = '/' + href;
+      return;
+    }
+    
+    const element = document.querySelector(href);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
   return (
     <header className="bg-background border-b border-border shadow-sm">
       <div className="container mx-auto px-4 py-4">
         <div className="relative flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-3">
+          <a href="/" className="flex items-center space-x-3">
             <img 
               src="/lovable-uploads/4d760ca1-c0a7-4a63-82d3-e45df96bc6b9.png" 
               alt="Health Helpers Logo" 
               className="h-12 w-auto"
             />
-          </div>
+          </a>
 
           {/* Navigation - Centered (Desktop only) */}
           <nav className="hidden lg:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
-            <a href="#services" className="text-foreground hover:text-primary transition-colors">
+            <a href="#services" onClick={(e) => handleDesktopNavClick(e, "#services")} className="text-foreground hover:text-primary transition-colors">
               Services
             </a>
-            <a href="#about" className="text-foreground hover:text-primary transition-colors">
+            <a href="#about" onClick={(e) => handleDesktopNavClick(e, "#about")} className="text-foreground hover:text-primary transition-colors">
               About
             </a>
-            <a href="#contact" className="text-foreground hover:text-primary transition-colors">
+            <a href="#contact" onClick={(e) => handleDesktopNavClick(e, "#contact")} className="text-foreground hover:text-primary transition-colors">
               Contact
             </a>
           </nav>
