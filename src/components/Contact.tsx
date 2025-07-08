@@ -76,7 +76,7 @@ const Contact = () => {
                     <Phone className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <div className="font-medium text-foreground">(555) 123-4567</div>
+                    <div className="font-medium text-foreground">(908) 224-5410</div>
                     <div className="text-sm text-muted-foreground">Call for immediate assistance</div>
                   </div>
                 </div>
@@ -85,7 +85,7 @@ const Contact = () => {
                     <Mail className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <div className="font-medium text-foreground">info@healthhelpers.com</div>
+                    <div className="font-medium text-foreground">info@healthhelpers.co</div>
                     <div className="text-sm text-muted-foreground">Email us anytime</div>
                   </div>
                 </div>
@@ -117,7 +117,7 @@ const Contact = () => {
                   Medicare enrollment deadlines are important. Don't wait - call us now for immediate assistance.
                 </p>
                 <Button variant="outline" className="w-full bg-background text-primary hover:bg-background/90">
-                  Call Now: (555) 123-4567
+                  Call Now: (908) 224-5410
                 </Button>
               </CardContent>
             </Card>
