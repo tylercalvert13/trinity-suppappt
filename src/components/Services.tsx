@@ -79,7 +79,7 @@ const Services = () => {
                     ))}
                   </ul>
                   <Button variant="outline" className="w-full">
-                    Learn More
+                    Enroll Online
                   </Button>
                 </CardContent>
               </Card>
@@ -89,7 +89,7 @@ const Services = () => {
 
         <div className="text-center mt-12">
           <Button variant="hero" size="lg">
-            Schedule Free Consultation
+            Start Your Enrollment Today
           </Button>
         </div>
       </div>

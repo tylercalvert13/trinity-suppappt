@@ -17,33 +17,33 @@ const About = () => {
           {/* Content */}
           <div>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-              Your Trusted Healthcare Insurance Partner
+              Medicare Enrollment Made Digital
             </h2>
             <p className="text-lg text-muted-foreground mb-6">
-              At Health Helpers, we understand that navigating Medicare and health insurance 
-              can be overwhelming. That's why we're here to simplify the process and provide 
-              personalized guidance every step of the way.
+              Unlike traditional agencies that require phone calls and meetings, Health Helpers provides 
+              a modern digital platform where you can research, compare, and enroll in Medicare plans 
+              entirely online. Take control of your healthcare decisions on your own schedule.
             </p>
             <div className="space-y-4 mb-8">
               <div className="flex items-start space-x-3">
                 <CheckCircle className="h-6 w-6 text-accent mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">Licensed & Certified</h3>
-                  <p className="text-muted-foreground">Our agents are fully licensed and certified to help you make informed decisions.</p>
+                  <h3 className="font-semibold text-foreground mb-1">Digital-First Platform</h3>
+                  <p className="text-muted-foreground">Complete your Medicare enrollment online without any phone calls or pressure tactics.</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
                 <CheckCircle className="h-6 w-6 text-accent mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">No-Cost Consultations</h3>
-                  <p className="text-muted-foreground">All our consultations and plan comparisons are completely free with no hidden fees.</p>
+                  <h3 className="font-semibold text-foreground mb-1">Self-Service Tools</h3>
+                  <p className="text-muted-foreground">Easy-to-use comparison tools and enrollment wizards guide you through every step.</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
                 <CheckCircle className="h-6 w-6 text-accent mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">Ongoing Support</h3>
-                  <p className="text-muted-foreground">We're here for you long after enrollment with continued support and annual reviews.</p>
+                  <h3 className="font-semibold text-foreground mb-1">Optional Support</h3>
+                  <p className="text-muted-foreground">Need help? Our support team is available if you prefer assistance, but it's entirely optional.</p>
                 </div>
               </div>
             </div>
