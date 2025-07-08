@@ -9,7 +9,7 @@ const Footer = () => {
           <div className="md:col-span-2">
             <a href="/" className="flex items-center space-x-3 mb-4">
               <img 
-                src="/lovable-uploads/4d760ca1-c0a7-4a63-82d3-e45df96bc6b9.png" 
+                src="/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" 
                 alt="Health Helpers Logo" 
                 className="h-10 w-auto"
               />
