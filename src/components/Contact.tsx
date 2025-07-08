@@ -59,7 +59,7 @@ const Contact = () => {
                 <div className="flex items-start space-x-3 p-4 bg-muted rounded-lg">
                   <Checkbox id="tcpa-consent" className="mt-1" />
                   <label htmlFor="tcpa-consent" className="text-sm text-foreground leading-relaxed cursor-pointer">
-                    <span className="font-medium">Communication Consent:</span> By checking this box, I consent to receive calls, text messages, and emails from Health Helpers regarding my Medicare enrollment inquiry. I understand these communications may be made using an automatic telephone dialing system or prerecorded messages. I may receive up to 8 text messages per month. Message and data rates may apply. I can opt out at any time by texting STOP or calling directly. This consent is not required as a condition of service.
+                    <span className="font-medium">Communication Consent:</span> By checking this box, I consent to receive calls, text messages, and emails from Health Helpers regarding my Medicare enrollment inquiry. I understand these communications may be made using an automatic telephone dialing system or prerecorded messages. I may receive up to 8 text messages per month. Message and data rates may apply. I can opt out at any time by texting STOP or calling directly. This consent is not required as a condition of service. I also agree to the <a href="/terms-of-service" className="text-primary hover:underline font-medium" target="_blank" rel="noopener noreferrer">Terms of Service</a>.
                   </label>
                 </div>
                 
