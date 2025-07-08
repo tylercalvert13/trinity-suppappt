@@ -7,13 +7,13 @@ const Hero = () => {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
           {/* Main Heading */}
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight">
             Enroll in Medicare Plans
             <span className="block text-accent"> Online by Yourself</span>
           </h1>
           
           {/* Subheading */}
-          <p className="text-xl md:text-2xl mb-8 text-primary-foreground/90 max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl md:text-2xl mb-8 text-primary-foreground/90 max-w-3xl mx-auto">
             Skip the phone calls and meetings. Use our digital platform to compare and enroll in 
             Medicare plans from the comfort of your home. No pressure, no waiting.
           </p>
