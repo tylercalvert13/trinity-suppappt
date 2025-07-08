@@ -5,7 +5,7 @@ const Header = () => {
   return (
     <header className="bg-background border-b border-border shadow-sm">
       <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
+        <div className="relative flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-3">
             <img 
@@ -15,8 +15,8 @@ const Header = () => {
             />
           </div>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          {/* Navigation - Centered */}
+          <nav className="hidden md:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
             <a href="#services" className="text-foreground hover:text-primary transition-colors">
               Services
             </a>
