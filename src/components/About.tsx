@@ -47,9 +47,6 @@ const About = () => {
                 </div>
               </div>
             </div>
-            <Button variant="trust" size="lg">
-              Meet Our Team
-            </Button>
           </div>
 
           {/* Stats */}
