@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Phone, Mail } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Phone, Mail, Menu } from "lucide-react";
 
 const Header = () => {
   return (
@@ -28,8 +29,37 @@ const Header = () => {
             </a>
           </nav>
 
+          {/* Mobile Menu */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="md:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-80">
+              <div className="flex flex-col space-y-6 mt-6">
+                <a href="#services" className="text-lg font-medium text-foreground hover:text-primary transition-colors">
+                  Services
+                </a>
+                <a href="#about" className="text-lg font-medium text-foreground hover:text-primary transition-colors">
+                  About
+                </a>
+                <a href="#contact" className="text-lg font-medium text-foreground hover:text-primary transition-colors">
+                  Contact
+                </a>
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground pt-4 border-t">
+                  <Phone className="h-4 w-4" />
+                  <span>(908) 224-5410</span>
+                </div>
+                <Button variant="hero" className="w-full">
+                  Start Online Enrollment
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+
           {/* Contact Info */}
-          <div className="flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-4">
             <div className="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground">
               <Phone className="h-4 w-4" />
               <span>(908) 224-5410</span>
