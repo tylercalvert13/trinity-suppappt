@@ -16,8 +16,8 @@ const Header = () => {
             />
           </div>
 
-          {/* Navigation - Centered */}
-          <nav className="hidden md:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
+          {/* Navigation - Centered (Desktop only) */}
+          <nav className="hidden lg:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
             <a href="#services" className="text-foreground hover:text-primary transition-colors">
               Services
             </a>
@@ -32,7 +32,7 @@ const Header = () => {
           {/* Mobile Menu */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="md:hidden">
+              <Button variant="ghost" size="sm" className="lg:hidden">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
@@ -59,7 +59,7 @@ const Header = () => {
           </Sheet>
 
           {/* Contact Info */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-4">
             <div className="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground">
               <Phone className="h-4 w-4" />
               <span>(908) 224-5410</span>
