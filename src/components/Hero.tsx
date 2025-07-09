@@ -23,7 +23,7 @@ const Hero = () => {
             <Button size="lg" variant="outline" className="bg-background text-primary hover:bg-background/90" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>
               Start Self-Enrollment
             </Button>
-            <Button size="lg" variant="healthcare">
+            <Button size="lg" variant="healthcare" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>
               Browse Plans Online
             </Button>
           </div>
