@@ -203,7 +203,7 @@ const HowToEnrollMedicareOnline = () => {
             Join thousands who have successfully enrolled in Medicare online. 
             Fast, secure, and pressure-free enrollment from your own home.
           </p>
-          <Button size="lg" className="mr-4">Begin Online Enrollment</Button>
+          <Button size="lg" className="mr-4" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>Begin Online Enrollment</Button>
           <Button variant="outline" size="lg">View Sample Plans</Button>
         </div>
       </div>

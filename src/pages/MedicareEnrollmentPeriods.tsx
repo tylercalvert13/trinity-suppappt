@@ -235,7 +235,7 @@ const MedicareEnrollmentPeriods = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg">Check My Enrollment Period</Button>
-            <Button variant="outline" size="lg">Start Online Enrollment</Button>
+            <Button variant="outline" size="lg" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>Start Online Enrollment</Button>
           </div>
         </div>
       </div>

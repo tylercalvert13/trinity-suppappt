@@ -53,7 +53,7 @@ const MedicareEnrollmentGuide = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Skip the phone calls and meetings. Use our digital platform to compare and enroll in Medicare plans from home.
                 </p>
-                <Button className="w-full">Begin Online Enrollment</Button>
+                <Button className="w-full" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>Begin Online Enrollment</Button>
               </div>
             </div>
           </CardContent>
@@ -149,7 +149,7 @@ const MedicareEnrollmentGuide = () => {
             No phone calls or high-pressure sales tactics.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg">Start Online Enrollment</Button>
+            <Button size="lg" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>Start Online Enrollment</Button>
             <Button variant="outline" size="lg">
               <Phone className="h-4 w-4 mr-2" />
               Get Help: (908) 224-5410

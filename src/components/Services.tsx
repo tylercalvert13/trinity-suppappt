@@ -78,7 +78,7 @@ const Services = () => {
                       </li>
                     ))}
                   </ul>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>
                     Enroll Online
                   </Button>
                 </CardContent>
@@ -88,7 +88,7 @@ const Services = () => {
         </div>
 
         <div className="text-center mt-12">
-          <Button variant="hero" size="lg">
+          <Button variant="hero" size="lg" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>
             Start Your Enrollment Today
           </Button>
         </div>

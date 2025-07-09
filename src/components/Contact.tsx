@@ -122,7 +122,7 @@ const Contact = () => {
                 <p className="text-primary-foreground/90 mb-4 text-sm">
                   Most people can complete their Medicare enrollment entirely online using our digital platform.
                 </p>
-                <Button variant="outline" className="w-full bg-background text-primary hover:bg-background/90">
+                <Button variant="outline" className="w-full bg-background text-primary hover:bg-background/90" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>
                   Begin Online Enrollment
                 </Button>
               </CardContent>

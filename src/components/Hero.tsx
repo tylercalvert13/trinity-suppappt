@@ -20,7 +20,7 @@ const Hero = () => {
 
           {/* Call to Action */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button size="lg" variant="outline" className="bg-background text-primary hover:bg-background/90">
+            <Button size="lg" variant="outline" className="bg-background text-primary hover:bg-background/90" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>
               Start Self-Enrollment
             </Button>
             <Button size="lg" variant="healthcare">
