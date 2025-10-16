@@ -218,7 +218,7 @@ const EnrollMedicareYourself = () => {
                 <h3 className="font-semibold mb-3">Get Help:</h3>
                 <div className="space-y-2">
                   <p className="text-sm">📞 <strong>(201) 589-1901</strong></p>
-                  <p className="text-sm">✉️ <strong>info@healthhelpers.co</strong></p>
+                  <p className="text-sm">✉️ <strong>support@healthhelpers.co</strong></p>
                   <p className="text-sm">🕒 Monday-Friday, 8AM-6PM EST</p>
                 </div>
               </div>

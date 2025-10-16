@@ -24,7 +24,7 @@ const TermsOfService = () => {
               
               <p>
                 If you experience issues with the messaging program, reply with the keyword HELP for more assistance, 
-                or reach out directly to <a href="mailto:info@healthhelpers.co" className="text-primary hover:underline">info@healthhelpers.co</a>.
+                or reach out directly to <a href="mailto:support@healthhelpers.co" className="text-primary hover:underline">support@healthhelpers.co</a>.
               </p>
               
               <p>
