@@ -89,9 +89,9 @@ const Header = () => {
                 </div>
                 <Button variant="hero" className="w-full" onClick={() => {
                   setIsMenuOpen(false);
-                  window.open('https://65.healthhelpers.co', '_blank');
+                  window.location.href = 'tel:201-589-1901';
                 }}>
-                  Start Online Enrollment
+                  Call Now
                 </Button>
               </div>
             </SheetContent>
@@ -103,8 +103,8 @@ const Header = () => {
               <Phone className="h-4 w-4" />
               <span>(908) 224-5410</span>
             </div>
-            <Button variant="hero" size="sm" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>
-              Start Online Enrollment
+            <Button variant="hero" size="sm" onClick={() => window.location.href = 'tel:201-589-1901'}>
+              Call Now
             </Button>
           </div>
         </div>

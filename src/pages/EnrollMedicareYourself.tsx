@@ -234,8 +234,8 @@ const EnrollMedicareYourself = () => {
             No sales pressure, no appointments, no waiting - just clear information and easy enrollment.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>Start Self-Enrollment Now</Button>
-            <Button variant="outline" size="lg">See Available Plans</Button>
+            <Button size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Call Now</Button>
+            <Button variant="outline" size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Call Now</Button>
           </div>
         </div>
       </div>

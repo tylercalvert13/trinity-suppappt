@@ -63,8 +63,8 @@ const Contact = () => {
                   </label>
                 </div>
                 
-                <Button variant="hero" size="lg" className="w-full">
-                  Request Support
+                <Button variant="hero" size="lg" className="w-full" onClick={() => window.location.href = 'tel:201-589-1901'}>
+                  Call Now
                 </Button>
               </CardContent>
             </Card>
@@ -122,8 +122,8 @@ const Contact = () => {
                 <p className="text-primary-foreground/90 mb-4 text-sm">
                   Most people can complete their Medicare enrollment entirely online using our digital platform.
                 </p>
-                <Button variant="outline" className="w-full bg-background text-primary hover:bg-background/90" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>
-                  Begin Online Enrollment
+                <Button variant="outline" className="w-full bg-background text-primary hover:bg-background/90" onClick={() => window.location.href = 'tel:201-589-1901'}>
+                  Call Now
                 </Button>
               </CardContent>
             </Card>

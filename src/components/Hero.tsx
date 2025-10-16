@@ -20,11 +20,11 @@ const Hero = () => {
 
           {/* Call to Action */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button size="lg" variant="outline" className="bg-background text-primary hover:bg-background/90" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>
-              Start Self-Enrollment
+            <Button size="lg" variant="outline" className="bg-background text-primary hover:bg-background/90" onClick={() => window.location.href = 'tel:201-589-1901'}>
+              Call Now
             </Button>
-            <Button size="lg" variant="healthcare" onClick={() => window.open('https://65.healthhelpers.co', '_blank')}>
-              Browse Plans Online
+            <Button size="lg" variant="healthcare" onClick={() => window.location.href = 'tel:201-589-1901'}>
+              Call Now
             </Button>
           </div>
 
