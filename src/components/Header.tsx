@@ -85,7 +85,7 @@ const Header = () => {
                 </a>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground pt-4 border-t">
                   <Phone className="h-4 w-4" />
-                  <span>(908) 224-5410</span>
+                  <span>(201) 589-1901</span>
                 </div>
                 <Button variant="hero" className="w-full" onClick={() => {
                   setIsMenuOpen(false);
@@ -101,7 +101,7 @@ const Header = () => {
           <div className="hidden lg:flex items-center space-x-4">
             <div className="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground">
               <Phone className="h-4 w-4" />
-              <span>(908) 224-5410</span>
+              <span>(201) 589-1901</span>
             </div>
             <Button variant="hero" size="sm" onClick={() => window.location.href = 'tel:201-589-1901'}>
               Call Now

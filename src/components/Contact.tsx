@@ -82,7 +82,7 @@ const Contact = () => {
                     <Phone className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <div className="font-medium text-foreground">(908) 224-5410</div>
+                    <div className="font-medium text-foreground">(201) 589-1901</div>
                     <div className="text-sm text-muted-foreground">Optional support line</div>
                   </div>
                 </div>

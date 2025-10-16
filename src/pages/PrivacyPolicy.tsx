@@ -135,7 +135,7 @@ const PrivacyPolicy = () => {
             <div className="bg-muted p-6 rounded-lg">
               <p className="mb-3">If you have questions about this Privacy Policy or wish to exercise your rights, please contact us:</p>
               <div className="space-y-2">
-                <p><strong>Phone:</strong> (908) 224-5410</p>
+                <p><strong>Phone:</strong> (201) 589-1901</p>
                 <p><strong>Email:</strong> privacy@healthhelpers.com</p>
                 <p><strong>Address:</strong> [Your Business Address]</p>
               </div>
