@@ -16,8 +16,8 @@ const MedicareEnrollmentGuide = () => {
             Complete Medicare Enrollment Guide 2024
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Everything you need to know about enrolling in Medicare online by yourself. 
-            No phone calls, no pressure - just clear, step-by-step guidance.
+            Understanding Medicare doesn't have to be complicated. Our licensed agents are here to guide 
+            you through the enrollment process and help you choose the right coverage.
           </p>
         </div>
 
@@ -49,11 +49,12 @@ const MedicareEnrollmentGuide = () => {
                 </ul>
               </div>
               <div className="bg-primary/5 p-4 rounded-lg">
-                <h3 className="font-semibold mb-3">Start Enrollment Now</h3>
+                <h3 className="font-semibold mb-3">Get Expert Help</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Skip the phone calls and meetings. Use our digital platform to compare and enroll in Medicare plans from home.
+                  Talk to a licensed Medicare specialist who can answer your questions and help you 
+                  compare plans to find the right coverage for your needs.
                 </p>
-                <Button className="w-full" onClick={() => window.location.href = 'tel:201-589-1901'}>Call Now</Button>
+                <Button className="w-full" onClick={() => window.location.href = 'tel:201-589-1901'}>Call for Assistance</Button>
               </div>
             </div>
           </CardContent>
@@ -84,8 +85,8 @@ const MedicareEnrollmentGuide = () => {
               },
               {
                 step: 4,
-                title: "Enroll Online",
-                description: "Complete your enrollment through our secure digital platform - no phone calls required.",
+                title: "Enroll with Help",
+                description: "Work with our licensed agents to complete your enrollment and ensure all paperwork is filed correctly.",
                 icon: <CheckCircle className="h-6 w-6" />
               }
             ].map((item) => (
@@ -145,13 +146,13 @@ const MedicareEnrollmentGuide = () => {
         <div className="text-center bg-primary/5 p-8 rounded-lg">
           <h2 className="text-2xl font-bold mb-4">Ready to Enroll in Medicare?</h2>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Use our online platform to compare plans and enroll in Medicare coverage that fits your needs and budget. 
-            No phone calls or high-pressure sales tactics.
+            Get personalized help from our licensed Medicare specialists. We'll help you understand your 
+            options and enroll in coverage that fits your needs and budget.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Call Now</Button>
+            <Button size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Speak with an Agent</Button>
             <Button variant="outline" size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>
-              Call Now
+              Call (201) 589-1901
             </Button>
           </div>
         </div>

@@ -13,33 +13,33 @@ const EnrollMedicareYourself = () => {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Enroll in Medicare Yourself - No Agents Required
+            Get Expert Medicare Enrollment Assistance
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Take control of your Medicare enrollment. Compare plans, make informed decisions, 
-            and enroll completely online without pressure from insurance agents or salespeople.
+            Navigating Medicare can be confusing. Our licensed agents provide personalized guidance 
+            to help you understand your options and choose the right plan for your needs.
           </p>
         </div>
 
         {/* Why Self-Enroll */}
         <div className="mb-12">
-          <h2 className="text-3xl font-bold text-center mb-8">Why Enroll Yourself?</h2>
+          <h2 className="text-3xl font-bold text-center mb-8">Why Choose Health Helpers?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
                 icon: <PhoneOff className="h-8 w-8 text-primary" />,
-                title: "No Sales Pressure",
-                description: "Make decisions at your own pace without pushy sales tactics or pressure to choose expensive plans."
+                title: "Experienced Agents",
+                description: "Work with licensed Medicare specialists who have years of experience helping people find the right coverage."
               },
               {
                 icon: <Clock className="h-8 w-8 text-primary" />,
-                title: "Your Timeline",
-                description: "Enroll 24/7 from home. No scheduling appointments or waiting for callbacks from busy agents."
+                title: "Save Time",
+                description: "We do the research for you, comparing plans and explaining your options in plain language."
               },
               {
                 icon: <UserCheck className="h-8 w-8 text-primary" />,
-                title: "Your Choice",
-                description: "Compare all available options objectively. Choose what's truly best for your health and budget."
+                title: "Personalized Care",
+                description: "Get recommendations based on your specific healthcare needs, medications, and budget."
               }
             ].map((benefit, index) => (
               <Card key={index}>
@@ -228,14 +228,14 @@ const EnrollMedicareYourself = () => {
 
         {/* CTA Section */}
         <div className="text-center bg-primary/5 p-8 rounded-lg">
-          <h2 className="text-2xl font-bold mb-4">Ready to Take Control of Your Medicare?</h2>
+          <h2 className="text-2xl font-bold mb-4">Ready to Get Started with Medicare?</h2>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Join thousands who have successfully enrolled in Medicare by themselves. 
-            No sales pressure, no appointments, no waiting - just clear information and easy enrollment.
+            Call today for a free consultation with one of our licensed Medicare specialists. 
+            We'll help you understand your options and enroll in the right plan.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Call Now</Button>
-            <Button variant="outline" size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Call Now</Button>
+            <Button size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Call (201) 589-1901</Button>
+            <Button variant="outline" size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Request Consultation</Button>
           </div>
         </div>
       </div>

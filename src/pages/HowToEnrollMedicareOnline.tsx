@@ -13,33 +13,33 @@ const HowToEnrollMedicareOnline = () => {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            How to Enroll in Medicare Online by Yourself
+            How to Get Medicare Enrollment Help
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Skip the phone calls and meetings. Learn how to enroll in Medicare plans completely online 
-            using our secure digital platform from the comfort of your home.
+            Let our licensed Medicare specialists guide you through the enrollment process. 
+            We make it easy to understand your options and choose the right coverage.
           </p>
         </div>
 
         {/* Benefits of Online Enrollment */}
         <div className="mb-12">
-          <h2 className="text-3xl font-bold text-center mb-8">Why Enroll Online?</h2>
+          <h2 className="text-3xl font-bold text-center mb-8">Why Work with Us?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
                 icon: <Clock className="h-8 w-8 text-primary" />,
-                title: "Save Time",
-                description: "No waiting for appointments or sitting through lengthy phone calls. Enroll at your own pace, 24/7."
+                title: "Personalized Service",
+                description: "Get one-on-one assistance from licensed agents who take time to understand your specific needs."
               },
               {
                 icon: <Shield className="h-8 w-8 text-primary" />,
-                title: "No Pressure",
-                description: "Compare plans without sales pressure. Take your time to review options and make informed decisions."
+                title: "Expert Guidance",
+                description: "Our specialists know Medicare inside and out. We'll help you navigate your options with confidence."
               },
               {
                 icon: <Monitor className="h-8 w-8 text-primary" />,
-                title: "Easy Comparison",
-                description: "Side-by-side plan comparisons with clear pricing and coverage details right on your screen."
+                title: "Clear Comparisons",
+                description: "We'll explain the differences between plans in plain English so you can make informed decisions."
               }
             ].map((benefit, index) => (
               <Card key={index}>
@@ -198,13 +198,13 @@ const HowToEnrollMedicareOnline = () => {
 
         {/* CTA Section */}
         <div className="text-center bg-primary/5 p-8 rounded-lg">
-          <h2 className="text-2xl font-bold mb-4">Start Your Online Medicare Enrollment</h2>
+          <h2 className="text-2xl font-bold mb-4">Get Your Free Medicare Consultation</h2>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Join thousands who have successfully enrolled in Medicare online. 
-            Fast, secure, and pressure-free enrollment from your own home.
+            Talk to a licensed Medicare specialist today. We'll answer your questions and help you find 
+            the right coverage for your healthcare needs and budget.
           </p>
-          <Button size="lg" className="mr-4" onClick={() => window.location.href = 'tel:201-589-1901'}>Call Now</Button>
-          <Button variant="outline" size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Call Now</Button>
+          <Button size="lg" className="mr-4" onClick={() => window.location.href = 'tel:201-589-1901'}>Call (201) 589-1901</Button>
+          <Button variant="outline" size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Request a Call Back</Button>
         </div>
       </div>
 

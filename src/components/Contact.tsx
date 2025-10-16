@@ -11,11 +11,11 @@ const Contact = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Ready to Enroll Online?
+            Get Your Free Medicare Consultation
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Start your Medicare enrollment using our digital platform. If you need assistance 
-            along the way, our support team is here to help - but only if you want it.
+            Have questions about Medicare? Our licensed agents are ready to help you understand 
+            your options and find the right coverage. Call us today or fill out the form below.
           </p>
         </div>
 
@@ -24,7 +24,7 @@ const Contact = () => {
           <div className="lg:col-span-2">
             <Card className="shadow-card border-0">
               <CardHeader>
-                <CardTitle className="text-2xl">Need Support? (Optional)</CardTitle>
+                <CardTitle className="text-2xl">Request a Call Back</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -48,9 +48,9 @@ const Contact = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">How can we assist you?</label>
+                  <label className="text-sm font-medium text-foreground mb-2 block">What can we help you with?</label>
                   <Textarea 
-                    placeholder="I'm having trouble with online enrollment, need help comparing plans, etc." 
+                    placeholder="I'm turning 65 soon and need help choosing a Medicare plan..." 
                     rows={4}
                   />
                 </div>
@@ -64,7 +64,7 @@ const Contact = () => {
                 </div>
                 
                 <Button variant="hero" size="lg" className="w-full" onClick={() => window.location.href = 'tel:201-589-1901'}>
-                  Call Now
+                  Request Consultation
                 </Button>
               </CardContent>
             </Card>
@@ -83,7 +83,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <div className="font-medium text-foreground">(201) 589-1901</div>
-                    <div className="text-sm text-muted-foreground">Optional support line</div>
+                    <div className="text-sm text-muted-foreground">Speak with an agent</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -118,12 +118,13 @@ const Contact = () => {
 
             <Card className="shadow-card border-0 bg-primary text-primary-foreground">
               <CardContent className="pt-6">
-                <h3 className="font-bold text-lg mb-2">Prefer to Start Online?</h3>
+                <h3 className="font-bold text-lg mb-2">Ready to Get Started?</h3>
                 <p className="text-primary-foreground/90 mb-4 text-sm">
-                  Most people can complete their Medicare enrollment entirely online using our digital platform.
+                  Call now to speak with a licensed Medicare specialist who can answer your questions 
+                  and help you enroll in the right plan.
                 </p>
                 <Button variant="outline" className="w-full bg-background text-primary hover:bg-background/90" onClick={() => window.location.href = 'tel:201-589-1901'}>
-                  Call Now
+                  Call (201) 589-1901
                 </Button>
               </CardContent>
             </Card>

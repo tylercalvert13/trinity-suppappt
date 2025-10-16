@@ -8,14 +8,14 @@ const Hero = () => {
         <div className="max-w-4xl mx-auto text-center">
           {/* Main Heading */}
           <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight">
-            Enroll in Medicare Plans
-            <span className="block text-accent"> Online by Yourself</span>
+            Expert Medicare Guidance
+            <span className="block text-accent"> Personalized for You</span>
           </h1>
           
           {/* Subheading */}
           <p className="text-lg sm:text-xl md:text-2xl mb-8 text-primary-foreground/90 max-w-3xl mx-auto">
-            Skip the phone calls and meetings. Use our digital platform to compare and enroll in 
-            Medicare plans from the comfort of your home. No pressure, no waiting.
+            Get personalized help choosing the right Medicare plan. Our licensed agents guide you through 
+            every step to find coverage that fits your needs and budget.
           </p>
 
           {/* Call to Action */}
@@ -32,19 +32,19 @@ const Hero = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto">
             <div className="flex flex-col items-center space-y-2">
               <Shield className="h-8 w-8 text-accent" />
-              <span className="text-sm font-medium">Online Platform</span>
+              <span className="text-sm font-medium">Licensed Agents</span>
             </div>
             <div className="flex flex-col items-center space-y-2">
               <Heart className="h-8 w-8 text-accent" />
-              <span className="text-sm font-medium">No Phone Calls</span>
+              <span className="text-sm font-medium">Personal Service</span>
             </div>
             <div className="flex flex-col items-center space-y-2">
               <Users className="h-8 w-8 text-accent" />
-              <span className="text-sm font-medium">Self-Service</span>
+              <span className="text-sm font-medium">Expert Guidance</span>
             </div>
             <div className="flex flex-col items-center space-y-2">
               <Award className="h-8 w-8 text-accent" />
-              <span className="text-sm font-medium">Enroll at Home</span>
+              <span className="text-sm font-medium">Trusted Service</span>
             </div>
           </div>
         </div>

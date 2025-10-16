@@ -79,7 +79,7 @@ const Services = () => {
                     ))}
                   </ul>
                   <Button variant="outline" className="w-full" onClick={() => window.location.href = 'tel:201-589-1901'}>
-                    Call Now
+                    Get Started
                   </Button>
                 </CardContent>
               </Card>
@@ -89,7 +89,7 @@ const Services = () => {
 
         <div className="text-center mt-12">
           <Button variant="hero" size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>
-            Call Now
+            Speak with an Agent Today
           </Button>
         </div>
       </div>

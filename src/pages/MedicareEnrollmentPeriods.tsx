@@ -230,12 +230,12 @@ const MedicareEnrollmentPeriods = () => {
         <div className="text-center bg-primary/5 p-8 rounded-lg">
           <h2 className="text-2xl font-bold mb-4">Don't Miss Your Enrollment Deadline</h2>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Enroll during your eligible period to avoid penalties and ensure you have 
-            the coverage you need. Our online platform makes enrollment quick and easy.
+            Our licensed Medicare specialists can help you understand your enrollment period and ensure 
+            you enroll on time. Call today for personalized assistance.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Call Now</Button>
-            <Button variant="outline" size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Call Now</Button>
+            <Button size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Call (201) 589-1901</Button>
+            <Button variant="outline" size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>Get Free Consultation</Button>
           </div>
         </div>
       </div>
