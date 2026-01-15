@@ -51,15 +51,12 @@ const trackFacebookConversion = async () => {
   try {
     const { fbc, fbp } = getFacebookCookies();
     
-    // Also fire the client-side pixel event for deduplication
-    if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'Lead');
-    }
+    // Note: No client-side pixel event for custom InboundCall - server-side only
     
     // Send server-side event via Edge Function
     const { error } = await supabase.functions.invoke('fb-conversion', {
       body: {
-        event_name: 'Lead',
+        event_name: 'InboundCall',
         event_source_url: window.location.href,
         fbc,
         fbp,
