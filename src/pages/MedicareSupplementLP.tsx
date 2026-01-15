@@ -36,6 +36,84 @@ const MedicareSupplementLP = () => {
   const [countdown, setCountdown] = useState(90);
   const [timerActive, setTimerActive] = useState(false);
 
+  // SEO Metadata Management
+  useEffect(() => {
+    // Store original values for cleanup
+    const originalTitle = document.title;
+    const metaDescription = document.querySelector('meta[name="description"]');
+    const originalDescription = metaDescription?.getAttribute("content") || "";
+    
+    // Set page-specific title
+    document.title = "Medicare Supplement Rate Check | Health Helpers";
+    
+    // Set page-specific description
+    if (metaDescription) {
+      metaDescription.setAttribute("content", "Check if you qualify for a Medicare Supplement rate reduction. Free comparison for Plan G, F, and N policyholders. Licensed agents available.");
+    }
+    
+    // Add noindex, nofollow for paid landing page
+    let metaRobots = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
+    if (!metaRobots) {
+      metaRobots = document.createElement('meta');
+      metaRobots.setAttribute('name', 'robots');
+      document.head.appendChild(metaRobots);
+    }
+    metaRobots.setAttribute('content', 'noindex, nofollow');
+    
+    // Add canonical URL
+    let linkCanonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!linkCanonical) {
+      linkCanonical = document.createElement('link');
+      linkCanonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(linkCanonical);
+    }
+    linkCanonical.setAttribute('href', 'https://healthhelpers.co/supp');
+    
+    // Update Open Graph tags
+    const updateMetaTag = (property: string, content: string) => {
+      let tag = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement | null;
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    };
+    
+    updateMetaTag('og:title', 'Medicare Supplement Rate Check | Health Helpers');
+    updateMetaTag('og:description', 'Check if you qualify for a Medicare Supplement rate reduction. Free comparison for Plan G, F, and N policyholders.');
+    updateMetaTag('og:url', 'https://healthhelpers.co/supp');
+    updateMetaTag('og:type', 'website');
+    
+    // Update Twitter tags
+    const updateTwitterTag = (name: string, content: string) => {
+      let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('name', name);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    };
+    
+    updateTwitterTag('twitter:title', 'Medicare Supplement Rate Check | Health Helpers');
+    updateTwitterTag('twitter:description', 'Check if you qualify for a Medicare Supplement rate reduction. Free comparison for Plan G, F, and N policyholders.');
+    
+    // Cleanup function to restore original values
+    return () => {
+      document.title = originalTitle;
+      if (metaDescription) {
+        metaDescription.setAttribute("content", originalDescription);
+      }
+      // Remove robots tag (allow indexing on other pages)
+      const robots = document.querySelector('meta[name="robots"]');
+      if (robots) robots.remove();
+      // Remove canonical
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.remove();
+    };
+  }, []);
+
   // Generate random application number
   useEffect(() => {
     const randomNum = Math.floor(10000 + Math.random() * 90000);
