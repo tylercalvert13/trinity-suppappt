@@ -12,6 +12,7 @@ interface ConversionRequest {
   event_source_url?: string;
   fbc?: string;
   fbp?: string;
+  test_event_code?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -30,13 +31,20 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { event_name, event_source_url, fbc, fbp }: ConversionRequest = await req.json();
+    const { event_name, event_source_url, fbc, fbp, test_event_code }: ConversionRequest = await req.json();
 
-    // Build user data object
-    const userData: Record<string, string> = {
-      client_ip_address: req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "",
-      client_user_agent: req.headers.get("user-agent") || "",
-    };
+    // Build user data object - only include fields with valid values
+    const userData: Record<string, string> = {};
+    
+    const clientIp = req.headers.get("x-forwarded-for")?.split(',')[0]?.trim() || req.headers.get("cf-connecting-ip") || "";
+    const userAgent = req.headers.get("user-agent") || "";
+    
+    if (clientIp && clientIp !== "127.0.0.1") {
+      userData.client_ip_address = clientIp;
+    }
+    if (userAgent) {
+      userData.client_user_agent = userAgent;
+    }
 
     // Add Facebook cookies if available
     if (fbc) userData.fbc = fbc;
@@ -51,12 +59,17 @@ const handler = async (req: Request): Promise<Response> => {
       user_data: userData,
     };
 
-    const payload = {
+    const payload: Record<string, any> = {
       data: [eventData],
       access_token: accessToken,
     };
 
-    console.log("Sending Facebook Conversion API event:", JSON.stringify({ event_name: eventData.event_name, action_source: eventData.action_source }));
+    // Add test event code if provided
+    if (test_event_code) {
+      payload.test_event_code = test_event_code;
+    }
+
+    console.log("Sending Facebook Conversion API event:", JSON.stringify({ event_name: eventData.event_name, action_source: eventData.action_source, test_event_code }));
 
     // Send to Facebook Conversion API
     const fbResponse = await fetch(
