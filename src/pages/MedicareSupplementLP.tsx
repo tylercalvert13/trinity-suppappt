@@ -5,10 +5,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 
+import { supabase } from "@/integrations/supabase/client";
+
 // Taboola pixel type declaration
 declare global {
   interface Window {
     _tfa?: Array<{ notify: string; name: string; id: number }>;
+    fbq?: (...args: any[]) => void;
   }
 }
 
@@ -27,6 +30,54 @@ const trackTaboolaConversion = () => {
       id: 1977536
     });
   }
+};
+
+// Get Facebook cookies for deduplication
+const getFacebookCookies = () => {
+  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key] = value;
+    return acc;
+  }, {} as Record<string, string>);
+  
+  return {
+    fbc: cookies['_fbc'] || undefined,
+    fbp: cookies['_fbp'] || undefined,
+  };
+};
+
+// Track Facebook Conversion API event
+const trackFacebookConversion = async () => {
+  try {
+    const { fbc, fbp } = getFacebookCookies();
+    
+    // Also fire the client-side pixel event for deduplication
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'Lead');
+    }
+    
+    // Send server-side event via Edge Function
+    const { error } = await supabase.functions.invoke('fb-conversion', {
+      body: {
+        event_name: 'Lead',
+        event_source_url: window.location.href,
+        fbc,
+        fbp,
+      },
+    });
+
+    if (error) {
+      console.error('Facebook Conversion API error:', error);
+    }
+  } catch (err) {
+    console.error('Failed to track Facebook conversion:', err);
+  }
+};
+
+// Combined tracking function for call clicks
+const handleCallClick = () => {
+  trackTaboolaConversion();
+  trackFacebookConversion();
 };
 
 const MedicareSupplementLP = () => {
@@ -476,7 +527,7 @@ const MedicareSupplementLP = () => {
                 </div>
 
                 {/* Call Button */}
-                <a href={PHONE_TEL} className="block" onClick={trackTaboolaConversion}>
+                <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
                   <Button
                     size="lg"
                     className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
@@ -554,7 +605,7 @@ const MedicareSupplementLP = () => {
                 {getDisqualMessage()}
               </p>
 
-              <a href={PHONE_TEL} className="block">
+              <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
                 <Button
                   size="lg"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 h-auto rounded-xl"
@@ -575,7 +626,7 @@ const MedicareSupplementLP = () => {
       {/* Sticky Call Button (Mobile - Qualified Only) */}
       {step === "qualified" && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg md:hidden">
-          <a href={PHONE_TEL} className="block" onClick={trackTaboolaConversion}>
+          <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
             <Button
               size="lg"
               className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-4 h-auto rounded-xl"
