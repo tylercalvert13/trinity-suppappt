@@ -5,11 +5,29 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 
+// Taboola pixel type declaration
+declare global {
+  interface Window {
+    _tfa?: Array<{ notify: string; name: string; id: number }>;
+  }
+}
+
 type FunnelStep = "article" | "q1" | "q2" | "q3" | "loading" | "qualified" | "disqualified";
 type DisqualReason = "no-plan" | "health-issues" | "medications";
 
 const PHONE_NUMBER = "+1 (888) 525-1179";
 const PHONE_TEL = "tel:+18885251179";
+
+// Track Taboola conversion for qualified leads
+const trackTaboolaConversion = () => {
+  if (typeof window !== 'undefined' && window._tfa) {
+    window._tfa.push({
+      notify: 'event',
+      name: 'qualified_lead',
+      id: 1977536
+    });
+  }
+};
 
 const MedicareSupplementLP = () => {
   const [step, setStep] = useState<FunnelStep>("article");
@@ -380,7 +398,7 @@ const MedicareSupplementLP = () => {
                 </div>
 
                 {/* Call Button */}
-                <a href={PHONE_TEL} className="block">
+                <a href={PHONE_TEL} className="block" onClick={trackTaboolaConversion}>
                   <Button
                     size="lg"
                     className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
@@ -479,7 +497,7 @@ const MedicareSupplementLP = () => {
       {/* Sticky Call Button (Mobile - Qualified Only) */}
       {step === "qualified" && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg md:hidden">
-          <a href={PHONE_TEL} className="block">
+          <a href={PHONE_TEL} className="block" onClick={trackTaboolaConversion}>
             <Button
               size="lg"
               className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-4 h-auto rounded-xl"
