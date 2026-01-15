@@ -46,12 +46,30 @@ const getFacebookCookies = () => {
   };
 };
 
+// Generate or retrieve persistent visitor ID for improved match quality
+const getVisitorId = (): string => {
+  const storageKey = 'hh_visitor_id';
+  let visitorId = localStorage.getItem(storageKey);
+  
+  if (!visitorId) {
+    visitorId = crypto.randomUUID();
+    localStorage.setItem(storageKey, visitorId);
+  }
+  
+  return visitorId;
+};
+
+// Generate unique event ID for deduplication
+const generateEventId = (): string => {
+  return crypto.randomUUID();
+};
+
 // Track Facebook Conversion API event
 const trackFacebookConversion = async () => {
   try {
     const { fbc, fbp } = getFacebookCookies();
-    
-    // Note: No client-side pixel event for custom InboundCall - server-side only
+    const event_id = generateEventId();
+    const external_id = getVisitorId();
     
     // Send server-side event via Edge Function
     const { error } = await supabase.functions.invoke('fb-conversion', {
@@ -60,6 +78,8 @@ const trackFacebookConversion = async () => {
         event_source_url: window.location.href,
         fbc,
         fbp,
+        event_id,
+        external_id,
       },
     });
 

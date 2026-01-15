@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { crypto } from "https://deno.land/std@0.190.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,18 @@ interface ConversionRequest {
   event_source_url?: string;
   fbc?: string;
   fbp?: string;
+  event_id?: string;
+  external_id?: string;
   test_event_code?: string;
+}
+
+// Hash a string using SHA-256 (required by Facebook for user data)
+async function hashSHA256(value: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(value.toLowerCase().trim());
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -31,10 +43,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { event_name, event_source_url, fbc, fbp, test_event_code }: ConversionRequest = await req.json();
+    const { event_name, event_source_url, fbc, fbp, event_id, external_id, test_event_code }: ConversionRequest = await req.json();
 
     // Build user data object - only include fields with valid values
-    const userData: Record<string, string> = {};
+    const userData: Record<string, string | string[]> = {};
     
     const clientIp = req.headers.get("x-forwarded-for")?.split(',')[0]?.trim() || req.headers.get("cf-connecting-ip") || "";
     const userAgent = req.headers.get("user-agent") || "";
@@ -50,14 +62,25 @@ const handler = async (req: Request): Promise<Response> => {
     if (fbc) userData.fbc = fbc;
     if (fbp) userData.fbp = fbp;
 
+    // Add external_id (hashed) for improved match quality
+    if (external_id) {
+      const hashedExternalId = await hashSHA256(external_id);
+      userData.external_id = [hashedExternalId];
+    }
+
     // Build the event payload
-    const eventData = {
+    const eventData: Record<string, any> = {
       event_name: event_name || "Lead",
       event_time: Math.floor(Date.now() / 1000),
       action_source: "website",
       event_source_url: event_source_url || "https://healthhelpers.co/supp",
       user_data: userData,
     };
+
+    // Add event_id for deduplication
+    if (event_id) {
+      eventData.event_id = event_id;
+    }
 
     const payload: Record<string, any> = {
       data: [eventData],
@@ -69,7 +92,13 @@ const handler = async (req: Request): Promise<Response> => {
       payload.test_event_code = test_event_code;
     }
 
-    console.log("Sending Facebook Conversion API event:", JSON.stringify({ event_name: eventData.event_name, action_source: eventData.action_source, test_event_code }));
+    console.log("Sending Facebook Conversion API event:", JSON.stringify({ 
+      event_name: eventData.event_name, 
+      action_source: eventData.action_source, 
+      event_id: eventData.event_id,
+      has_external_id: !!external_id,
+      test_event_code 
+    }));
 
     // Send to Facebook Conversion API
     const fbResponse = await fetch(
