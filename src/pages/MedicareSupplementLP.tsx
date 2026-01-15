@@ -1,0 +1,497 @@
+import { useState, useEffect, useCallback } from "react";
+import { Phone, CheckCircle, Clock, Shield, Users, FileCheck, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+
+type FunnelStep = "article" | "q1" | "q2" | "q3" | "loading" | "qualified" | "disqualified";
+type DisqualReason = "no-plan" | "health-issues" | "medications";
+
+const PHONE_NUMBER = "+1 (888) 525-1179";
+const PHONE_TEL = "tel:+18885251179";
+
+const MedicareSupplementLP = () => {
+  const [step, setStep] = useState<FunnelStep>("article");
+  const [disqualReason, setDisqualReason] = useState<DisqualReason | null>(null);
+  const [applicationNumber, setApplicationNumber] = useState("");
+  const [countdown, setCountdown] = useState(90);
+  const [timerActive, setTimerActive] = useState(false);
+
+  // Generate random application number
+  useEffect(() => {
+    const randomNum = Math.floor(10000 + Math.random() * 90000);
+    setApplicationNumber(`SM${randomNum}`);
+  }, []);
+
+  // Countdown timer
+  useEffect(() => {
+    if (!timerActive || countdown <= 0) return;
+    
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          setTimerActive(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timerActive, countdown]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return { mins: mins.toString().padStart(2, "0"), secs: secs.toString().padStart(2, "0") };
+  };
+
+  const handleQ1Answer = (answer: string) => {
+    if (answer === "yes") {
+      setStep("q2");
+    } else {
+      setDisqualReason("no-plan");
+      setStep("disqualified");
+    }
+  };
+
+  const handleQ2Answer = (answer: string) => {
+    if (answer === "no") {
+      setStep("q3");
+    } else {
+      setDisqualReason("health-issues");
+      setStep("disqualified");
+    }
+  };
+
+  const handleQ3Answer = (answer: string) => {
+    if (answer === "no") {
+      setStep("loading");
+      setTimeout(() => {
+        setStep("qualified");
+        setTimerActive(true);
+      }, 2500);
+    } else {
+      setDisqualReason("medications");
+      setStep("disqualified");
+    }
+  };
+
+  const scrollToFunnel = useCallback(() => {
+    setStep("q1");
+    setTimeout(() => {
+      document.getElementById("funnel-section")?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  }, []);
+
+  const getDisqualMessage = () => {
+    switch (disqualReason) {
+      case "no-plan":
+        return "Unfortunately, this program is only available for current Medicare Supplement Plan G, F, or N policyholders. If you'd like to learn more about Medicare Supplement options, please call us.";
+      case "health-issues":
+        return "Unfortunately, based on your health history, we may not be able to offer immediate rate reductions through this program. However, our licensed agents can discuss your specific situation.";
+      case "medications":
+        return "Unfortunately, based on your current medications, we may not be able to offer immediate rate reductions through this program. However, our licensed agents can discuss your specific situation.";
+      default:
+        return "";
+    }
+  };
+
+  const time = formatTime(countdown);
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Hero/Article Section */}
+      {(step === "article" || step === "q1" || step === "q2" || step === "q3") && (
+        <section className="bg-gradient-to-b from-blue-50 to-background">
+          <div className="max-w-3xl mx-auto px-4 py-8 md:py-12">
+            {/* Breaking News Tag */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded uppercase tracking-wide animate-pulse">
+                Breaking News
+              </span>
+              <span className="text-muted-foreground text-sm">Consumer Alert</span>
+            </div>
+
+            {/* Headline */}
+            <h1 className="text-2xl md:text-4xl font-bold text-foreground leading-tight mb-4">
+              Medicare Supplement 'Rate Trap' Exposed: Seniors on Plan G, F, or N Could Save $100-200/Month
+            </h1>
+
+            {/* Subheadline */}
+            <p className="text-lg md:text-xl text-muted-foreground mb-4">
+              Consumer advocacy groups reveal why most Medicare Supplement policyholders are overpaying—and how a quick check could unlock your savings.
+            </p>
+
+            {/* Byline */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 pb-6 border-b">
+              <span className="font-medium text-foreground">Health Helpers Research Team</span>
+              <span>•</span>
+              <span>3 min read</span>
+            </div>
+
+            {/* Hero Image */}
+            <div className="rounded-xl overflow-hidden mb-8 shadow-lg">
+              <img
+                src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=450&fit=crop"
+                alt="Senior couple reviewing Medicare documents together"
+                className="w-full h-48 md:h-64 object-cover"
+                loading="eager"
+              />
+            </div>
+
+            {/* Article Content */}
+            <article className="prose prose-lg max-w-none mb-8">
+              <p className="text-foreground leading-relaxed mb-4">
+                If you're currently paying for Medicare Supplement Plan G, F, or N, there's something your insurance company probably hasn't told you: <strong>you can switch carriers anytime without losing coverage</strong>.
+              </p>
+
+              <p className="text-foreground leading-relaxed mb-4">
+                Here's what most people don't realize: Insurance companies routinely raise rates on existing customers while offering significantly better rates to new customers. It's called "price optimization" and it's completely legal.
+              </p>
+
+              <div className="bg-blue-50 border-l-4 border-blue-600 p-4 my-6 rounded-r-lg">
+                <p className="text-foreground font-medium mb-2">The secret the insurance industry doesn't want you to know:</p>
+                <p className="text-muted-foreground">
+                  <strong>Plan G is Plan G regardless of which company you buy it from.</strong> The benefits are identical because they're standardized by the federal government. The only difference? The price.
+                </p>
+              </div>
+
+              <p className="text-foreground leading-relaxed mb-4">
+                This means you could be paying $150-200 more per month than your neighbor for the <em>exact same coverage</em>—simply because you've been a loyal customer.
+              </p>
+
+              <h2 className="text-xl font-bold text-foreground mt-8 mb-4">What You Keep When You Switch:</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Same doctors and hospitals</span>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Same coverage and benefits</span>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">No coverage gaps</span>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground">Just a lower monthly premium</span>
+                </div>
+              </div>
+
+              <p className="text-foreground leading-relaxed mb-6">
+                The qualification process is simple and only takes a few minutes. Answer a few quick questions below to see if you qualify for a rate reduction!
+              </p>
+            </article>
+
+            {/* CTA Button */}
+            {step === "article" && (
+              <div className="text-center">
+                <Button
+                  onClick={scrollToFunnel}
+                  size="lg"
+                  className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-6 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
+                >
+                  Check If You Qualify
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+                <p className="text-sm text-muted-foreground mt-3">Free • No Obligation • Takes 30 Seconds</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Qualification Funnel */}
+      <section id="funnel-section" className="py-8 md:py-12">
+        <div className="max-w-xl mx-auto px-4">
+          
+          {/* Question 1 */}
+          {step === "q1" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Question 1 of 3</span>
+                  <span className="text-sm text-muted-foreground">33%</span>
+                </div>
+                <Progress value={33} className="h-2" />
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6">
+                Do you currently have Medicare Supplement Plan G, F, or N?
+              </h2>
+
+              <RadioGroup className="space-y-4">
+                <div
+                  onClick={() => handleQ1Answer("yes")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="yes" id="q1-yes" className="h-6 w-6" />
+                  <Label htmlFor="q1-yes" className="text-lg cursor-pointer flex-1">Yes</Label>
+                </div>
+                <div
+                  onClick={() => handleQ1Answer("no")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="no" id="q1-no" className="h-6 w-6" />
+                  <Label htmlFor="q1-no" className="text-lg cursor-pointer flex-1">No</Label>
+                </div>
+                <div
+                  onClick={() => handleQ1Answer("not-sure")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="not-sure" id="q1-not-sure" className="h-6 w-6" />
+                  <Label htmlFor="q1-not-sure" className="text-lg cursor-pointer flex-1">Not Sure</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Question 2 */}
+          {step === "q2" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Question 2 of 3</span>
+                  <span className="text-sm text-muted-foreground">66%</span>
+                </div>
+                <Progress value={66} className="h-2" />
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                In the last 2 years, have you had any of the following?
+              </h2>
+              
+              <ul className="text-muted-foreground mb-6 space-y-1 text-sm md:text-base">
+                <li>• Cancer, heart attack, stroke, or congestive heart failure</li>
+                <li>• Kidney failure or needed oxygen at home</li>
+                <li>• Live in a nursing home or assisted living</li>
+                <li>• Need daily help with bathing, dressing, or eating</li>
+              </ul>
+
+              <RadioGroup className="space-y-4">
+                <div
+                  onClick={() => handleQ2Answer("yes")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="yes" id="q2-yes" className="h-6 w-6" />
+                  <Label htmlFor="q2-yes" className="text-lg cursor-pointer flex-1">Yes</Label>
+                </div>
+                <div
+                  onClick={() => handleQ2Answer("no")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="no" id="q2-no" className="h-6 w-6" />
+                  <Label htmlFor="q2-no" className="text-lg cursor-pointer flex-1">No</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Question 3 */}
+          {step === "q3" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Question 3 of 3</span>
+                  <span className="text-sm text-muted-foreground">99%</span>
+                </div>
+                <Progress value={99} className="h-2" />
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                Do any of the following apply to you?
+              </h2>
+              
+              <ul className="text-muted-foreground mb-6 space-y-1 text-sm md:text-base">
+                <li>• Use insulin for diabetes</li>
+                <li>• Take 3 or more diabetes medications</li>
+                <li>• Take strong prescription pain medicine daily (oxycodone, hydrocodone, morphine)</li>
+              </ul>
+
+              <RadioGroup className="space-y-4">
+                <div
+                  onClick={() => handleQ3Answer("yes")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="yes" id="q3-yes" className="h-6 w-6" />
+                  <Label htmlFor="q3-yes" className="text-lg cursor-pointer flex-1">Yes</Label>
+                </div>
+                <div
+                  onClick={() => handleQ3Answer("no")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="no" id="q3-no" className="h-6 w-6" />
+                  <Label htmlFor="q3-no" className="text-lg cursor-pointer flex-1">No</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Loading Screen */}
+          {step === "loading" && (
+            <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border text-center">
+              <div className="mb-6">
+                <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              </div>
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
+                Checking available rates...
+              </h2>
+              <p className="text-muted-foreground">This will only take a moment</p>
+            </div>
+          )}
+
+          {/* Qualified Screen */}
+          {step === "qualified" && (
+            <div className="space-y-6">
+              {/* Success Card */}
+              <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="h-12 w-12 text-green-600" />
+                </div>
+                
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                  Congratulations!
+                </h2>
+                <p className="text-xl text-green-600 font-semibold mb-4">
+                  You Pre-Qualify for a Reduced Rate
+                </p>
+                <p className="text-muted-foreground mb-6">
+                  Based on your answers, you pre-qualify for a Medicare Supplement rate reduction without changing your coverage.
+                </p>
+
+                {/* Application Number */}
+                <div className="bg-gray-50 rounded-lg p-3 mb-4 inline-block">
+                  <span className="text-sm text-muted-foreground">Application Reference: </span>
+                  <span className="font-mono font-bold text-foreground">{applicationNumber}</span>
+                </div>
+
+                {/* Live Agent Badge */}
+                <div className="flex items-center justify-center gap-2 mb-6">
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  </span>
+                  <span className="text-green-600 font-medium">Live Agent Holding Your Spot</span>
+                </div>
+
+                {/* Call Button */}
+                <a href={PHONE_TEL} className="block">
+                  <Button
+                    size="lg"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
+                  >
+                    <Phone className="mr-3 h-6 w-6" />
+                    Tap To Call Now
+                  </Button>
+                </a>
+                <p className="text-lg font-semibold text-foreground mt-3">{PHONE_NUMBER}</p>
+              </div>
+
+              {/* Countdown Timer */}
+              {countdown > 0 && (
+                <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-4 md:p-6 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <Clock className="h-5 w-5 text-amber-600" />
+                    <span className="text-amber-800 font-semibold uppercase tracking-wide text-sm">
+                      Agent Holding Your Spot For:
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="bg-amber-600 text-white rounded-lg px-4 py-2">
+                      <span className="text-3xl font-bold font-mono">{time.mins}</span>
+                      <span className="text-xs block">MIN</span>
+                    </div>
+                    <span className="text-2xl font-bold text-amber-600">:</span>
+                    <div className="bg-amber-600 text-white rounded-lg px-4 py-2">
+                      <span className="text-3xl font-bold font-mono">{time.secs}</span>
+                      <span className="text-xs block">SEC</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Trust Elements */}
+              <div className="bg-white rounded-xl p-6 border">
+                <p className="text-center text-muted-foreground mb-4">
+                  A licensed agent can explain your options and handle everything for you.
+                </p>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="flex flex-col items-center">
+                    <Shield className="h-6 w-6 text-blue-600 mb-1" />
+                    <span className="text-xs text-muted-foreground">Licensed Agents</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <Users className="h-6 w-6 text-blue-600 mb-1" />
+                    <span className="text-xs text-muted-foreground">No Obligation</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <FileCheck className="h-6 w-6 text-blue-600 mb-1" />
+                    <span className="text-xs text-muted-foreground">Free Service</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Disclaimer */}
+              <p className="text-xs text-muted-foreground text-center px-4">
+                This is a free rate comparison service. We do not charge fees. By calling, you consent to speak with a licensed insurance agent about Medicare Supplement insurance.
+              </p>
+            </div>
+          )}
+
+          {/* Disqualified Screen */}
+          {step === "disqualified" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Phone className="h-8 w-8 text-blue-600" />
+              </div>
+              
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                We'd Still Like to Help
+              </h2>
+              
+              <p className="text-muted-foreground mb-6">
+                {getDisqualMessage()}
+              </p>
+
+              <a href={PHONE_TEL} className="block">
+                <Button
+                  size="lg"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 h-auto rounded-xl"
+                >
+                  <Phone className="mr-2 h-5 w-5" />
+                  Call {PHONE_NUMBER}
+                </Button>
+              </a>
+              
+              <p className="text-sm text-muted-foreground mt-4">
+                Our licensed agents are available to discuss your options.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Sticky Call Button (Mobile - Qualified Only) */}
+      {step === "qualified" && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg md:hidden">
+          <a href={PHONE_TEL} className="block">
+            <Button
+              size="lg"
+              className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-4 h-auto rounded-xl"
+            >
+              <Phone className="mr-2 h-5 w-5" />
+              Call Now - {PHONE_NUMBER}
+            </Button>
+          </a>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MedicareSupplementLP;
