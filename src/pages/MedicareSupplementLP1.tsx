@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Phone, CheckCircle, Clock, Shield, Users, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -572,9 +573,14 @@ const MedicareSupplementLP1 = () => {
             <p>
               Eligibility for rate reduction depends on factors including your current health, age, and location. Pre-qualification does not guarantee acceptance or a specific rate.
             </p>
-            <p className="pt-4 border-t">
-              © {new Date().getFullYear()} Health Helpers. All rights reserved.
-            </p>
+            <div className="pt-4 border-t flex flex-col items-center gap-2">
+              <div className="flex items-center gap-4">
+                <Link to="/privacy-policy" className="hover:underline">Privacy Policy</Link>
+                <span>•</span>
+                <Link to="/terms-of-service" className="hover:underline">Terms of Service</Link>
+              </div>
+              <p>© {new Date().getFullYear()} Health Helpers. All rights reserved.</p>
+            </div>
           </div>
         </div>
       </footer>
