@@ -556,6 +556,9 @@ const MedicareSupplementLP1 = () => {
         </div>
       </section>
 
+      {/* Spacer to push footer below fold */}
+      <div className="h-[50vh]" />
+
       {/* Footer Disclaimers */}
       <footer className="py-8 md:py-12 bg-gray-50 mt-8">
         <div className="max-w-3xl mx-auto px-4">
