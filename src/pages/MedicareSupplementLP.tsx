@@ -640,6 +640,26 @@ const MedicareSupplementLP = () => {
         </div>
       </section>
 
+      {/* Footer Disclaimers */}
+      <footer className="py-8 md:py-12 bg-gray-50 mt-8">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="text-center text-xs text-muted-foreground space-y-4">
+            <p>
+              This is a free rate comparison service. We do not charge fees. By calling, you consent to speak with a licensed insurance agent about Medicare Supplement insurance.
+            </p>
+            <p>
+              Health Helpers is not connected with or endorsed by the U.S. government or the federal Medicare program. Medicare Supplement insurance is sold by private insurance companies.
+            </p>
+            <p>
+              Eligibility for rate reduction depends on factors including your current health, age, and location. Pre-qualification does not guarantee acceptance or a specific rate.
+            </p>
+            <p className="pt-4 border-t">
+              © {new Date().getFullYear()} Health Helpers. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
+
       {/* Sticky Call Button (Mobile - Qualified Only) */}
       {step === "qualified" && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg md:hidden">
