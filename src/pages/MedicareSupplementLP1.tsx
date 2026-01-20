@@ -559,7 +559,7 @@ const MedicareSupplementLP1 = () => {
                 </div>
 
                 {/* Call Button */}
-                <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
+                <a href={PHONE_TEL} className="block" onClick={handleCallClickWithAnalytics}>
                   <Button
                     size="lg"
                     className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
@@ -634,7 +634,7 @@ const MedicareSupplementLP1 = () => {
                 {getDisqualMessage()}
               </p>
 
-              <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
+              <a href={PHONE_TEL} className="block" onClick={handleCallClickWithAnalytics}>
                 <Button
                   size="lg"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 h-auto rounded-xl"
@@ -683,7 +683,7 @@ const MedicareSupplementLP1 = () => {
       {/* Sticky Call Button (Mobile - Qualified Only) */}
       {step === "qualified" && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg md:hidden">
-          <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
+          <a href={PHONE_TEL} className="block" onClick={handleCallClickWithAnalytics}>
             <Button
               size="lg"
               className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-4 h-auto rounded-xl"
