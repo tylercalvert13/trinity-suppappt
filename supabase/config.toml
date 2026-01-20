@@ -1,1 +1,7 @@
 project_id = "rxoykogmyitwmdqxytvd"
+
+[functions.fb-conversion]
+verify_jwt = false
+
+[functions.analytics-auth]
+verify_jwt = false
