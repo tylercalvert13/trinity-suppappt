@@ -357,79 +357,6 @@ const MedicareSupplementLP1 = () => {
             </div>
           )}
 
-          {/* Social Proof - shown during questions */}
-          {(step === "q1" || step === "q2" || step === "q3") && (
-            <div className="bg-white rounded-xl p-6 border space-y-4 mt-6">
-              <p className="text-center text-sm font-medium text-muted-foreground uppercase tracking-wide">Real Savings from Real People</p>
-              
-              <div className="space-y-3">
-                {/* Patricia's Review */}
-                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white font-bold text-sm">P</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-foreground">Patricia</span>
-                        <span className="text-green-600 font-bold text-sm">Saved $178/mo</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">"I couldn't believe it was this easy. Same Plan G coverage, just with a different company. Now I'm saving over $2,000 a year!"</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Loyce's Review */}
-                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white font-bold text-sm">L</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-foreground">Loyce</span>
-                        <span className="text-green-600 font-bold text-sm">Saved $213/mo</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">"The agent was so helpful and made the switch seamless. My Plan F benefits stayed exactly the same—just paying a lot less now."</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Ronald's Review */}
-                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white font-bold text-sm">R</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-foreground">Ronald</span>
-                        <span className="text-green-600 font-bold text-sm">Saved $291/mo</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">"I was skeptical at first, but the savings are real. Same Plan G, same coverage—just $291 less every month."</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Gayle's Review */}
-                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white font-bold text-sm">G</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-foreground">Gayle</span>
-                        <span className="text-green-600 font-bold text-sm">Saved $249/mo</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">"My Plan N benefits didn't change at all. I wish I had done this years ago—$249 a month adds up fast!"</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Question 2 */}
           {step === "q2" && (
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
@@ -508,6 +435,79 @@ const MedicareSupplementLP1 = () => {
                   <Label htmlFor="q3-no" className="text-lg cursor-pointer flex-1">No</Label>
                 </div>
               </RadioGroup>
+            </div>
+          )}
+
+          {/* Social Proof - shown during questions */}
+          {(step === "q1" || step === "q2" || step === "q3") && (
+            <div className="bg-white rounded-xl p-6 border space-y-4 mt-6">
+              <p className="text-center text-sm font-medium text-muted-foreground uppercase tracking-wide">Real Savings from Real People</p>
+              
+              <div className="space-y-3">
+                {/* Patricia's Review */}
+                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">P</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-foreground">Patricia</span>
+                        <span className="text-green-600 font-bold text-sm">Saved $178/mo</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">"I couldn't believe it was this easy. Same Plan G coverage, just with a different company. Now I'm saving over $2,000 a year!"</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loyce's Review */}
+                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">L</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-foreground">Loyce</span>
+                        <span className="text-green-600 font-bold text-sm">Saved $213/mo</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">"The agent was so helpful and made the switch seamless. My Plan F benefits stayed exactly the same—just paying a lot less now."</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ronald's Review */}
+                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">R</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-foreground">Ronald</span>
+                        <span className="text-green-600 font-bold text-sm">Saved $291/mo</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">"I was skeptical at first, but the savings are real. Same Plan G, same coverage—just $291 less every month."</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gayle's Review */}
+                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">G</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-foreground">Gayle</span>
+                        <span className="text-green-600 font-bold text-sm">Saved $249/mo</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">"My Plan N benefits didn't change at all. I wish I had done this years ago—$249 a month adds up fast!"</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
