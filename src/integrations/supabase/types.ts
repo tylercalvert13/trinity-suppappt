@@ -14,7 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      dashboard_users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          password_hash: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          password_hash: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          password_hash?: string
+        }
+        Relationships: []
+      }
+      funnel_events: {
+        Row: {
+          answer: string | null
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          outcome: string | null
+          page: string
+          session_id: string
+          step: string | null
+          visitor_id: string
+        }
+        Insert: {
+          answer?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          outcome?: string | null
+          page: string
+          session_id: string
+          step?: string | null
+          visitor_id: string
+        }
+        Update: {
+          answer?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          outcome?: string | null
+          page?: string
+          session_id?: string
+          step?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      funnel_sessions: {
+        Row: {
+          called: boolean
+          completed: boolean
+          device_type: string
+          id: string
+          last_step: string
+          page: string
+          referrer: string | null
+          session_id: string
+          started_at: string
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          visitor_id: string
+        }
+        Insert: {
+          called?: boolean
+          completed?: boolean
+          device_type?: string
+          id?: string
+          last_step?: string
+          page: string
+          referrer?: string | null
+          session_id: string
+          started_at?: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          visitor_id: string
+        }
+        Update: {
+          called?: boolean
+          completed?: boolean
+          device_type?: string
+          id?: string
+          last_step?: string
+          page?: string
+          referrer?: string | null
+          session_id?: string
+          started_at?: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

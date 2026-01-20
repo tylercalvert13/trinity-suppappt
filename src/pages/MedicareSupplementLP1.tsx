@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useFunnelAnalytics } from "@/hooks/useFunnelAnalytics";
 
 // Taboola pixel type declaration
 declare global {
@@ -104,6 +105,9 @@ const MedicareSupplementLP1 = () => {
   const [applicationNumber, setApplicationNumber] = useState("");
   const [countdown, setCountdown] = useState(90);
   const [timerActive, setTimerActive] = useState(false);
+  
+  // Analytics tracking
+  const { trackStepChange, trackQualification, trackCallClick } = useFunnelAnalytics('supp1');
 
   // SEO Metadata Management
   useEffect(() => {
@@ -215,32 +219,48 @@ const MedicareSupplementLP1 = () => {
   const handleQ1Answer = (answer: string) => {
     if (answer === "yes") {
       setStep("q2");
+      trackStepChange("q2", answer);
     } else {
       setDisqualReason("no-plan");
       setStep("disqualified");
+      trackStepChange("disqualified", answer);
+      trackQualification("disqualified", "no-plan");
     }
   };
 
   const handleQ2Answer = (answer: string) => {
     if (answer === "no") {
       setStep("q3");
+      trackStepChange("q3", answer);
     } else {
       setDisqualReason("health-issues");
       setStep("disqualified");
+      trackStepChange("disqualified", answer);
+      trackQualification("disqualified", "health-issues");
     }
   };
 
   const handleQ3Answer = (answer: string) => {
     if (answer === "no") {
       setStep("loading");
+      trackStepChange("loading", answer);
       setTimeout(() => {
         setStep("qualified");
         setTimerActive(true);
+        trackStepChange("qualified");
+        trackQualification("qualified");
       }, 2500);
     } else {
       setDisqualReason("medications");
       setStep("disqualified");
+      trackStepChange("disqualified", answer);
+      trackQualification("disqualified", "medications");
     }
+  };
+
+  const handleCallClickWithAnalytics = () => {
+    handleCallClick();
+    trackCallClick();
   };
 
   const getDisqualMessage = () => {

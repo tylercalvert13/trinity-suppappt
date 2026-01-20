@@ -13,6 +13,8 @@ import MedicareEnrollmentPeriods from "./pages/MedicareEnrollmentPeriods";
 import EnrollMedicareYourself from "./pages/EnrollMedicareYourself";
 import MedicareSupplementLP from "./pages/MedicareSupplementLP";
 import MedicareSupplementLP1 from "./pages/MedicareSupplementLP1";
+import Analytics from "./pages/Analytics";
+import AnalyticsLogin from "./pages/AnalyticsLogin";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,8 @@ const App = () => (
           <Route path="/enroll-medicare-yourself" element={<EnrollMedicareYourself />} />
           <Route path="/supp" element={<MedicareSupplementLP />} />
           <Route path="/supp1" element={<MedicareSupplementLP1 />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/analytics-login" element={<AnalyticsLogin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
