@@ -501,6 +501,45 @@ const MedicareSupplementLP1 = () => {
                 </div>
               )}
 
+              {/* Social Proof */}
+              <div className="bg-white rounded-xl p-6 border space-y-4">
+                <p className="text-center text-sm font-medium text-muted-foreground uppercase tracking-wide">Real Savings from Real People</p>
+                
+                <div className="space-y-3">
+                  {/* Patricia's Review */}
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-sm">P</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-foreground">Patricia</span>
+                          <span className="text-green-600 font-bold text-sm">Saved $178/mo</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">"I couldn't believe it was this easy. Same Plan G coverage, just with a different company. Now I'm saving over $2,000 a year!"</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Loyce's Review */}
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-sm">L</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-foreground">Loyce</span>
+                          <span className="text-green-600 font-bold text-sm">Saved $213/mo</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">"The agent was so helpful and made the switch seamless. My Plan F benefits stayed exactly the same—just paying a lot less now."</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Trust Elements */}
               <div className="bg-white rounded-xl p-6 border">
                 <p className="text-center text-muted-foreground mb-4">
