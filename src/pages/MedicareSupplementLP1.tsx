@@ -374,6 +374,38 @@ const MedicareSupplementLP1 = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Ronald's Review */}
+                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">R</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-foreground">Ronald</span>
+                        <span className="text-green-600 font-bold text-sm">Saved $291/mo</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">"I was skeptical at first, but the savings are real. Same Plan G, same coverage—just $291 less every month."</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gayle's Review */}
+                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">G</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-foreground">Gayle</span>
+                        <span className="text-green-600 font-bold text-sm">Saved $249/mo</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">"My Plan N benefits didn't change at all. I wish I had done this years ago—$249 a month adds up fast!"</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
