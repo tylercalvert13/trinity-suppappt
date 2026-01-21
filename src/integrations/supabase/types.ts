@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      csg_api_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dashboard_users: {
         Row: {
           created_at: string
@@ -128,6 +152,93 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           visitor_id?: string
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          age: number | null
+          am_best_rating: string | null
+          annual_savings: number | null
+          care_or_condition: string | null
+          created_at: string
+          current_payment: number | null
+          disqualification_reason: string | null
+          email: string | null
+          first_name: string | null
+          gender: string | null
+          id: string
+          last_name: string | null
+          medication_use: string | null
+          monthly_savings: number | null
+          page: string | null
+          phone: string | null
+          plan: string | null
+          quoted_carrier: string | null
+          quoted_rate: number | null
+          recent_treatment: string | null
+          session_id: string | null
+          spouse: string | null
+          submission_type: string
+          tobacco: string | null
+          visitor_id: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          age?: number | null
+          am_best_rating?: string | null
+          annual_savings?: number | null
+          care_or_condition?: string | null
+          created_at?: string
+          current_payment?: number | null
+          disqualification_reason?: string | null
+          email?: string | null
+          first_name?: string | null
+          gender?: string | null
+          id?: string
+          last_name?: string | null
+          medication_use?: string | null
+          monthly_savings?: number | null
+          page?: string | null
+          phone?: string | null
+          plan?: string | null
+          quoted_carrier?: string | null
+          quoted_rate?: number | null
+          recent_treatment?: string | null
+          session_id?: string | null
+          spouse?: string | null
+          submission_type: string
+          tobacco?: string | null
+          visitor_id?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          age?: number | null
+          am_best_rating?: string | null
+          annual_savings?: number | null
+          care_or_condition?: string | null
+          created_at?: string
+          current_payment?: number | null
+          disqualification_reason?: string | null
+          email?: string | null
+          first_name?: string | null
+          gender?: string | null
+          id?: string
+          last_name?: string | null
+          medication_use?: string | null
+          monthly_savings?: number | null
+          page?: string | null
+          phone?: string | null
+          plan?: string | null
+          quoted_carrier?: string | null
+          quoted_rate?: number | null
+          recent_treatment?: string | null
+          session_id?: string | null
+          spouse?: string | null
+          submission_type?: string
+          tobacco?: string | null
+          visitor_id?: string | null
+          zip_code?: string | null
         }
         Relationships: []
       }
