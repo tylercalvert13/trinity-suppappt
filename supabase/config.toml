@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.analytics-auth]
 verify_jwt = false
+
+[functions.get-medicare-quote]
+verify_jwt = false
+
+[functions.send-lead-webhook]
+verify_jwt = false

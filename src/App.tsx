@@ -13,6 +13,9 @@ import MedicareEnrollmentPeriods from "./pages/MedicareEnrollmentPeriods";
 import EnrollMedicareYourself from "./pages/EnrollMedicareYourself";
 import MedicareSupplementLP from "./pages/MedicareSupplementLP";
 import MedicareSupplementLP1 from "./pages/MedicareSupplementLP1";
+import MedicareSupplementQuote from "./pages/MedicareSupplementQuote";
+import Disqualified from "./pages/Disqualified";
+import GreatRate from "./pages/GreatRate";
 import Analytics from "./pages/Analytics";
 import AnalyticsLogin from "./pages/AnalyticsLogin";
 
@@ -34,6 +37,9 @@ const App = () => (
           <Route path="/enroll-medicare-yourself" element={<EnrollMedicareYourself />} />
           <Route path="/supp" element={<MedicareSupplementLP />} />
           <Route path="/supp1" element={<MedicareSupplementLP1 />} />
+          <Route path="/suppquote" element={<MedicareSupplementQuote />} />
+          <Route path="/disqualified" element={<Disqualified />} />
+          <Route path="/great-rate" element={<GreatRate />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/analytics-login" element={<AnalyticsLogin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
