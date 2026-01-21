@@ -1008,16 +1008,17 @@ const MedicareSupplementQuote = () => {
 
                 {/* Rate Comparison - Mobile Optimized */}
                 <div className="bg-gray-50 rounded-xl p-6 mb-6">
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="text-center">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div className="text-center py-2 sm:py-0">
                       <p className="text-xs uppercase tracking-wide text-red-500 font-semibold mb-1">You're Paying</p>
-                      <p className="text-3xl md:text-4xl font-bold text-red-500 line-through">
+                      <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-red-500 line-through">
                         ${parseFloat(formData.currentPayment).toFixed(2)}/mo
                       </p>
                     </div>
-                    <div className="text-center">
+                    <div className="border-b border-gray-200 sm:hidden my-2"></div>
+                    <div className="text-center py-2 sm:py-0">
                       <p className="text-xs uppercase tracking-wide text-green-600 font-semibold mb-1">You Could Pay</p>
-                      <p className="text-3xl md:text-4xl font-bold text-green-600">
+                      <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-600">
                         ${quoteResult.rate.toFixed(2)}/mo
                       </p>
                     </div>
