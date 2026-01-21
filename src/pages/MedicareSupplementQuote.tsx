@@ -459,13 +459,21 @@ const MedicareSupplementQuote = () => {
           </p>
 
           {step === "landing" && (
-            <Button
-              onClick={scrollToFunnel}
-              size="lg"
-              className="bg-green-500 hover:bg-green-600 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
-            >
-              Check If You Qualify
-            </Button>
+            <>
+              <Button
+                onClick={scrollToFunnel}
+                size="lg"
+                className="bg-green-500 hover:bg-green-600 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
+              >
+                Check If You Qualify
+              </Button>
+              <div className="mt-6 text-sm text-blue-200">
+                <span>By continuing, you agree to our </span>
+                <Link to="/privacy-policy" className="underline hover:text-white">Privacy Policy</Link>
+                <span> and </span>
+                <Link to="/terms-of-service" className="underline hover:text-white">Terms of Service</Link>
+              </div>
+            </>
           )}
 
           {/* Trust Badges */}
@@ -946,8 +954,16 @@ const MedicareSupplementQuote = () => {
                 </Button>
               </form>
 
-              <p className="text-xs text-muted-foreground text-center mt-4">
-                🔒 By submitting, you agree to be contacted by a licensed insurance agent. We respect your privacy.
+              <p className="text-xs text-muted-foreground text-center mt-4 leading-relaxed">
+                By clicking "See My New Rate," I consent to receive calls, text messages, and emails 
+                from Health Helpers and its partners regarding my Medicare inquiry. I understand these 
+                communications may be made using automated telephone dialing systems, artificial intelligence, 
+                and/or prerecorded messages. Message frequency varies. Message and data rates may apply. 
+                I can opt out at any time by texting STOP or calling directly. This consent is not required 
+                to receive a quote. I agree to the{' '}
+                <Link to="/terms-of-service" className="underline hover:text-foreground">Terms of Service</Link>
+                {' '}and{' '}
+                <Link to="/privacy-policy" className="underline hover:text-foreground">Privacy Policy</Link>.
               </p>
             </div>
           )}
@@ -1013,15 +1029,14 @@ const MedicareSupplementQuote = () => {
                   </div>
                 </div>
 
-                {/* Carrier Info */}
-                <div className="bg-blue-50 rounded-lg p-4 mb-6">
-                  <div className="flex items-center justify-center gap-3 flex-wrap">
-                    <span className="text-muted-foreground">Quote from:</span>
-                    <span className="font-bold text-foreground">{quoteResult.carrier}</span>
-                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                      AM Best: {quoteResult.amBestRating}
-                    </span>
-                  </div>
+                {/* Tentative Rate Warning */}
+                <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 mb-6">
+                  <p className="text-amber-800 font-semibold text-center">
+                    ⚠️ This rate is <span className="underline">tentative</span> and subject to verification.
+                  </p>
+                  <p className="text-amber-700 text-sm text-center mt-1">
+                    Call now to confirm your rate before it expires.
+                  </p>
                 </div>
 
                 {/* US Based Licensed Agent Badge */}
@@ -1030,7 +1045,7 @@ const MedicareSupplementQuote = () => {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                   </span>
-                  <span className="text-green-600 font-medium">US Based Licensed Agent Ready to Finalize Your Rate</span>
+                  <span className="text-green-600 font-medium">US Based Licensed Agent Ready to Confirm Your Rate</span>
                 </div>
 
                 {/* Call Button */}
@@ -1044,7 +1059,9 @@ const MedicareSupplementQuote = () => {
                   </Button>
                 </a>
                 <p className="text-lg font-semibold text-foreground mt-3">{PHONE_NUMBER}</p>
-                <p className="text-sm text-muted-foreground mt-1">Rate valid for today only</p>
+                <p className="text-sm text-amber-700 font-medium mt-1">
+                  Rate must be confirmed by phone to lock in your savings.
+                </p>
               </div>
 
               {/* Countdown Timer */}
