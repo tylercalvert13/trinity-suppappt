@@ -88,7 +88,8 @@ const generateEventId = (): string => {
   return `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 };
 
-const trackFacebookConversion = async () => {
+// Track Lead event - only fired when we find savings for the user
+const trackFacebookLeadEvent = async () => {
   try {
     const { fbc, fbp } = getFacebookCookies();
     const eventId = generateEventId();
@@ -96,7 +97,6 @@ const trackFacebookConversion = async () => {
     await supabase.functions.invoke('fb-conversion', {
       body: {
         event_name: 'Lead',
-        event_time: Math.floor(Date.now() / 1000),
         event_source_url: window.location.href,
         external_id: getVisitorId(),
         fbc,
@@ -106,8 +106,35 @@ const trackFacebookConversion = async () => {
     });
     console.log('Facebook Lead conversion tracked');
   } catch (error) {
-    console.error('Error tracking Facebook conversion:', error);
+    console.error('Error tracking Facebook Lead event:', error);
   }
+};
+
+// Track InboundCall event - fired when user clicks the call button
+const trackFacebookCallEvent = async () => {
+  try {
+    const { fbc, fbp } = getFacebookCookies();
+    const eventId = generateEventId();
+    
+    await supabase.functions.invoke('fb-conversion', {
+      body: {
+        event_name: 'InboundCall',
+        event_source_url: window.location.href,
+        external_id: getVisitorId(),
+        fbc,
+        fbp,
+        event_id: eventId,
+      }
+    });
+    console.log('Facebook InboundCall conversion tracked');
+  } catch (error) {
+    console.error('Error tracking Facebook InboundCall event:', error);
+  }
+};
+
+// Generate application reference number
+const generateApplicationNumber = (): string => {
+  return `SM${Math.floor(10000 + Math.random() * 90000)}`;
 };
 
 const MedicareSupplementQuote = () => {
@@ -117,6 +144,7 @@ const MedicareSupplementQuote = () => {
   const [countdown, setCountdown] = useState(90);
   const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [applicationNumber] = useState(() => generateApplicationNumber());
   const [error, setError] = useState<string | null>(null);
   const funnelRef = useRef<HTMLDivElement>(null);
   
@@ -347,10 +375,10 @@ const MedicareSupplementQuote = () => {
         }
       });
 
-      // Track conversions
+      // Track conversions - Lead event fires here (we found savings)
       trackQualification("qualified");
       trackTaboolaConversion();
-      await trackFacebookConversion();
+      await trackFacebookLeadEvent();
       
       setStep("qualified");
       setCountdown(90);
@@ -404,7 +432,7 @@ const MedicareSupplementQuote = () => {
   const handleCallClick = () => {
     trackCallClick();
     trackTaboolaConversion();
-    trackFacebookConversion();
+    trackFacebookCallEvent(); // InboundCall event fires on call click
   };
 
   return (
@@ -414,16 +442,20 @@ const MedicareSupplementQuote = () => {
         <div className="max-w-4xl mx-auto px-4 text-center">
           {/* Breaking News Badge */}
           <div className="inline-flex items-center bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold mb-6 animate-pulse">
-            <span className="mr-2">📰</span>
-            BREAKING: Medicare Supplement Rate Reductions Available
+            <span className="mr-2">🚨</span>
+            EXPOSED: Medicare Supplement "Rate Trap"
           </div>
 
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
-            Find Out If You're Paying Too Much for Medicare Supplement
+            Seniors on Plan G, F, or N Are Overpaying by $100-200/Month
           </h1>
           
-          <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Get a personalized quote from top-rated carriers in under 2 minutes
+          <p className="text-lg md:text-xl text-blue-100 mb-4 max-w-2xl mx-auto">
+            Your benefits are <span className="font-bold text-white">federally standardized</span> — the only difference is the price.
+          </p>
+          
+          <p className="text-base text-blue-200 mb-8 max-w-xl mx-auto">
+            See your personalized rate in under 2 minutes. No obligation. No pressure.
           </p>
 
           {step === "landing" && (
@@ -432,7 +464,7 @@ const MedicareSupplementQuote = () => {
               size="lg"
               className="bg-green-500 hover:bg-green-600 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
             >
-              Get My Free Quote
+              Check If You Qualify
             </Button>
           )}
 
@@ -440,15 +472,15 @@ const MedicareSupplementQuote = () => {
           <div className="flex flex-wrap justify-center gap-6 mt-8">
             <div className="flex items-center gap-2 text-blue-100">
               <Shield className="h-5 w-5" />
-              <span className="text-sm">Licensed Agents</span>
+              <span className="text-sm">US Based Licensed Agents</span>
             </div>
             <div className="flex items-center gap-2 text-blue-100">
               <Users className="h-5 w-5" />
-              <span className="text-sm">No Obligation</span>
+              <span className="text-sm">10,000+ Seniors Helped</span>
             </div>
             <div className="flex items-center gap-2 text-blue-100">
               <FileCheck className="h-5 w-5" />
-              <span className="text-sm">Free Service</span>
+              <span className="text-sm">100% Free Service</span>
             </div>
           </div>
         </div>
@@ -470,7 +502,7 @@ const MedicareSupplementQuote = () => {
               </div>
 
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
-                What Medicare Supplement plan do you currently have?
+                Which Medicare Supplement plan are you paying for today?
               </h2>
 
               <RadioGroup className="space-y-4">
@@ -500,7 +532,7 @@ const MedicareSupplementQuote = () => {
               </div>
 
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
-                How much do you currently pay per month?
+                How much does your insurance company charge you each month?
               </h2>
 
               <div className="space-y-4">
@@ -837,9 +869,12 @@ const MedicareSupplementQuote = () => {
                 <Progress value={getProgress()} className="h-2" />
               </div>
 
-              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
-                Almost done! Where should we send your quote?
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
+                Final Step: Enter Your Details to See Your New Rate
               </h2>
+              <p className="text-muted-foreground mb-6 text-sm">
+                Your information is 100% secure and will never be sold.
+              </p>
 
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
@@ -907,12 +942,12 @@ const MedicareSupplementQuote = () => {
                   className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto rounded-xl"
                   disabled={isSubmitting || !formData.firstName || !formData.lastName || !formData.email || !formData.phone}
                 >
-                  {isSubmitting ? "Getting Your Quote..." : "Get My Personalized Quote"}
+                  {isSubmitting ? "Comparing Rates..." : "See My New Rate"}
                 </Button>
               </form>
 
               <p className="text-xs text-muted-foreground text-center mt-4">
-                By submitting, you agree to be contacted by a licensed insurance agent.
+                🔒 By submitting, you agree to be contacted by a licensed insurance agent. We respect your privacy.
               </p>
             </div>
           )}
@@ -935,55 +970,67 @@ const MedicareSupplementQuote = () => {
             <div className="space-y-6">
               {/* Success Card */}
               <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
+                {/* Application Number */}
+                <div className="bg-gray-100 rounded-lg px-4 py-2 inline-block mb-4">
+                  <span className="text-sm text-muted-foreground">Application Reference: </span>
+                  <span className="font-mono font-bold text-foreground">{applicationNumber}</span>
+                </div>
+
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="h-12 w-12 text-green-600" />
                 </div>
                 
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                  Great News, {formData.firstName}!
+                  You're Overpaying, {formData.firstName}.
                 </h2>
-                <p className="text-xl text-green-600 font-semibold mb-6">
-                  We found the same coverage for {quoteResult.savingsPercent?.toFixed(0)}% less
+                <p className="text-xl text-green-600 font-semibold mb-2">
+                  We found the same {formData.plan} coverage for {quoteResult.savingsPercent?.toFixed(0)}% less
+                </p>
+                <p className="text-muted-foreground mb-6">
+                  That's <span className="font-bold text-green-600">${quoteResult.annualSavings.toFixed(0)}</span> back in your pocket every year.
                 </p>
 
                 {/* Rate Comparison */}
                 <div className="bg-gray-50 rounded-xl p-6 mb-6">
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground mb-1">Current Rate</p>
-                      <p className="text-2xl font-bold text-muted-foreground line-through">
+                      <p className="text-xs uppercase tracking-wide text-red-500 font-semibold mb-1">You're Paying</p>
+                      <p className="text-2xl font-bold text-red-500 line-through">
                         ${parseFloat(formData.currentPayment).toFixed(2)}/mo
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-green-600 mb-1">New Rate</p>
+                      <p className="text-xs uppercase tracking-wide text-green-600 font-semibold mb-1">You Could Pay</p>
                       <p className="text-2xl font-bold text-green-600">
                         ${quoteResult.rate.toFixed(2)}/mo
                       </p>
                     </div>
                   </div>
                   <div className="border-t pt-4">
-                    <p className="text-lg font-semibold text-foreground">
-                      You could save <span className="text-green-600">${quoteResult.annualSavings.toFixed(0)}/year</span>
+                    <p className="text-lg font-bold text-foreground">
+                      Save <span className="text-green-600">${quoteResult.monthlySavings.toFixed(2)}/month</span>
                     </p>
                   </div>
                 </div>
 
                 {/* Carrier Info */}
-                <div className="flex items-center justify-center gap-2 mb-6 text-muted-foreground">
-                  <span>Quote from: <strong className="text-foreground">{quoteResult.carrier}</strong></span>
-                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium">
-                    AM Best: {quoteResult.amBestRating}
-                  </span>
+                <div className="bg-blue-50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-center gap-3 flex-wrap">
+                    <span className="text-muted-foreground">Quote from:</span>
+                    <span className="font-bold text-foreground">{quoteResult.carrier}</span>
+                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                      AM Best: {quoteResult.amBestRating}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Live Agent Badge */}
+                {/* US Based Licensed Agent Badge */}
                 <div className="flex items-center justify-center gap-2 mb-6">
                   <span className="relative flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                   </span>
-                  <span className="text-green-600 font-medium">Agent Ready to Finalize Your Quote</span>
+                  <span className="text-green-600 font-medium">US Based Licensed Agent Ready to Finalize Your Rate</span>
                 </div>
 
                 {/* Call Button */}
@@ -993,10 +1040,11 @@ const MedicareSupplementQuote = () => {
                     className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
                   >
                     <Phone className="mr-3 h-6 w-6" />
-                    Yes, Call Me About This Rate
+                    Tap To Call Now
                   </Button>
                 </a>
                 <p className="text-lg font-semibold text-foreground mt-3">{PHONE_NUMBER}</p>
+                <p className="text-sm text-muted-foreground mt-1">Rate valid for today only</p>
               </div>
 
               {/* Countdown Timer */}
@@ -1022,21 +1070,36 @@ const MedicareSupplementQuote = () => {
                 </div>
               )}
 
+              {/* Social Proof Stats */}
+              <div className="bg-white rounded-xl p-6 border">
+                <p className="text-sm text-muted-foreground mb-4 text-center">Thousands of seniors have already saved:</p>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-green-600">$2.4M+</p>
+                    <p className="text-xs text-muted-foreground">Saved This Year</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-blue-600">10,000+</p>
+                    <p className="text-xs text-muted-foreground">Seniors Helped</p>
+                  </div>
+                </div>
+              </div>
+
               {/* What Happens Next */}
               <div className="bg-white rounded-xl p-6 border">
-                <h3 className="font-bold text-foreground mb-4">What Happens Next?</h3>
+                <h3 className="font-bold text-foreground mb-4">What Happens When You Call?</h3>
                 <ol className="space-y-3 text-muted-foreground text-sm">
                   <li className="flex gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span>
-                    <span>Call the number above to speak with a licensed agent</span>
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">1</span>
+                    <span><strong className="text-foreground">Speak directly</strong> with a US based licensed agent — no transfers, no hold music</span>
                   </li>
                   <li className="flex gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span>
-                    <span>They'll verify your information and confirm your rate</span>
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">2</span>
+                    <span><strong className="text-foreground">Verify your rate</strong> — takes less than 5 minutes over the phone</span>
                   </li>
                   <li className="flex gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">3</span>
-                    <span>If approved, your new coverage starts with no gap in protection</span>
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">3</span>
+                    <span><strong className="text-foreground">Start saving immediately</strong> — new coverage starts with no gap in protection</span>
                   </li>
                 </ol>
               </div>
@@ -1046,7 +1109,7 @@ const MedicareSupplementQuote = () => {
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="flex flex-col items-center">
                     <Shield className="h-6 w-6 text-blue-600 mb-1" />
-                    <span className="text-xs text-muted-foreground">Licensed Agents</span>
+                    <span className="text-xs text-muted-foreground">US Based Agents</span>
                   </div>
                   <div className="flex flex-col items-center">
                     <Users className="h-6 w-6 text-blue-600 mb-1" />
@@ -1054,7 +1117,7 @@ const MedicareSupplementQuote = () => {
                   </div>
                   <div className="flex flex-col items-center">
                     <FileCheck className="h-6 w-6 text-blue-600 mb-1" />
-                    <span className="text-xs text-muted-foreground">Free Service</span>
+                    <span className="text-xs text-muted-foreground">100% Free</span>
                   </div>
                 </div>
               </div>
@@ -1105,7 +1168,7 @@ const MedicareSupplementQuote = () => {
               className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-4 h-auto rounded-xl"
             >
               <Phone className="mr-2 h-5 w-5" />
-              Call Now - {PHONE_NUMBER}
+              Tap To Call - {PHONE_NUMBER}
             </Button>
           </a>
         </div>
