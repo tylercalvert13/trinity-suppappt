@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Phone, Shield, Users, FileCheck, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Phone, Shield, Users, FileCheck, CheckCircle, Clock, AlertCircle, CalendarCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 
@@ -137,6 +138,22 @@ const generateApplicationNumber = (): string => {
   return `SM${Math.floor(10000 + Math.random() * 90000)}`;
 };
 
+// Helper to check if current time is within business hours (9 AM - 5 PM Eastern, Mon-Fri)
+const isWithinBusinessHours = (): boolean => {
+  const now = new Date();
+  
+  // Convert to Eastern Time
+  const easternTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+  const hour = easternTime.getHours();
+  const dayOfWeek = easternTime.getDay(); // 0 = Sunday, 6 = Saturday
+  
+  // Business hours: Monday-Friday, 9 AM - 5 PM Eastern
+  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+  const isBusinessHour = hour >= 9 && hour < 17;
+  
+  return isWeekday && isBusinessHour;
+};
+
 const MedicareSupplementQuote = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<FunnelStep>("landing");
@@ -147,6 +164,12 @@ const MedicareSupplementQuote = () => {
   const [applicationNumber] = useState(() => generateApplicationNumber());
   const [error, setError] = useState<string | null>(null);
   const funnelRef = useRef<HTMLDivElement>(null);
+  
+  // Business hours and callback scheduling state
+  const [isDuringBusinessHours, setIsDuringBusinessHours] = useState(true);
+  const [callbackTimeSlot, setCallbackTimeSlot] = useState<'morning' | 'afternoon' | null>(null);
+  const [callbackScheduled, setCallbackScheduled] = useState(false);
+  const [isSchedulingCallback, setIsSchedulingCallback] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     plan: '',
@@ -165,7 +188,14 @@ const MedicareSupplementQuote = () => {
     phone: '',
   });
 
-  const { visitorId, sessionId, trackStepChange, trackQualification, trackCallClick } = useFunnelAnalytics('suppquote');
+  const { visitorId, sessionId, trackStepChange, trackQualification, trackCallClick, trackEvent } = useFunnelAnalytics('suppquote');
+
+  // Check business hours when reaching qualified step
+  useEffect(() => {
+    if (step === 'qualified') {
+      setIsDuringBusinessHours(isWithinBusinessHours());
+    }
+  }, [step]);
 
   // SEO meta tags
   useEffect(() => {
@@ -433,6 +463,52 @@ const MedicareSupplementQuote = () => {
     trackCallClick();
     trackTaboolaConversion();
     trackFacebookCallEvent(); // InboundCall event fires on call click
+  };
+
+  // Handle scheduling a callback for after-hours
+  const handleScheduleCallback = async () => {
+    if (!callbackTimeSlot) return;
+
+    setIsSchedulingCallback(true);
+    try {
+      const response = await supabase.functions.invoke('schedule-callback', {
+        body: {
+          email: formData.email,
+          phone: formData.phone,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          callbackTime: callbackTimeSlot,
+          quotedRate: quoteResult?.rate,
+          currentPayment: parseFloat(formData.currentPayment),
+          monthlySavings: quoteResult?.monthlySavings,
+        }
+      });
+
+      if (response.error) {
+        console.error("Error scheduling callback:", response.error);
+        toast.error("Something went wrong. Please try again.");
+        return;
+      }
+
+      // Track the callback scheduled event
+      await trackEvent({
+        eventType: 'callback_scheduled',
+        step: 'qualified',
+        answer: callbackTimeSlot,
+        metadata: {
+          timeSlot: callbackTimeSlot,
+        }
+      });
+
+      setCallbackScheduled(true);
+      toast.success("Callback scheduled! We'll call you tomorrow.");
+
+    } catch (error) {
+      console.error("Error scheduling callback:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSchedulingCallback(false);
+    }
   };
 
   return (
@@ -1030,43 +1106,122 @@ const MedicareSupplementQuote = () => {
                   </div>
                 </div>
 
-                {/* Tentative Rate Warning with Scarcity */}
-                <div className="bg-amber-50 border-2 border-amber-400 rounded-lg p-4 mb-6">
-                  <p className="text-amber-800 font-semibold text-center">
-                    ⚠️ This rate is <span className="underline">tentative</span> and subject to verification.
-                  </p>
-                  <p className="text-amber-700 text-sm text-center mt-1">
-                    This rate is reserved for the next {time.mins}:{time.secs}. Call now or you may lose this quote.
-                  </p>
-                </div>
+                {/* Conditional: During Business Hours = Call Now, After Hours = Schedule Callback */}
+                {isDuringBusinessHours ? (
+                  <>
+                    {/* Tentative Rate Warning with Scarcity */}
+                    <div className="bg-amber-50 border-2 border-amber-400 rounded-lg p-4 mb-6">
+                      <p className="text-amber-800 font-semibold text-center">
+                        ⚠️ This rate is <span className="underline">tentative</span> and subject to verification.
+                      </p>
+                      <p className="text-amber-700 text-sm text-center mt-1">
+                        This rate is reserved for the next {time.mins}:{time.secs}. Call now or you may lose this quote.
+                      </p>
+                    </div>
 
-                {/* US Based Licensed Agent Badge */}
-                <div className="flex items-center justify-center gap-2 mb-6">
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                  </span>
-                  <span className="text-green-600 font-medium">US Based Licensed Agent Ready to Confirm Your Rate</span>
-                </div>
+                    {/* US Based Licensed Agent Badge */}
+                    <div className="flex items-center justify-center gap-2 mb-6">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                      </span>
+                      <span className="text-green-600 font-medium">US Based Licensed Agent Ready to Confirm Your Rate</span>
+                    </div>
 
-                {/* Call Button */}
-                <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
-                  <Button
-                    size="lg"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
-                  >
-                    <Phone className="mr-3 h-6 w-6 animate-pulse" />
-                    Tap To Lock In Your Rate
-                  </Button>
-                </a>
-                <p className="text-lg font-semibold text-foreground mt-3">{PHONE_NUMBER}</p>
-                <p className="text-sm text-red-600 font-semibold mt-2">
-                  ⚠️ If you don't call, your rate expires and you'll keep overpaying.
-                </p>
+                    {/* Call Button */}
+                    <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
+                      <Button
+                        size="lg"
+                        className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
+                      >
+                        <Phone className="mr-3 h-6 w-6 animate-pulse" />
+                        Tap To Lock In Your Rate
+                      </Button>
+                    </a>
+                    <p className="text-lg font-semibold text-foreground mt-3">{PHONE_NUMBER}</p>
+                    <p className="text-sm text-red-600 font-semibold mt-2">
+                      ⚠️ If you don't call, your rate expires and you'll keep overpaying.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    {/* AFTER HOURS: Schedule Callback UI */}
+                    {!callbackScheduled ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-center gap-2 mb-4">
+                          <Clock className="h-5 w-5 text-amber-600" />
+                          <span className="text-amber-700 font-medium">Our agents are available Mon-Fri, 9 AM - 5 PM Eastern</span>
+                        </div>
+
+                        <p className="text-lg text-foreground mb-4">
+                          Schedule a callback tomorrow and we'll call <strong>you</strong> to lock in your rate.
+                        </p>
+
+                        <div className="bg-blue-50 rounded-xl p-6">
+                          <p className="font-semibold text-foreground mb-4">When would you like us to call you tomorrow?</p>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <Button
+                              size="lg"
+                              variant={callbackTimeSlot === 'morning' ? 'default' : 'outline'}
+                              className={`py-6 h-auto ${callbackTimeSlot === 'morning' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+                              onClick={() => setCallbackTimeSlot('morning')}
+                            >
+                              <div className="text-center">
+                                <p className="font-bold">Morning</p>
+                                <p className="text-sm opacity-80">9:00 AM - 12:00 PM ET</p>
+                              </div>
+                            </Button>
+                            
+                            <Button
+                              size="lg"
+                              variant={callbackTimeSlot === 'afternoon' ? 'default' : 'outline'}
+                              className={`py-6 h-auto ${callbackTimeSlot === 'afternoon' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+                              onClick={() => setCallbackTimeSlot('afternoon')}
+                            >
+                              <div className="text-center">
+                                <p className="font-bold">Afternoon</p>
+                                <p className="text-sm opacity-80">12:00 PM - 5:00 PM ET</p>
+                              </div>
+                            </Button>
+                          </div>
+
+                          {callbackTimeSlot && (
+                            <Button
+                              size="lg"
+                              className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto"
+                              onClick={handleScheduleCallback}
+                              disabled={isSchedulingCallback}
+                            >
+                              <CalendarCheck className="mr-2 h-5 w-5" />
+                              {isSchedulingCallback ? 'Scheduling...' : 'Schedule My Callback'}
+                            </Button>
+                          )}
+                        </div>
+
+                        <p className="text-sm text-muted-foreground text-center">
+                          We'll call you at the phone number you provided: <strong>{formData.phone}</strong>
+                        </p>
+                      </div>
+                    ) : (
+                      /* CALLBACK CONFIRMED UI */
+                      <div className="bg-green-50 border-2 border-green-400 rounded-xl p-6 text-center">
+                        <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-foreground mb-2">Callback Scheduled!</h3>
+                        <p className="text-green-700">
+                          We'll call you tomorrow {callbackTimeSlot === 'morning' ? 'between 9 AM - 12 PM' : 'between 12 PM - 5 PM'} Eastern.
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-4">
+                          We'll call <strong>{formData.phone}</strong>. Make sure your phone is on!
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
-              {/* Countdown Timer */}
-              {countdown > 0 && (
+              {/* Countdown Timer - Only show during business hours */}
+              {isDuringBusinessHours && countdown > 0 && (
                 <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-4 md:p-6 text-center">
                   <div className="flex items-center justify-center gap-2 mb-3">
                     <Clock className="h-5 w-5 text-amber-600" />
@@ -1177,18 +1332,33 @@ const MedicareSupplementQuote = () => {
         </div>
       </footer>
 
-      {/* Sticky Call Button (Mobile - Qualified Only) */}
+      {/* Sticky Footer (Mobile - Qualified Only) */}
       {step === "qualified" && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg md:hidden">
-          <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
+          {isDuringBusinessHours ? (
+            <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
+              <Button
+                size="lg"
+                className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-4 h-auto rounded-xl"
+              >
+                <Phone className="mr-2 h-5 w-5 animate-pulse" />
+                Call Now - Save ${quoteResult?.monthlySavings.toFixed(0)}/mo
+              </Button>
+            </a>
+          ) : !callbackScheduled ? (
             <Button
               size="lg"
-              className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-4 h-auto rounded-xl"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-4 h-auto rounded-xl"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
-              <Phone className="mr-2 h-5 w-5 animate-pulse" />
-              Call Now - Save ${quoteResult?.monthlySavings.toFixed(0)}/mo
+              <CalendarCheck className="mr-2 h-5 w-5" />
+              Schedule Callback Tomorrow
             </Button>
-          </a>
+          ) : (
+            <div className="text-center py-2">
+              <p className="text-green-600 font-semibold">✓ Callback Scheduled for Tomorrow</p>
+            </div>
+          )}
         </div>
       )}
     </div>
