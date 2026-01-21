@@ -997,45 +997,45 @@ const MedicareSupplementQuote = () => {
                 </div>
                 
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                  You're Overpaying, {formData.firstName}.
+                  {formData.firstName}, You're Losing ${quoteResult.monthlySavings.toFixed(0)} Every Month.
                 </h2>
                 <p className="text-xl text-green-600 font-semibold mb-2">
                   We found the same {formData.plan} coverage for {quoteResult.savingsPercent?.toFixed(0)}% less
                 </p>
-                <p className="text-muted-foreground mb-6">
-                  That's <span className="font-bold text-green-600">${quoteResult.annualSavings.toFixed(0)}</span> back in your pocket every year.
+                <p className="text-lg md:text-xl text-foreground mb-6">
+                  That's <span className="font-bold text-green-600 text-2xl">${quoteResult.annualSavings.toFixed(0)}</span> back in your pocket every year.
                 </p>
 
-                {/* Rate Comparison */}
+                {/* Rate Comparison - Mobile Optimized */}
                 <div className="bg-gray-50 rounded-xl p-6 mb-6">
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="text-center">
                       <p className="text-xs uppercase tracking-wide text-red-500 font-semibold mb-1">You're Paying</p>
-                      <p className="text-2xl font-bold text-red-500 line-through">
+                      <p className="text-3xl md:text-4xl font-bold text-red-500 line-through">
                         ${parseFloat(formData.currentPayment).toFixed(2)}/mo
                       </p>
                     </div>
                     <div className="text-center">
                       <p className="text-xs uppercase tracking-wide text-green-600 font-semibold mb-1">You Could Pay</p>
-                      <p className="text-2xl font-bold text-green-600">
+                      <p className="text-3xl md:text-4xl font-bold text-green-600">
                         ${quoteResult.rate.toFixed(2)}/mo
                       </p>
                     </div>
                   </div>
                   <div className="border-t pt-4">
-                    <p className="text-lg font-bold text-foreground">
+                    <p className="text-xl md:text-2xl font-bold text-foreground">
                       Save <span className="text-green-600">${quoteResult.monthlySavings.toFixed(2)}/month</span>
                     </p>
                   </div>
                 </div>
 
-                {/* Tentative Rate Warning */}
-                <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 mb-6">
+                {/* Tentative Rate Warning with Scarcity */}
+                <div className="bg-amber-50 border-2 border-amber-400 rounded-lg p-4 mb-6">
                   <p className="text-amber-800 font-semibold text-center">
                     ⚠️ This rate is <span className="underline">tentative</span> and subject to verification.
                   </p>
                   <p className="text-amber-700 text-sm text-center mt-1">
-                    Call now to confirm your rate before it expires.
+                    This rate is reserved for the next {time.mins}:{time.secs}. Call now or you may lose this quote.
                   </p>
                 </div>
 
@@ -1054,13 +1054,13 @@ const MedicareSupplementQuote = () => {
                     size="lg"
                     className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
                   >
-                    <Phone className="mr-3 h-6 w-6" />
-                    Tap To Call Now
+                    <Phone className="mr-3 h-6 w-6 animate-pulse" />
+                    Tap To Lock In Your Rate
                   </Button>
                 </a>
                 <p className="text-lg font-semibold text-foreground mt-3">{PHONE_NUMBER}</p>
-                <p className="text-sm text-amber-700 font-medium mt-1">
-                  Rate must be confirmed by phone to lock in your savings.
+                <p className="text-sm text-red-600 font-semibold mt-2">
+                  ⚠️ If you don't call, your rate expires and you'll keep overpaying.
                 </p>
               </div>
 
@@ -1184,8 +1184,8 @@ const MedicareSupplementQuote = () => {
               size="lg"
               className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-4 h-auto rounded-xl"
             >
-              <Phone className="mr-2 h-5 w-5" />
-              Tap To Call - {PHONE_NUMBER}
+              <Phone className="mr-2 h-5 w-5 animate-pulse" />
+              Call Now - Save ${quoteResult?.monthlySavings.toFixed(0)}/mo
             </Button>
           </a>
         </div>
