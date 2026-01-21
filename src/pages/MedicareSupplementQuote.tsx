@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Phone, Shield, Users, FileCheck, CheckCircle, Clock, AlertCircle, CalendarCheck } from 'lucide-react';
+import { Phone, Shield, Users, FileCheck, CheckCircle, Clock, AlertCircle, CalendarCheck, ChevronDown, Sun, Sunset } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
@@ -1157,34 +1157,55 @@ const MedicareSupplementQuote = () => {
                           Schedule a callback tomorrow and we'll call <strong>you</strong> to lock in your rate.
                         </p>
 
-                        <div className="bg-blue-50 rounded-xl p-6">
-                          <p className="font-semibold text-foreground mb-4">When would you like us to call you tomorrow?</p>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <Button
-                              size="lg"
-                              variant={callbackTimeSlot === 'morning' ? 'default' : 'outline'}
-                              className={`py-6 h-auto ${callbackTimeSlot === 'morning' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                              onClick={() => setCallbackTimeSlot('morning')}
-                            >
-                              <div className="text-center">
-                                <p className="font-bold">Morning</p>
-                                <p className="text-sm opacity-80">9:00 AM - 12:00 PM ET</p>
-                              </div>
-                            </Button>
-                            
-                            <Button
-                              size="lg"
-                              variant={callbackTimeSlot === 'afternoon' ? 'default' : 'outline'}
-                              className={`py-6 h-auto ${callbackTimeSlot === 'afternoon' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                              onClick={() => setCallbackTimeSlot('afternoon')}
-                            >
-                              <div className="text-center">
-                                <p className="font-bold">Afternoon</p>
-                                <p className="text-sm opacity-80">12:00 PM - 5:00 PM ET</p>
-                              </div>
-                            </Button>
-                          </div>
+                <div className="bg-gradient-to-b from-green-50 to-green-100 border-2 border-green-400 rounded-xl p-6 shadow-lg">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
+                    <span className="text-green-700 font-bold uppercase text-sm tracking-wide">Select a Time</span>
+                  </div>
+                  <p className="font-bold text-xl text-foreground mb-2 text-center">When should we call you tomorrow?</p>
+                  
+                  <div className="flex justify-center mb-4">
+                    <ChevronDown className="h-8 w-8 text-green-600 animate-bounce" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className={`py-8 h-auto border-2 transition-all transform hover:scale-105 ${
+                        callbackTimeSlot === 'morning' 
+                          ? 'bg-green-600 border-green-600 text-white shadow-lg scale-105' 
+                          : 'bg-white border-green-500 text-green-700 hover:bg-green-50 hover:border-green-600 shadow-md animate-pulse'
+                      }`}
+                      onClick={() => setCallbackTimeSlot('morning')}
+                    >
+                      <div className="text-center">
+                        <Sun className="h-8 w-8 mx-auto mb-2" />
+                        <p className="font-bold text-lg">Morning</p>
+                        <p className="text-sm opacity-80">9:00 AM - 12:00 PM ET</p>
+                      </div>
+                    </Button>
+                    
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className={`py-8 h-auto border-2 transition-all transform hover:scale-105 ${
+                        callbackTimeSlot === 'afternoon' 
+                          ? 'bg-green-600 border-green-600 text-white shadow-lg scale-105' 
+                          : 'bg-white border-green-500 text-green-700 hover:bg-green-50 hover:border-green-600 shadow-md animate-pulse'
+                      }`}
+                      onClick={() => setCallbackTimeSlot('afternoon')}
+                    >
+                      <div className="text-center">
+                        <Sunset className="h-8 w-8 mx-auto mb-2" />
+                        <p className="font-bold text-lg">Afternoon</p>
+                        <p className="text-sm opacity-80">12:00 PM - 5:00 PM ET</p>
+                      </div>
+                    </Button>
+                  </div>
 
                           {callbackTimeSlot && (
                             <Button
