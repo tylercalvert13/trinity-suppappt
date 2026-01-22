@@ -89,15 +89,15 @@ const generateEventId = (): string => {
   return `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 };
 
-// Track Lead event - only fired when we find savings for the user
-const trackFacebookLeadEvent = async () => {
+// Track submission event - custom event fired when we find savings for the user
+const trackFacebookSubmissionEvent = async () => {
   try {
     const { fbc, fbp } = getFacebookCookies();
     const eventId = generateEventId();
     
     await supabase.functions.invoke('fb-conversion', {
       body: {
-        event_name: 'Lead',
+        event_name: 'submission',
         event_source_url: window.location.href,
         external_id: getVisitorId(),
         fbc,
@@ -105,9 +105,9 @@ const trackFacebookLeadEvent = async () => {
         event_id: eventId,
       }
     });
-    console.log('Facebook Lead conversion tracked');
+    console.log('Facebook submission conversion tracked');
   } catch (error) {
-    console.error('Error tracking Facebook Lead event:', error);
+    console.error('Error tracking Facebook submission event:', error);
   }
 };
 
@@ -465,10 +465,10 @@ const MedicareSupplementQuote = () => {
         }
       });
 
-      // Track conversions - Lead event fires here (we found savings)
+      // Track conversions - submission event fires here (we found savings)
       trackQualification("qualified");
       trackTaboolaConversion();
-      await trackFacebookLeadEvent();
+      await trackFacebookSubmissionEvent();
       
       setStep("qualified");
       setCountdown(90);
