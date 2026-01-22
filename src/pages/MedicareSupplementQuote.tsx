@@ -802,31 +802,46 @@ const MedicareSupplementQuote = () => {
                 <Progress value={getProgress()} className="h-2" />
               </div>
 
-              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
-                Do any of the following apply to you?
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                Quick Health Check
               </h2>
+              <p className="text-lg md:text-xl text-muted-foreground mb-6">
+                Do any of these apply to you?
+              </p>
               
-              <ul className="text-muted-foreground mb-6 space-y-1 text-sm md:text-base">
-                <li>• Live in a nursing home or assisted living facility</li>
-                <li>• Need daily help with bathing, dressing, or eating</li>
-                <li>• Have been diagnosed with dementia or Alzheimer's</li>
-                <li>• Currently use oxygen at home</li>
+              <ul className="text-foreground mb-8 space-y-3">
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Nursing home or assisted living</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Need daily help with personal care</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Dementia or Alzheimer's</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Use oxygen at home</span>
+                </li>
               </ul>
 
               <RadioGroup className="space-y-4">
                 <div
                   onClick={() => handleCareAnswer("yes")}
-                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
                 >
-                  <RadioGroupItem value="yes" id="care-yes" className="h-6 w-6" />
-                  <Label htmlFor="care-yes" className="text-lg cursor-pointer flex-1">Yes</Label>
+                  <RadioGroupItem value="yes" id="care-yes" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="care-yes" className="text-xl md:text-2xl cursor-pointer flex-1">Yes</Label>
                 </div>
                 <div
                   onClick={() => handleCareAnswer("no")}
-                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
                 >
-                  <RadioGroupItem value="no" id="care-no" className="h-6 w-6" />
-                  <Label htmlFor="care-no" className="text-lg cursor-pointer flex-1">No</Label>
+                  <RadioGroupItem value="no" id="care-no" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="care-no" className="text-xl md:text-2xl cursor-pointer flex-1">No</Label>
                 </div>
               </RadioGroup>
             </div>
@@ -843,31 +858,42 @@ const MedicareSupplementQuote = () => {
                 <Progress value={getProgress()} className="h-2" />
               </div>
 
-              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
-                In the last 2 years, have you had any of the following?
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                Recent Medical History
               </h2>
+              <p className="text-lg md:text-xl text-muted-foreground mb-6">
+                In the last 2 years, have you had:
+              </p>
               
-              <ul className="text-muted-foreground mb-6 space-y-1 text-sm md:text-base">
-                <li>• Cancer, heart attack, stroke, or congestive heart failure</li>
-                <li>• Kidney failure or dialysis</li>
-                <li>• Organ transplant</li>
-                <li>• ALS, Parkinson's, or multiple sclerosis</li>
+              <ul className="text-foreground mb-8 space-y-3">
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Cancer, heart attack, or stroke</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Kidney dialysis or organ transplant</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>ALS, Parkinson's, or MS</span>
+                </li>
               </ul>
 
               <RadioGroup className="space-y-4">
                 <div
                   onClick={() => handleTreatmentAnswer("yes")}
-                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
                 >
-                  <RadioGroupItem value="yes" id="treatment-yes" className="h-6 w-6" />
-                  <Label htmlFor="treatment-yes" className="text-lg cursor-pointer flex-1">Yes</Label>
+                  <RadioGroupItem value="yes" id="treatment-yes" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="treatment-yes" className="text-xl md:text-2xl cursor-pointer flex-1">Yes</Label>
                 </div>
                 <div
                   onClick={() => handleTreatmentAnswer("no")}
-                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
                 >
-                  <RadioGroupItem value="no" id="treatment-no" className="h-6 w-6" />
-                  <Label htmlFor="treatment-no" className="text-lg cursor-pointer flex-1">No</Label>
+                  <RadioGroupItem value="no" id="treatment-no" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="treatment-no" className="text-xl md:text-2xl cursor-pointer flex-1">No</Label>
                 </div>
               </RadioGroup>
             </div>
@@ -884,30 +910,42 @@ const MedicareSupplementQuote = () => {
                 <Progress value={getProgress()} className="h-2" />
               </div>
 
-              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
-                Do any of the following apply to you?
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                Current Medications
               </h2>
+              <p className="text-lg md:text-xl text-muted-foreground mb-6">
+                Do any of these apply to you?
+              </p>
               
-              <ul className="text-muted-foreground mb-6 space-y-1 text-sm md:text-base">
-                <li>• Use insulin for diabetes</li>
-                <li>• Take 3 or more diabetes medications</li>
-                <li>• Take strong prescription pain medicine daily (oxycodone, hydrocodone, morphine)</li>
+              <ul className="text-foreground mb-8 space-y-3">
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Use insulin</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Take 3+ diabetes medications</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Daily prescription pain medicine (opioids)</span>
+                </li>
               </ul>
 
               <RadioGroup className="space-y-4">
                 <div
                   onClick={() => handleMedicationsAnswer("yes")}
-                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
                 >
-                  <RadioGroupItem value="yes" id="meds-yes" className="h-6 w-6" />
-                  <Label htmlFor="meds-yes" className="text-lg cursor-pointer flex-1">Yes</Label>
+                  <RadioGroupItem value="yes" id="meds-yes" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="meds-yes" className="text-xl md:text-2xl cursor-pointer flex-1">Yes</Label>
                 </div>
                 <div
                   onClick={() => handleMedicationsAnswer("no")}
-                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
                 >
-                  <RadioGroupItem value="no" id="meds-no" className="h-6 w-6" />
-                  <Label htmlFor="meds-no" className="text-lg cursor-pointer flex-1">No</Label>
+                  <RadioGroupItem value="no" id="meds-no" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="meds-no" className="text-xl md:text-2xl cursor-pointer flex-1">No</Label>
                 </div>
               </RadioGroup>
             </div>
