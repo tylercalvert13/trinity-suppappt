@@ -125,22 +125,39 @@ const trackFacebookSubmissionEvent = async (
 };
 
 // Track InboundCall event - fired when user clicks the call button
-const trackFacebookCallEvent = async () => {
+// Includes lead data when available for improved match quality
+const trackFacebookCallEvent = async (
+  formData?: FormData,
+  quoteResult?: QuoteResult | null
+) => {
   try {
     const { fbc, fbp } = getFacebookCookies();
     const eventId = generateEventId();
     
-    await supabase.functions.invoke('fb-conversion', {
-      body: {
-        event_name: 'InboundCall',
-        event_source_url: window.location.href,
-        external_id: getVisitorId(),
-        fbc,
-        fbp,
-        event_id: eventId,
-      }
-    });
-    console.log('Facebook InboundCall conversion tracked');
+    const body: Record<string, any> = {
+      event_name: 'InboundCall',
+      event_source_url: window.location.href,
+      external_id: getVisitorId(),
+      fbc,
+      fbp,
+      event_id: eventId,
+    };
+
+    // Add lead data if available (user has completed the form)
+    if (formData?.firstName) body.first_name = formData.firstName;
+    if (formData?.lastName) body.last_name = formData.lastName;
+    if (formData?.email) body.email = formData.email;
+    if (formData?.phone) body.phone = formData.phone;
+    if (formData?.zipCode) body.zip_code = formData.zipCode;
+    
+    // Add conversion value if quote is available
+    if (quoteResult) {
+      body.value = quoteResult.monthlySavings || quoteResult.rate || 0;
+      body.currency = 'USD';
+    }
+
+    await supabase.functions.invoke('fb-conversion', { body });
+    console.log('Facebook InboundCall conversion tracked', formData ? 'with lead data' : 'without lead data');
   } catch (error) {
     console.error('Error tracking Facebook InboundCall event:', error);
   }
@@ -535,7 +552,7 @@ const MedicareSupplementQuote = () => {
   const handleCallClick = () => {
     trackCallClick();
     trackTaboolaConversion();
-    trackFacebookCallEvent(); // InboundCall event fires on call click
+    trackFacebookCallEvent(formData, quoteResult); // InboundCall event fires on call click with lead data
   };
 
   // Handle SMS nurture request (primary after-hours CTA)
