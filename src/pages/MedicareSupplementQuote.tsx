@@ -256,6 +256,7 @@ const MedicareSupplementQuote = () => {
   const [isSchedulingCallback, setIsSchedulingCallback] = useState(false);
   const [showCallbackOptions, setShowCallbackOptions] = useState(false);
   const [callbackDateInfo, setCallbackDateInfo] = useState<CallbackDateInfo | null>(null);
+  const [agentCallRequested, setAgentCallRequested] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     plan: '',
@@ -553,6 +554,53 @@ const MedicareSupplementQuote = () => {
     trackCallClick();
     trackTaboolaConversion();
     trackFacebookCallEvent(formData, quoteResult); // InboundCall event fires on call click with lead data
+  };
+
+  // Handle "Have Agent Call Me" request (during business hours)
+  const handleAgentCallRequest = async () => {
+    setAgentCallRequested(true);
+    
+    try {
+      // Track analytics event
+      await trackEvent({
+        eventType: 'agent_call_requested',
+        step: 'qualified',
+        metadata: {
+          callbackType: 'immediate',
+        }
+      });
+
+      const response = await supabase.functions.invoke('schedule-callback', {
+        body: {
+          email: formData.email,
+          phone: formData.phone,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          leadType: 'immediate_callback',
+          callbackTime: 'immediate',
+          nextBusinessDay: new Date().toISOString().split('T')[0],
+          isToday: true,
+          quotedRate: quoteResult?.rate,
+          currentPayment: parseFloat(formData.currentPayment),
+          monthlySavings: quoteResult?.monthlySavings,
+          annualSavings: quoteResult?.annualSavings,
+        }
+      });
+
+      if (response.error) {
+        console.error("Error requesting agent call:", response.error);
+        toast.error("Something went wrong. Please try calling us directly.");
+        setAgentCallRequested(false);
+        return;
+      }
+
+      toast.success("An agent will call you in about 60 seconds!");
+
+    } catch (error) {
+      console.error("Error requesting agent call:", error);
+      toast.error("Something went wrong. Please try calling us directly.");
+      setAgentCallRequested(false);
+    }
   };
 
   // Handle SMS nurture request (primary after-hours CTA)
@@ -1295,39 +1343,87 @@ const MedicareSupplementQuote = () => {
                 {/* Conditional: During Business Hours = Call Now, After Hours = Schedule Callback */}
                 {isDuringBusinessHours ? (
                   <>
-                    {/* Tentative Rate Warning with Scarcity */}
-                    <div className="bg-amber-50 border-2 border-amber-400 rounded-lg p-4 mb-6">
-                      <p className="text-amber-800 font-semibold text-center">
-                        ⚠️ This rate is <span className="underline">tentative</span> and subject to verification.
-                      </p>
-                      <p className="text-amber-700 text-sm text-center mt-1">
-                        This rate is reserved for the next {time.mins}:{time.secs}. Call now or you may lose this quote.
-                      </p>
-                    </div>
+                    {agentCallRequested ? (
+                      /* Agent Calling Confirmation UI */
+                      <div className="bg-green-50 border-2 border-green-400 rounded-xl p-6 text-center">
+                        <Phone className="h-12 w-12 text-green-600 mx-auto mb-3 animate-pulse" />
+                        <h3 className="text-xl font-bold text-foreground mb-2">Agent Calling You Now!</h3>
+                        <p className="text-green-700">
+                          Keep your phone handy - we're calling <strong>{formData.phone}</strong> in about 60 seconds.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Positive Confirmation Box (replaces amber tentative warning) */}
+                        <div className="bg-green-50 border-2 border-green-400 rounded-lg p-4 mb-6">
+                          <p className="text-green-800 font-semibold text-center">
+                            ✅ Your rate is confirmed! Call now to lock it in.
+                          </p>
+                          <p className="text-green-700 text-sm text-center mt-1">
+                            🕐 Rate reserved for 30 minutes - agents standing by
+                          </p>
+                        </div>
 
-                    {/* US Based Licensed Agent Badge */}
-                    <div className="flex items-center justify-center gap-2 mb-6">
-                      <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                      </span>
-                      <span className="text-green-600 font-medium">US Based Licensed Agent Ready to Confirm Your Rate</span>
-                    </div>
+                        {/* Agent Credibility Section */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
+                          <div className="flex items-start gap-4">
+                            {/* Agent Avatar */}
+                            <div className="flex-shrink-0">
+                              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xl font-bold">
+                                S
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-bold text-foreground text-lg mb-1">
+                                👋 Hi, I'm Sarah - Your Licensed Agent
+                              </p>
+                              <p className="text-blue-700 font-medium mb-3 text-sm">
+                                I'm standing by to confirm your ${quoteResult.rate.toFixed(2)} rate
+                              </p>
+                              <ul className="space-y-1.5 text-sm text-foreground">
+                                <li className="flex items-center gap-2">
+                                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                  No hold time - speak directly to me
+                                </li>
+                                <li className="flex items-center gap-2">
+                                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                  No pressure - I'm here to answer questions
+                                </li>
+                                <li className="flex items-center gap-2">
+                                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                  5 minute call - verify and lock in your savings
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
 
-                    {/* Call Button */}
-                    <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
-                      <Button
-                        size="lg"
-                        className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
-                      >
-                        <Phone className="mr-3 h-6 w-6 animate-pulse" />
-                        Tap To Lock In Your Rate
-                      </Button>
-                    </a>
-                    <p className="text-lg font-semibold text-foreground mt-3">{PHONE_NUMBER}</p>
-                    <p className="text-sm text-red-600 font-semibold mt-2">
-                      ⚠️ If you don't call, your rate expires and you'll keep overpaying.
-                    </p>
+                        {/* Primary Call Button */}
+                        <a href={PHONE_TEL} className="block" onClick={handleCallClick}>
+                          <Button
+                            size="lg"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
+                          >
+                            <Phone className="mr-3 h-6 w-6 animate-pulse" />
+                            Tap To Lock In Your Rate
+                          </Button>
+                        </a>
+
+                        {/* Secondary CTA - Have Agent Call Me */}
+                        <button
+                          onClick={handleAgentCallRequest}
+                          className="w-full mt-3 py-4 border-2 border-gray-300 rounded-xl text-foreground font-medium hover:border-green-400 hover:bg-green-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Phone className="h-5 w-5" />
+                          Have Agent Call Me Instead
+                        </button>
+
+                        {/* Positive Benefit Text (replaces red fear-based warning) */}
+                        <p className="text-sm text-green-600 font-semibold mt-3 text-center">
+                          💰 Call now and your new rate starts within 7 days - no gap in coverage
+                        </p>
+                      </>
+                    )}
                   </>
                 ) : (
                   <>
