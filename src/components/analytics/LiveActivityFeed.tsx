@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { isInternalTeamMember, filterInternalSubmissions } from "@/lib/analyticsFilters";
 import { Activity, Eye, ArrowRight, PhoneCall, UserCheck, UserX, DollarSign, TrendingDown, XCircle, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 
@@ -167,7 +168,9 @@ export const LiveActivityFeed = () => {
         timestamp: e.created_at
       }));
       
-      const submissions: ActivityItem[] = (submissionsResult.data || []).map(s => ({
+      // Filter out internal team submissions
+      const filteredSubmissions = filterInternalSubmissions(submissionsResult.data || []);
+      const submissions: ActivityItem[] = filteredSubmissions.map(s => ({
         type: 'submission' as const,
         data: s,
         timestamp: s.created_at
@@ -215,12 +218,16 @@ export const LiveActivityFeed = () => {
           table: 'submissions',
         },
         (payload) => {
-          const newSubmission: ActivityItem = {
+          const newSubmission = payload.new as Submission;
+          // Skip internal team submissions
+          if (isInternalTeamMember(newSubmission)) return;
+          
+          const activityItem: ActivityItem = {
             type: 'submission',
-            data: payload.new as Submission,
-            timestamp: (payload.new as Submission).created_at
+            data: newSubmission,
+            timestamp: newSubmission.created_at
           };
-          setActivities((prev) => [newSubmission, ...prev.slice(0, 49)]);
+          setActivities((prev) => [activityItem, ...prev.slice(0, 49)]);
         }
       )
       .subscribe();

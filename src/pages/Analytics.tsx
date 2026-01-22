@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { filterInternalSubmissions } from "@/lib/analyticsFilters";
 import { OverviewCards } from "@/components/analytics/OverviewCards";
 import { FunnelChart } from "@/components/analytics/FunnelChart";
 import { TrafficSourcesTable } from "@/components/analytics/TrafficSourcesTable";
@@ -130,7 +131,7 @@ const Analytics = () => {
 
       if (sessionsRes.data) setSessions(sessionsRes.data);
       if (eventsRes.data) setEvents(eventsRes.data);
-      if (submissionsRes.data) setSubmissions(submissionsRes.data);
+      if (submissionsRes.data) setSubmissions(filterInternalSubmissions(submissionsRes.data));
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
