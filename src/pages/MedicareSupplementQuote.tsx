@@ -10,8 +10,8 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 
-const PHONE_NUMBER = "(888) 525-1179";
-const PHONE_TEL = "tel:+18885251179";
+const PHONE_NUMBER = "(201) 426-9265";
+const PHONE_TEL = "tel:+12014269265";
 
 type FunnelStep = 
   | "landing" 
