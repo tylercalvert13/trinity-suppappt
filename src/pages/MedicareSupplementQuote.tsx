@@ -1364,30 +1364,30 @@ const MedicareSupplementQuote = () => {
                           </p>
                         </div>
 
-                        {/* Agent Credibility Section */}
+                        {/* Health Helpers Team Section */}
                         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
                           <div className="flex items-start gap-4">
-                            {/* Agent Avatar */}
+                            {/* Team Icon */}
                             <div className="flex-shrink-0">
-                              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xl font-bold">
-                                S
+                              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center text-white">
+                                <Shield className="h-7 w-7" />
                               </div>
                             </div>
                             <div className="flex-1">
                               <p className="font-bold text-foreground text-lg mb-1">
-                                👋 Hi, I'm Sarah - Your Licensed Agent
+                                Your Health Helpers Team Is Ready
                               </p>
                               <p className="text-blue-700 font-medium mb-3 text-sm">
-                                I'm standing by to confirm your ${quoteResult.rate.toFixed(2)} rate
+                                Licensed agents standing by to confirm your ${quoteResult.rate.toFixed(2)} rate
                               </p>
                               <ul className="space-y-1.5 text-sm text-foreground">
                                 <li className="flex items-center gap-2">
                                   <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                                  No hold time - speak directly to me
+                                  No hold time - speak directly to an agent
                                 </li>
                                 <li className="flex items-center gap-2">
                                   <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                                  No pressure - I'm here to answer questions
+                                  No pressure - we're here to answer questions
                                 </li>
                                 <li className="flex items-center gap-2">
                                   <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
