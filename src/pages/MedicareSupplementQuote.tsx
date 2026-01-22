@@ -1315,11 +1315,11 @@ const MedicareSupplementQuote = () => {
                           {/* Primary CTA: Text Me When You're Open */}
                           <Button
                             size="lg"
-                            className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white text-base md:text-xl py-6 md:py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
                             onClick={handleSmsNurtureRequest}
                             disabled={isSchedulingCallback}
                           >
-                            <MessageSquare className="mr-3 h-6 w-6" />
+                            <MessageSquare className="mr-2 md:mr-3 h-5 w-5 md:h-6 md:w-6 flex-shrink-0" />
                             {isSchedulingCallback ? 'Setting Up...' : 'Text Me When You\'re Open'}
                           </Button>
                         </div>
