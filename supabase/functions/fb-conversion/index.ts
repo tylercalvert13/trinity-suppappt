@@ -16,6 +16,15 @@ interface ConversionRequest {
   event_id?: string;
   external_id?: string;
   test_event_code?: string;
+  // User data fields
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  zip_code?: string;
+  // Conversion value
+  value?: number;
+  currency?: string;
 }
 
 // Hash a string using SHA-256 (required by Facebook for user data)
@@ -25,6 +34,11 @@ async function hashSHA256(value: string): Promise<string> {
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Normalize phone number to digits only (Facebook requirement)
+function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, '');
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -43,7 +57,22 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { event_name, event_source_url, fbc, fbp, event_id, external_id, test_event_code }: ConversionRequest = await req.json();
+    const { 
+      event_name, 
+      event_source_url, 
+      fbc, 
+      fbp, 
+      event_id, 
+      external_id, 
+      test_event_code,
+      first_name,
+      last_name,
+      email,
+      phone,
+      zip_code,
+      value,
+      currency
+    }: ConversionRequest = await req.json();
 
     // Build user data object - only include fields with valid values
     const userData: Record<string, string | string[]> = {};
@@ -68,18 +97,51 @@ const handler = async (req: Request): Promise<Response> => {
       userData.external_id = [hashedExternalId];
     }
 
+    // Hash and add PII fields (Facebook requires all PII to be hashed)
+    if (email && email.trim()) {
+      userData.em = [await hashSHA256(email)];
+    }
+    if (phone && phone.trim()) {
+      const normalizedPhone = normalizePhone(phone);
+      if (normalizedPhone.length >= 10) {
+        userData.ph = [await hashSHA256(normalizedPhone)];
+      }
+    }
+    if (first_name && first_name.trim()) {
+      userData.fn = [await hashSHA256(first_name)];
+    }
+    if (last_name && last_name.trim()) {
+      userData.ln = [await hashSHA256(last_name)];
+    }
+    if (zip_code && zip_code.trim()) {
+      // Facebook expects 5-digit zip for US
+      const normalizedZip = zip_code.trim().substring(0, 5);
+      userData.zp = [await hashSHA256(normalizedZip)];
+    }
+
+    // Always set country to US for this Medicare funnel
+    userData.country = [await hashSHA256("us")];
+
     // Build the event payload
     const eventData: Record<string, any> = {
       event_name: event_name || "Lead",
       event_time: Math.floor(Date.now() / 1000),
       action_source: "website",
-      event_source_url: event_source_url || "https://healthhelpers.co/supp",
+      event_source_url: event_source_url || "https://healthhelpers.co/suppquote",
       user_data: userData,
     };
 
     // Add event_id for deduplication
     if (event_id) {
       eventData.event_id = event_id;
+    }
+
+    // Add custom_data with conversion value if provided
+    if (value && value > 0) {
+      eventData.custom_data = {
+        value: value,
+        currency: currency || "USD",
+      };
     }
 
     const payload: Record<string, any> = {
@@ -92,11 +154,19 @@ const handler = async (req: Request): Promise<Response> => {
       payload.test_event_code = test_event_code;
     }
 
+    // Log what data we're sending (without actual hashed values for privacy)
     console.log("Sending Facebook Conversion API event:", JSON.stringify({ 
       event_name: eventData.event_name, 
       action_source: eventData.action_source, 
       event_id: eventData.event_id,
       has_external_id: !!external_id,
+      has_email: !!email,
+      has_phone: !!phone,
+      has_first_name: !!first_name,
+      has_last_name: !!last_name,
+      has_zip_code: !!zip_code,
+      has_value: !!value,
+      value: value,
       test_event_code 
     }));
 

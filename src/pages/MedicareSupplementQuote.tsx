@@ -90,7 +90,11 @@ const generateEventId = (): string => {
 };
 
 // Track submission event - custom event fired when we find savings for the user
-const trackFacebookSubmissionEvent = async () => {
+// Includes full lead data for Facebook's match quality optimization
+const trackFacebookSubmissionEvent = async (
+  formData: FormData,
+  quoteResult: QuoteResult | null
+) => {
   try {
     const { fbc, fbp } = getFacebookCookies();
     const eventId = generateEventId();
@@ -103,9 +107,18 @@ const trackFacebookSubmissionEvent = async () => {
         fbc,
         fbp,
         event_id: eventId,
+        // Lead data for improved match quality
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        zip_code: formData.zipCode,
+        // Conversion value for optimization
+        value: quoteResult?.monthlySavings || quoteResult?.rate || 0,
+        currency: 'USD',
       }
     });
-    console.log('Facebook submission conversion tracked');
+    console.log('Facebook submission conversion tracked with lead data');
   } catch (error) {
     console.error('Error tracking Facebook submission event:', error);
   }
@@ -468,7 +481,7 @@ const MedicareSupplementQuote = () => {
       // Track conversions - submission event fires here (we found savings)
       trackQualification("qualified");
       trackTaboolaConversion();
-      await trackFacebookSubmissionEvent();
+      await trackFacebookSubmissionEvent(formData, data);
       
       setStep("qualified");
       setCountdown(90);
