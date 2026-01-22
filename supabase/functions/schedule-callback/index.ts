@@ -54,8 +54,11 @@ serve(async (req) => {
       callbackDate = callbackDateObj.toISOString().split('T')[0];
     }
 
-    // Determine lead type (sms_nurture is primary, callback_request is secondary)
+    // Determine lead type (immediate_callback is highest priority, then sms_nurture, then callback_request)
     const leadType = data.leadType || 'callback_request';
+    
+    // Check if this is an immediate callback request (during business hours)
+    const isImmediateCallback = leadType === 'immediate_callback' || data.callbackTime === 'immediate';
     
     // Calculate savings if we have the data
     const monthlySavings = data.monthlySavings || 
@@ -91,11 +94,16 @@ serve(async (req) => {
       monthlySavings: monthlySavings,
       annualSavings: annualSavings,
       
+      // Flag for immediate callback (triggers instant dialer in GHL)
+      isImmediateCallback: isImmediateCallback,
+      
       // Metadata
       requestedAt: new Date().toISOString(),
-      source: leadType === 'sms_nurture' 
-        ? "Health Helpers Quote Funnel - SMS Nurture Request"
-        : "Health Helpers Quote Funnel - Callback Request",
+      source: isImmediateCallback
+        ? "Health Helpers Quote Funnel - Immediate Callback Request"
+        : leadType === 'sms_nurture' 
+          ? "Health Helpers Quote Funnel - SMS Nurture Request"
+          : "Health Helpers Quote Funnel - Callback Request",
     };
 
     console.log("Sending to GHL:", JSON.stringify(payload));
@@ -115,14 +123,17 @@ serve(async (req) => {
       );
     }
 
-    console.log("After-hours lead processed successfully:", leadType);
+    console.log("Lead processed successfully:", leadType, isImmediateCallback ? "(immediate)" : "");
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: leadType === 'sms_nurture' 
-          ? "SMS nurture scheduled successfully" 
-          : "Callback scheduled successfully",
+        message: isImmediateCallback
+          ? "Immediate callback request sent successfully"
+          : leadType === 'sms_nurture' 
+            ? "SMS nurture scheduled successfully" 
+            : "Callback scheduled successfully",
         leadType: leadType,
+        isImmediateCallback: isImmediateCallback,
         callbackDate: callbackDate,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
