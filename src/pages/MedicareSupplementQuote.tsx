@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Phone, Shield, Users, FileCheck, CheckCircle, Clock, AlertCircle, CalendarCheck, ChevronDown, Sun, Sunset } from 'lucide-react';
+import { Phone, Shield, Users, FileCheck, CheckCircle, Clock, AlertCircle, CalendarCheck, ChevronDown, Sun, Sunset, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
@@ -154,6 +154,60 @@ const isWithinBusinessHours = (): boolean => {
   return isWeekday && isBusinessHour;
 };
 
+// Helper to get callback date info based on current Eastern Time
+interface CallbackDateInfo {
+  dateLabel: string;
+  isToday: boolean;
+  nextBusinessDay: string; // YYYY-MM-DD format for webhook
+}
+
+const getCallbackDateInfo = (): CallbackDateInfo => {
+  const now = new Date();
+  const easternTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+  const hour = easternTime.getHours();
+  const dayOfWeek = easternTime.getDay(); // 0 = Sunday, 6 = Saturday
+
+  let callbackDate = new Date(easternTime);
+  let dateLabel = "";
+  let isToday = false;
+
+  // Before 9 AM on a weekday = callback TODAY
+  if (hour < 9 && dayOfWeek >= 1 && dayOfWeek <= 5) {
+    isToday = true;
+    dateLabel = "today";
+  } else {
+    // Start from tomorrow
+    callbackDate.setDate(callbackDate.getDate() + 1);
+    
+    // Skip weekends
+    const nextDay = callbackDate.getDay();
+    if (nextDay === 0) { // Sunday -> Monday
+      callbackDate.setDate(callbackDate.getDate() + 1);
+    } else if (nextDay === 6) { // Saturday -> Monday
+      callbackDate.setDate(callbackDate.getDate() + 2);
+    }
+
+    // Determine label
+    const tomorrowCheck = new Date(easternTime);
+    tomorrowCheck.setDate(tomorrowCheck.getDate() + 1);
+    
+    if (callbackDate.toDateString() === tomorrowCheck.toDateString()) {
+      dateLabel = "tomorrow";
+    } else {
+      // Format as day name (e.g., "Monday")
+      dateLabel = callbackDate.toLocaleDateString("en-US", { 
+        weekday: "long", 
+        timeZone: "America/New_York" 
+      });
+    }
+  }
+
+  // Format callback date as YYYY-MM-DD for webhook
+  const nextBusinessDay = callbackDate.toISOString().split('T')[0];
+
+  return { dateLabel, isToday, nextBusinessDay };
+};
+
 const MedicareSupplementQuote = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<FunnelStep>("landing");
@@ -170,6 +224,8 @@ const MedicareSupplementQuote = () => {
   const [callbackTimeSlot, setCallbackTimeSlot] = useState<'morning' | 'afternoon' | null>(null);
   const [callbackScheduled, setCallbackScheduled] = useState(false);
   const [isSchedulingCallback, setIsSchedulingCallback] = useState(false);
+  const [showCallbackOptions, setShowCallbackOptions] = useState(false);
+  const [callbackDateInfo, setCallbackDateInfo] = useState<CallbackDateInfo | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     plan: '',
@@ -190,10 +246,14 @@ const MedicareSupplementQuote = () => {
 
   const { visitorId, sessionId, trackStepChange, trackQualification, trackCallClick, trackEvent } = useFunnelAnalytics('suppquote');
 
-  // Check business hours when reaching qualified step
+  // Check business hours and calculate callback date when reaching qualified step
   useEffect(() => {
     if (step === 'qualified') {
-      setIsDuringBusinessHours(isWithinBusinessHours());
+      const duringHours = isWithinBusinessHours();
+      setIsDuringBusinessHours(duringHours);
+      if (!duringHours) {
+        setCallbackDateInfo(getCallbackDateInfo());
+      }
     }
   }, [step]);
 
@@ -465,22 +525,78 @@ const MedicareSupplementQuote = () => {
     trackFacebookCallEvent(); // InboundCall event fires on call click
   };
 
-  // Handle scheduling a callback for after-hours
-  const handleScheduleCallback = async () => {
-    if (!callbackTimeSlot) return;
-
+  // Handle SMS nurture request (primary after-hours CTA)
+  const handleSmsNurtureRequest = async () => {
     setIsSchedulingCallback(true);
     try {
+      const dateInfo = callbackDateInfo || getCallbackDateInfo();
+      
       const response = await supabase.functions.invoke('schedule-callback', {
         body: {
           email: formData.email,
           phone: formData.phone,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          callbackTime: callbackTimeSlot,
+          leadType: 'sms_nurture',
+          callbackTime: null, // No specific time preference
+          nextBusinessDay: dateInfo.nextBusinessDay,
+          isToday: dateInfo.isToday,
           quotedRate: quoteResult?.rate,
           currentPayment: parseFloat(formData.currentPayment),
           monthlySavings: quoteResult?.monthlySavings,
+          annualSavings: quoteResult?.annualSavings,
+        }
+      });
+
+      if (response.error) {
+        console.error("Error requesting SMS nurture:", response.error);
+        toast.error("Something went wrong. Please try again.");
+        return;
+      }
+
+      // Track the SMS nurture requested event
+      await trackEvent({
+        eventType: 'sms_nurture_requested',
+        step: 'qualified',
+        metadata: {
+          dateLabel: dateInfo.dateLabel,
+          isToday: dateInfo.isToday,
+        }
+      });
+
+      setCallbackScheduled(true);
+      toast.success(`Great! We'll text you ${dateInfo.dateLabel} when we're ready.`);
+
+    } catch (error) {
+      console.error("Error requesting SMS nurture:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSchedulingCallback(false);
+    }
+  };
+
+  // Handle scheduling a callback for after-hours (secondary option)
+  const handleScheduleCallback = async () => {
+    if (!callbackTimeSlot) return;
+
+    setIsSchedulingCallback(true);
+    try {
+      const dateInfo = callbackDateInfo || getCallbackDateInfo();
+      
+      const response = await supabase.functions.invoke('schedule-callback', {
+        body: {
+          email: formData.email,
+          phone: formData.phone,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          leadType: 'callback_request',
+          callbackTime: callbackTimeSlot,
+          nextBusinessDay: dateInfo.nextBusinessDay,
+          isToday: dateInfo.isToday,
+          quotedRate: quoteResult?.rate,
+          currentPayment: parseFloat(formData.currentPayment),
+          monthlySavings: quoteResult?.monthlySavings,
+          annualSavings: quoteResult?.annualSavings,
         }
       });
 
@@ -492,16 +608,18 @@ const MedicareSupplementQuote = () => {
 
       // Track the callback scheduled event
       await trackEvent({
-        eventType: 'callback_scheduled',
+        eventType: 'callback_requested',
         step: 'qualified',
         answer: callbackTimeSlot,
         metadata: {
           timeSlot: callbackTimeSlot,
+          dateLabel: dateInfo.dateLabel,
+          isToday: dateInfo.isToday,
         }
       });
 
       setCallbackScheduled(true);
-      toast.success("Callback scheduled! We'll call you tomorrow.");
+      toast.success(`Callback scheduled! We'll call you ${dateInfo.dateLabel}.`);
 
     } catch (error) {
       console.error("Error scheduling callback:", error);
@@ -1145,96 +1263,141 @@ const MedicareSupplementQuote = () => {
                   </>
                 ) : (
                   <>
-                    {/* AFTER HOURS: Schedule Callback UI */}
+                    {/* AFTER HOURS: Hybrid SMS Nurture + Callback UI */}
                     {!callbackScheduled ? (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-center gap-2 mb-4">
+                        {/* Office Closed Notice */}
+                        <div className="flex items-center justify-center gap-2 mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
                           <Clock className="h-5 w-5 text-amber-600" />
-                          <span className="text-amber-700 font-medium">Our agents are available Mon-Fri, 9 AM - 5 PM Eastern</span>
+                          <span className="text-amber-700 font-medium text-sm">Our office is closed. Agents available Mon-Fri, 9 AM - 5 PM ET</span>
                         </div>
 
-                        <p className="text-lg text-foreground mb-4">
-                          Schedule a callback tomorrow and we'll call <strong>you</strong> to lock in your rate.
+                        {/* Rate Saved Confirmation */}
+                        <div className="bg-green-50 border-2 border-green-400 rounded-xl p-6">
+                          <div className="flex items-center justify-center gap-2 mb-3">
+                            <CheckCircle className="h-6 w-6 text-green-600" />
+                            <span className="text-green-700 font-bold">Your rate of ${quoteResult.rate.toFixed(2)}/mo has been saved!</span>
+                          </div>
+                          <p className="text-foreground text-center mb-6">
+                            We'll text you {callbackDateInfo?.dateLabel || "tomorrow"} when our agents are ready to lock in your rate.
+                          </p>
+
+                          {/* Primary CTA: Text Me When You're Open */}
+                          <Button
+                            size="lg"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-8 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
+                            onClick={handleSmsNurtureRequest}
+                            disabled={isSchedulingCallback}
+                          >
+                            <MessageSquare className="mr-3 h-6 w-6" />
+                            {isSchedulingCallback ? 'Setting Up...' : 'Text Me When You\'re Open'}
+                          </Button>
+                        </div>
+
+                        {/* Secondary: Call us tomorrow */}
+                        <p className="text-center text-muted-foreground">
+                          Or call us {callbackDateInfo?.dateLabel || "tomorrow"} at <strong className="text-foreground">{PHONE_NUMBER}</strong>
                         </p>
 
-                <div className="bg-gradient-to-b from-green-50 to-green-100 border-2 border-green-400 rounded-xl p-6 shadow-lg">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                    </span>
-                    <span className="text-green-700 font-bold uppercase text-sm tracking-wide">Select a Time</span>
-                  </div>
-                  <p className="font-bold text-xl text-foreground mb-2 text-center">When should we call you tomorrow?</p>
-                  
-                  <div className="flex justify-center mb-4">
-                    <ChevronDown className="h-8 w-8 text-green-600 animate-bounce" />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className={`py-8 h-auto border-2 transition-all transform hover:scale-105 ${
-                        callbackTimeSlot === 'morning' 
-                          ? 'bg-green-600 border-green-600 text-white shadow-lg scale-105' 
-                          : 'bg-white border-green-500 text-green-700 hover:bg-green-50 hover:border-green-600 shadow-md animate-pulse'
-                      }`}
-                      onClick={() => setCallbackTimeSlot('morning')}
-                    >
-                      <div className="text-center">
-                        <Sun className="h-8 w-8 mx-auto mb-2" />
-                        <p className="font-bold text-lg">Morning</p>
-                        <p className="text-sm opacity-80">9:00 AM - 12:00 PM ET</p>
-                      </div>
-                    </Button>
-                    
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className={`py-8 h-auto border-2 transition-all transform hover:scale-105 ${
-                        callbackTimeSlot === 'afternoon' 
-                          ? 'bg-green-600 border-green-600 text-white shadow-lg scale-105' 
-                          : 'bg-white border-green-500 text-green-700 hover:bg-green-50 hover:border-green-600 shadow-md animate-pulse'
-                      }`}
-                      onClick={() => setCallbackTimeSlot('afternoon')}
-                    >
-                      <div className="text-center">
-                        <Sunset className="h-8 w-8 mx-auto mb-2" />
-                        <p className="font-bold text-lg">Afternoon</p>
-                        <p className="text-sm opacity-80">12:00 PM - 5:00 PM ET</p>
-                      </div>
-                    </Button>
-                  </div>
+                        {/* Expandable Callback Option */}
+                        <div className="border-t pt-4">
+                          <button
+                            onClick={() => setShowCallbackOptions(!showCallbackOptions)}
+                            className="w-full text-center text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center justify-center gap-1"
+                          >
+                            Prefer we call you instead?
+                            <ChevronDown className={`h-4 w-4 transition-transform ${showCallbackOptions ? 'rotate-180' : ''}`} />
+                          </button>
 
-                          {callbackTimeSlot && (
-                            <Button
-                              size="lg"
-                              className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto"
-                              onClick={handleScheduleCallback}
-                              disabled={isSchedulingCallback}
-                            >
-                              <CalendarCheck className="mr-2 h-5 w-5" />
-                              {isSchedulingCallback ? 'Scheduling...' : 'Schedule My Callback'}
-                            </Button>
+                          {showCallbackOptions && (
+                            <div className="mt-4 bg-gray-50 border rounded-xl p-4">
+                              <p className="font-semibold text-foreground mb-3 text-center">
+                                When should we call you {callbackDateInfo?.dateLabel || "tomorrow"}?
+                              </p>
+                              
+                              <div className="grid grid-cols-2 gap-3 mb-4">
+                                <Button
+                                  variant="outline"
+                                  className={`py-4 h-auto border-2 transition-all ${
+                                    callbackTimeSlot === 'morning' 
+                                      ? 'bg-blue-600 border-blue-600 text-white' 
+                                      : 'border-gray-300 hover:border-blue-400'
+                                  }`}
+                                  onClick={() => setCallbackTimeSlot('morning')}
+                                >
+                                  <div className="text-center">
+                                    <Sun className="h-5 w-5 mx-auto mb-1" />
+                                    <p className="font-semibold text-sm">Morning</p>
+                                    <p className="text-xs opacity-80">9 AM - 12 PM ET</p>
+                                  </div>
+                                </Button>
+                                
+                                <Button
+                                  variant="outline"
+                                  className={`py-4 h-auto border-2 transition-all ${
+                                    callbackTimeSlot === 'afternoon' 
+                                      ? 'bg-blue-600 border-blue-600 text-white' 
+                                      : 'border-gray-300 hover:border-blue-400'
+                                  }`}
+                                  onClick={() => setCallbackTimeSlot('afternoon')}
+                                >
+                                  <div className="text-center">
+                                    <Sunset className="h-5 w-5 mx-auto mb-1" />
+                                    <p className="font-semibold text-sm">Afternoon</p>
+                                    <p className="text-xs opacity-80">12 PM - 5 PM ET</p>
+                                  </div>
+                                </Button>
+                              </div>
+
+                              {callbackTimeSlot && (
+                                <Button
+                                  size="lg"
+                                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 h-auto"
+                                  onClick={handleScheduleCallback}
+                                  disabled={isSchedulingCallback}
+                                >
+                                  <CalendarCheck className="mr-2 h-5 w-5" />
+                                  {isSchedulingCallback ? 'Scheduling...' : 'Schedule Callback'}
+                                </Button>
+                              )}
+                              
+                              <p className="text-xs text-muted-foreground text-center mt-3">
+                                We'll call <strong>{formData.phone}</strong>
+                              </p>
+                            </div>
                           )}
                         </div>
-
-                        <p className="text-sm text-muted-foreground text-center">
-                          We'll call you at the phone number you provided: <strong>{formData.phone}</strong>
-                        </p>
                       </div>
                     ) : (
-                      /* CALLBACK CONFIRMED UI */
+                      /* CONFIRMED UI - Works for both SMS and Callback */
                       <div className="bg-green-50 border-2 border-green-400 rounded-xl p-6 text-center">
                         <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-foreground mb-2">Callback Scheduled!</h3>
-                        <p className="text-green-700">
-                          We'll call you tomorrow {callbackTimeSlot === 'morning' ? 'between 9 AM - 12 PM' : 'between 12 PM - 5 PM'} Eastern.
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-4">
-                          We'll call <strong>{formData.phone}</strong>. Make sure your phone is on!
-                        </p>
+                        <h3 className="text-xl font-bold text-foreground mb-2">You're All Set!</h3>
+                        
+                        {callbackTimeSlot ? (
+                          <>
+                            <p className="text-green-700">
+                              We'll call you {callbackDateInfo?.dateLabel || "tomorrow"} {callbackTimeSlot === 'morning' ? 'between 9 AM - 12 PM' : 'between 12 PM - 5 PM'} Eastern.
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-3">
+                              We'll call <strong>{formData.phone}</strong>. Make sure your phone is on!
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-green-700">
+                              We'll text you {callbackDateInfo?.dateLabel || "tomorrow"} at 9 AM ET when our agents are ready.
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-3">
+                              Keep an eye on <strong>{formData.phone}</strong> for our message.
+                            </p>
+                            <div className="mt-4 pt-4 border-t border-green-200">
+                              <p className="text-sm text-foreground font-medium">Save our number:</p>
+                              <p className="text-lg font-bold text-green-700">{PHONE_NUMBER}</p>
+                              <p className="text-xs text-muted-foreground">Health Helpers</p>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </>
@@ -1369,15 +1532,16 @@ const MedicareSupplementQuote = () => {
           ) : !callbackScheduled ? (
             <Button
               size="lg"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-4 h-auto rounded-xl"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-4 h-auto rounded-xl"
+              onClick={handleSmsNurtureRequest}
+              disabled={isSchedulingCallback}
             >
-              <CalendarCheck className="mr-2 h-5 w-5" />
-              Schedule Callback Tomorrow
+              <MessageSquare className="mr-2 h-5 w-5" />
+              {isSchedulingCallback ? 'Setting Up...' : `Text Me ${callbackDateInfo?.isToday ? 'Today' : 'When You\'re Open'}`}
             </Button>
           ) : (
             <div className="text-center py-2">
-              <p className="text-green-600 font-semibold">✓ Callback Scheduled for Tomorrow</p>
+              <p className="text-green-600 font-semibold">✓ We'll text you {callbackDateInfo?.dateLabel || 'tomorrow'} at 9 AM ET</p>
             </div>
           )}
         </div>
