@@ -30,38 +30,13 @@ interface ValidationResponse {
   phone: PhoneValidationResult;
 }
 
-// Validate email using Abstract Email Reputation API
-async function validateEmail(email: string, apiKey: string): Promise<EmailValidationResult> {
-  try {
-    const url = `https://emailreputation.abstractapi.com/v1/?api_key=${apiKey}&email=${encodeURIComponent(email)}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      console.error("Email validation API error:", response.status);
-      return { valid: true, deliverable: true, disposable: false, error: "API unavailable" };
-    }
-    
-    const data = await response.json();
-    console.log("Email validation response:", JSON.stringify(data));
-    
-    // Parse Email Reputation API response structure
-    const isValidFormat = data.email?.valid === true;
-    const isDeliverable = data.email_deliverability?.status === "deliverable";
-    const isDisposable = data.email_quality?.is_disposable === true;
-    
-    // Email is valid if: format is correct AND deliverable AND not disposable
-    const valid = isValidFormat && isDeliverable && !isDisposable;
-    
-    return {
-      valid,
-      deliverable: isDeliverable,
-      disposable: isDisposable,
-    };
-  } catch (error) {
-    console.error("Email validation error:", error);
-    // Fail open - don't block legitimate users if API is down
-    return { valid: true, deliverable: true, disposable: false, error: "Validation failed" };
-  }
+// Skip email validation - always pass (only using phone validation)
+async function validateEmail(): Promise<EmailValidationResult> {
+  return {
+    valid: true,
+    deliverable: true,
+    disposable: false,
+  };
 }
 
 // Validate phone using Abstract Phone Intelligence API
@@ -121,12 +96,11 @@ serve(async (req) => {
       );
     }
 
-    const emailApiKey = Deno.env.get("ABSTRACT_EMAIL_API_KEY");
     const phoneApiKey = Deno.env.get("ABSTRACT_PHONE_API_KEY");
 
-    if (!emailApiKey || !phoneApiKey) {
-      console.error("Missing API keys");
-      // Fail open if API keys not configured
+    if (!phoneApiKey) {
+      console.error("Missing phone API key");
+      // Fail open if API key not configured
       return new Response(
         JSON.stringify({
           valid: true,
@@ -137,9 +111,9 @@ serve(async (req) => {
       );
     }
 
-    // Validate both in parallel
+    // Validate phone only (email always passes)
     const [emailResult, phoneResult] = await Promise.all([
-      validateEmail(email, emailApiKey),
+      validateEmail(),
       validatePhone(phone, phoneApiKey),
     ]);
 
