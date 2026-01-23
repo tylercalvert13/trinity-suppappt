@@ -1068,47 +1068,61 @@ const MedicareSupplementAppointment = () => {
                 </p>
               </div>
 
-              {/* Main Call-to-Action Section */}
-              <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-6 text-center">
-                <div className="mb-4">
-                  <Phone className="h-16 w-16 text-blue-600 mx-auto animate-pulse" />
-                </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-                  ANSWER YOUR PHONE NOW!
-                </h2>
-                <p className="text-lg text-foreground mb-2">
-                  We're calling you from:
-                </p>
-                <p className="text-3xl md:text-4xl font-bold text-blue-600 mb-4">
-                  {PHONE_NUMBER}
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Your phone will ring in the next 30 seconds
-                </p>
-              </div>
+        {/* Main Call-to-Action Section */}
+        <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-6 text-center">
+          <div className="mb-4">
+            <Phone className="h-16 w-16 text-blue-600 mx-auto animate-ring-phone" />
+          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-orange-600 mb-3">
+            ANSWER YOUR PHONE NOW!
+          </h2>
+          <p className="text-lg text-foreground mb-2">
+            We're calling you from:
+          </p>
+          <p className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">
+            {PHONE_NUMBER}
+          </p>
+          <p className="text-sm text-blue-700 mb-4">
+            Save this number - it's us calling!
+          </p>
+          <p className="text-foreground font-semibold text-base">
+            Your phone will ring in the next 30 seconds
+          </p>
+        </div>
 
-              {/* Explanation Section */}
-              <div className="bg-gray-50 rounded-xl p-6">
-                <h3 className="font-bold text-foreground mb-4 text-lg">What happens next:</h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-foreground">A licensed agent will call you from <strong>{PHONE_NUMBER}</strong></span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-foreground">They'll confirm your <strong>${quoteResult.rate.toFixed(2)}/month</strong> rate</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-foreground">Answer any questions you have</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-foreground">Schedule a time to complete the switch (if you want to proceed)</span>
-                  </li>
-                </ul>
-              </div>
+        {/* Explanation Section */}
+        <div className="bg-gray-50 rounded-xl p-6">
+          <h3 className="font-bold text-foreground mb-4 text-lg">What happens next:</h3>
+          <ul className="space-y-3">
+            <li className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-foreground">We'll call you from <strong>{PHONE_NUMBER}</strong></span>
+            </li>
+            <li className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-foreground">We'll confirm your <strong>${quoteResult.rate.toFixed(2)}/month</strong> rate</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-foreground">Answer any questions you have about your rate</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-foreground">Connect you with a licensed agent to complete the switch (if you'd like to proceed)</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* Missed the Call Section */}
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+            <Phone className="h-4 w-4 text-amber-600" />
+            Missed the call?
+          </h3>
+          <p className="text-sm text-foreground">
+            If you missed our call, we'll text you immediately so you can call us back or schedule a time that works better.
+          </p>
+        </div>
 
               {/* Trust Elements */}
               <div className="bg-white rounded-xl p-4 border">
