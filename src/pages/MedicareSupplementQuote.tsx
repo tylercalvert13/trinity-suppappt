@@ -5,13 +5,41 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Phone, Shield, Users, FileCheck, CheckCircle, Clock, AlertCircle, CalendarCheck, ChevronDown, Sun, Sunset, MessageSquare } from 'lucide-react';
+import { Phone, Shield, Users, FileCheck, CheckCircle, Clock, AlertCircle, CalendarCheck, ChevronDown, Sun, Sunset, MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
+import { z } from 'zod';
 
 const PHONE_NUMBER = "(201) 426-9265";
 const PHONE_TEL = "tel:+12014269265";
+
+// Contact form validation schema
+const contactSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(50, "First name is too long"),
+  lastName: z.string().min(1, "Last name is required").max(50, "Last name is too long"),
+  email: z.string().email("Please enter a valid email address").max(255, "Email is too long"),
+  phone: z.string()
+    .transform(val => val.replace(/\D/g, ''))
+    .refine(val => val.length === 10, "Phone must be 10 digits")
+    .refine(val => !val.startsWith('0') && !val.startsWith('1'), "Please enter a valid US phone number"),
+});
+
+// Format phone number for display as user types
+const formatPhoneNumber = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 0) return '';
+  if (digits.length <= 3) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+};
+
+interface ValidationErrors {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+}
 
 type FunnelStep = 
   | "landing" 
@@ -275,6 +303,10 @@ const MedicareSupplementQuote = () => {
     phone: '',
   });
 
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [isValidating, setIsValidating] = useState(false);
+
   const { visitorId, sessionId, trackStepChange, trackQualification, trackCallClick, trackEvent } = useFunnelAnalytics('suppquote');
 
   // Check business hours and calculate callback date when reaching qualified step
@@ -436,11 +468,69 @@ const MedicareSupplementQuote = () => {
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) return;
+    setValidationErrors({});
+    setError(null);
     
+    // Step 1: Client-side Zod validation
+    const validationResult = contactSchema.safeParse({
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone,
+    });
+
+    if (!validationResult.success) {
+      const errors: ValidationErrors = {};
+      validationResult.error.errors.forEach((err) => {
+        const field = err.path[0] as keyof ValidationErrors;
+        errors[field] = err.message;
+      });
+      setValidationErrors(errors);
+      return;
+    }
+
+    // Step 2: Server-side API validation
+    setIsValidating(true);
+    
+    try {
+      const { data: validationData, error: validationError } = await supabase.functions.invoke('validate-contact', {
+        body: {
+          email: formData.email.trim(),
+          phone: formData.phone.replace(/\D/g, ''),
+        }
+      });
+
+      if (validationError) {
+        console.error("Validation API error:", validationError);
+        // Continue anyway - fail open
+      } else if (validationData && !validationData.valid) {
+        // Check which field failed
+        const errors: ValidationErrors = {};
+        if (!validationData.email?.valid) {
+          if (validationData.email?.disposable) {
+            errors.email = "Please use a permanent email address (no temporary emails)";
+          } else {
+            errors.email = "We couldn't verify this email. Please check it and try again.";
+          }
+        }
+        if (!validationData.phone?.valid) {
+          errors.phone = "This phone number doesn't appear to be valid. Please double-check it.";
+        }
+        
+        if (Object.keys(errors).length > 0) {
+          setValidationErrors(errors);
+          setIsValidating(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("Validation error:", err);
+      // Continue anyway - fail open
+    }
+
+    setIsValidating(false);
     setStep("loading");
     setIsSubmitting(true);
-    setError(null);
     trackStepChange("loading");
 
     try {
@@ -1213,22 +1303,34 @@ const MedicareSupplementQuote = () => {
                     <Input
                       id="firstName"
                       value={formData.firstName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, firstName: e.target.value }));
+                        if (validationErrors.firstName) setValidationErrors(prev => ({ ...prev, firstName: undefined }));
+                      }}
                       placeholder="John"
-                      className="h-12 rounded-xl"
+                      className={`h-12 rounded-xl ${validationErrors.firstName ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                       required
                     />
+                    {validationErrors.firstName && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.firstName}</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
                       value={formData.lastName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, lastName: e.target.value }));
+                        if (validationErrors.lastName) setValidationErrors(prev => ({ ...prev, lastName: undefined }));
+                      }}
                       placeholder="Smith"
-                      className="h-12 rounded-xl"
+                      className={`h-12 rounded-xl ${validationErrors.lastName ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                       required
                     />
+                    {validationErrors.lastName && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.lastName}</p>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -1237,11 +1339,17 @@ const MedicareSupplementQuote = () => {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, email: e.target.value }));
+                      if (validationErrors.email) setValidationErrors(prev => ({ ...prev, email: undefined }));
+                    }}
                     placeholder="john@example.com"
-                    className="h-12 rounded-xl"
+                    className={`h-12 rounded-xl ${validationErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                     required
                   />
+                  {validationErrors.email && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="phone">Phone Number</Label>
@@ -1249,18 +1357,35 @@ const MedicareSupplementQuote = () => {
                     id="phone"
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={(e) => {
+                      const formatted = formatPhoneNumber(e.target.value);
+                      setFormData(prev => ({ ...prev, phone: formatted }));
+                      if (validationErrors.phone) setValidationErrors(prev => ({ ...prev, phone: undefined }));
+                    }}
                     placeholder="(555) 123-4567"
-                    className="h-12 rounded-xl"
+                    className={`h-12 rounded-xl ${validationErrors.phone ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                    maxLength={14}
                     required
                   />
+                  {validationErrors.phone && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
+                  )}
                 </div>
                 <Button
                   type="submit"
                   className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto rounded-xl"
-                  disabled={isSubmitting || !formData.firstName || !formData.lastName || !formData.email || !formData.phone}
+                  disabled={isSubmitting || isValidating || !formData.firstName || !formData.lastName || !formData.email || !formData.phone}
                 >
-                  {isSubmitting ? "Comparing Rates..." : "See My New Rate"}
+                  {isValidating ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Verifying your information...
+                    </>
+                  ) : isSubmitting ? (
+                    "Comparing Rates..."
+                  ) : (
+                    "See My New Rate"
+                  )}
                 </Button>
               </form>
 
