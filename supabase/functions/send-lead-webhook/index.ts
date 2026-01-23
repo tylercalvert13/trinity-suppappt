@@ -61,6 +61,9 @@ serve(async (req) => {
       annualSavings,
       savingsPercent: data.savingsPercent,
       
+      // Timezone (IANA format, e.g., "America/New_York")
+      timezone: data.timezone || null,
+      
       // Metadata
       timestamp: new Date().toISOString(),
       source: "Health Helpers Quote Funnel",
