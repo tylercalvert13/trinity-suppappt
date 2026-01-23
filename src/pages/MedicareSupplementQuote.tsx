@@ -570,6 +570,9 @@ const MedicareSupplementQuote = () => {
       setQuoteResult(data);
       await saveSubmission("success", undefined, data);
       
+      // Get user's timezone from browser (IANA format for GHL)
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
       // Send lead to GHL webhook
       await supabase.functions.invoke('send-lead-webhook', {
         body: {
@@ -583,6 +586,7 @@ const MedicareSupplementQuote = () => {
           visitorId,
           sessionId,
           page: 'suppquote',
+          timezone: userTimezone,
         }
       });
 
