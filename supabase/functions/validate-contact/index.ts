@@ -30,10 +30,10 @@ interface ValidationResponse {
   phone: PhoneValidationResult;
 }
 
-// Validate email using Abstract API
+// Validate email using Abstract Email Reputation API
 async function validateEmail(email: string, apiKey: string): Promise<EmailValidationResult> {
   try {
-    const url = `https://emailvalidation.abstractapi.com/v1/?api_key=${apiKey}&email=${encodeURIComponent(email)}`;
+    const url = `https://emailreputation.abstractapi.com/v1/?api_key=${apiKey}&email=${encodeURIComponent(email)}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -44,11 +44,10 @@ async function validateEmail(email: string, apiKey: string): Promise<EmailValida
     const data = await response.json();
     console.log("Email validation response:", JSON.stringify(data));
     
-    // Check if it's a valid, deliverable email
-    const isValidFormat = data.is_valid_format?.value === true;
-    const isDeliverable = data.deliverability === "DELIVERABLE";
-    const isDisposable = data.is_disposable_email?.value === true;
-    const isFreeEmail = data.is_free_email?.value === true; // Gmail, Yahoo, etc. - these are OK
+    // Parse Email Reputation API response structure
+    const isValidFormat = data.email?.valid === true;
+    const isDeliverable = data.email_deliverability?.status === "deliverable";
+    const isDisposable = data.email_quality?.is_disposable === true;
     
     // Email is valid if: format is correct AND deliverable AND not disposable
     const valid = isValidFormat && isDeliverable && !isDisposable;
@@ -65,7 +64,7 @@ async function validateEmail(email: string, apiKey: string): Promise<EmailValida
   }
 }
 
-// Validate phone using Abstract API
+// Validate phone using Abstract Phone Intelligence API
 async function validatePhone(phone: string, apiKey: string): Promise<PhoneValidationResult> {
   try {
     // Clean phone number - remove formatting
@@ -74,7 +73,7 @@ async function validatePhone(phone: string, apiKey: string): Promise<PhoneValida
     // Add US country code if not present
     const phoneWithCode = cleanPhone.length === 10 ? `1${cleanPhone}` : cleanPhone;
     
-    const url = `https://phonevalidation.abstractapi.com/v1/?api_key=${apiKey}&phone=${phoneWithCode}`;
+    const url = `https://phoneintelligence.abstractapi.com/v1/?api_key=${apiKey}&phone=${phoneWithCode}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -85,11 +84,11 @@ async function validatePhone(phone: string, apiKey: string): Promise<PhoneValida
     const data = await response.json();
     console.log("Phone validation response:", JSON.stringify(data));
     
-    // Check if it's a valid phone number
-    const isValid = data.valid === true;
-    const lineType = data.type || null; // mobile, landline, voip, etc.
-    const carrier = data.carrier || null;
-    const country = data.country?.code || null;
+    // Parse Phone Intelligence API response structure
+    const isValid = data.phone_validation?.is_valid === true;
+    const lineType = data.phone_carrier?.line_type || null;
+    const carrier = data.phone_carrier?.name || null;
+    const country = data.phone_location?.country_code || null;
     
     // Phone is valid if: API says valid AND it's a US number
     const valid = isValid && country === "US";
