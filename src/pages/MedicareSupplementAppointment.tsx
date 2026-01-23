@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Phone, Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Phone, Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 import { z } from 'zod';
@@ -90,6 +90,28 @@ interface QuoteResult {
 // Generate application reference number
 const generateApplicationNumber = (): string => {
   return `SM${Math.floor(10000 + Math.random() * 90000)}`;
+};
+
+// Download vCard contact for iOS/Android
+const downloadContactCard = () => {
+  const vcardString = `BEGIN:VCARD
+VERSION:3.0
+FN:Health Helpers
+ORG:Health Helpers
+TEL;TYPE=WORK,VOICE:+12014269898
+TEL;TYPE=WORK,VOICE:+12012988393
+NOTE:Medicare Supplement Quote Team - Save this contact so you know it's us calling!
+END:VCARD`;
+
+  const blob = new Blob([vcardString], { type: 'text/vcard' });
+  const downloadUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.download = 'Health-Helpers.vcf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(downloadUrl);
 };
 
 // Message type for time-based display
@@ -1139,9 +1161,17 @@ const MedicareSupplementAppointment = () => {
               </div>
 
               {/* Phone Number Reminder */}
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center space-y-3">
                 <p className="text-lg font-bold text-foreground">Our number: {PHONE_NUMBER}</p>
                 <p className="text-sm text-muted-foreground">(Save this number so you know it's us calling!)</p>
+                <Button 
+                  onClick={downloadContactCard}
+                  variant="outline"
+                  className="w-full sm:w-auto border-blue-500 text-blue-600 hover:bg-blue-50"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Save Our Number to Contacts
+                </Button>
               </div>
 
               {/* Trust Elements */}
@@ -1239,9 +1269,17 @@ const MedicareSupplementAppointment = () => {
               </div>
 
               {/* Phone Number Reminder */}
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center space-y-3">
                 <p className="text-lg font-bold text-foreground">Our number: {PHONE_NUMBER}</p>
                 <p className="text-sm text-muted-foreground">(Save this number so you know it's us calling!)</p>
+                <Button 
+                  onClick={downloadContactCard}
+                  variant="outline"
+                  className="w-full sm:w-auto border-blue-500 text-blue-600 hover:bg-blue-50"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Save Our Number to Contacts
+                </Button>
               </div>
 
               {/* Trust Elements */}
@@ -1339,9 +1377,17 @@ const MedicareSupplementAppointment = () => {
               </div>
 
               {/* Phone Number Reminder */}
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center space-y-3">
                 <p className="text-lg font-bold text-foreground">Our number: {PHONE_NUMBER}</p>
                 <p className="text-sm text-muted-foreground">(Save this number so you know it's us calling!)</p>
+                <Button 
+                  onClick={downloadContactCard}
+                  variant="outline"
+                  className="w-full sm:w-auto border-blue-500 text-blue-600 hover:bg-blue-50"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Save Our Number to Contacts
+                </Button>
               </div>
 
               {/* Trust Elements */}
