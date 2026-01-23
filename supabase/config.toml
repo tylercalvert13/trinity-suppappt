@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.schedule-callback]
 verify_jwt = false
+
+[functions.validate-contact]
+verify_jwt = false
