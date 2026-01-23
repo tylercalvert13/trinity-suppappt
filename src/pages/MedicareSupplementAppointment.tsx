@@ -1,0 +1,1181 @@
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Phone, Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
+import { z } from 'zod';
+
+// Outbound call number for this funnel
+const PHONE_NUMBER = "(201) 426-9898";
+const PHONE_TEL = "tel:+12014269898";
+
+// Contact form validation schema
+const contactSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(50, "First name is too long"),
+  lastName: z.string().min(1, "Last name is required").max(50, "Last name is too long"),
+  email: z.string().email("Please enter a valid email address").max(255, "Email is too long"),
+  phone: z.string()
+    .transform(val => val.replace(/\D/g, ''))
+    .refine(val => val.length === 10, "Phone must be 10 digits")
+    .refine(val => !val.startsWith('0') && !val.startsWith('1'), "Please enter a valid US phone number"),
+});
+
+// Format phone number for display as user types
+const formatPhoneNumber = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 0) return '';
+  if (digits.length <= 3) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+};
+
+interface ValidationErrors {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+}
+
+type FunnelStep = 
+  | "landing" 
+  | "plan" 
+  | "payment" 
+  | "care" 
+  | "treatment" 
+  | "medications"
+  | "gender"
+  | "tobacco"
+  | "spouse"
+  | "age"
+  | "zip"
+  | "contact"
+  | "loading"
+  | "qualified";
+
+type DisqualReason = "care" | "treatment" | "medications";
+
+interface FormData {
+  plan: string;
+  currentPayment: string;
+  careOrCondition: string;
+  recentTreatment: string;
+  medicationUse: string;
+  gender: string;
+  tobacco: string;
+  spouse: string;
+  age: string;
+  zipCode: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
+interface QuoteResult {
+  rate: number;
+  carrier: string;
+  amBestRating: string;
+  monthlySavings: number;
+  annualSavings: number;
+  savingsPercent: number;
+  cannotBeatRate?: boolean;
+  error?: string;
+}
+
+// Generate application reference number
+const generateApplicationNumber = (): string => {
+  return `SM${Math.floor(10000 + Math.random() * 90000)}`;
+};
+
+const MedicareSupplementAppointment = () => {
+  const navigate = useNavigate();
+  const [step, setStep] = useState<FunnelStep>("landing");
+  const [disqualReason, setDisqualReason] = useState<DisqualReason | null>(null);
+  const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [applicationNumber] = useState(() => generateApplicationNumber());
+  const [error, setError] = useState<string | null>(null);
+  const funnelRef = useRef<HTMLDivElement>(null);
+  
+  const [formData, setFormData] = useState<FormData>({
+    plan: '',
+    currentPayment: '',
+    careOrCondition: '',
+    recentTreatment: '',
+    medicationUse: '',
+    gender: '',
+    tobacco: '',
+    spouse: '',
+    age: '',
+    zipCode: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+  });
+
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [isValidating, setIsValidating] = useState(false);
+
+  const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt');
+
+  // SEO meta tags
+  useEffect(() => {
+    document.title = "Medicare Supplement Appointment | Health Helpers";
+    
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', 'Get a personalized Medicare Supplement quote and speak directly with a licensed agent.');
+    }
+
+    let robotsMeta = document.querySelector('meta[name="robots"]');
+    if (!robotsMeta) {
+      robotsMeta = document.createElement('meta');
+      robotsMeta.setAttribute('name', 'robots');
+      document.head.appendChild(robotsMeta);
+    }
+    robotsMeta.setAttribute('content', 'noindex, nofollow');
+
+    return () => {
+      document.title = "Medicare Self-Enrollment Online | Health Helpers";
+      if (metaDescription) {
+        metaDescription.setAttribute('content', 'Enroll in Medicare plans online by yourself. No phone calls, no meetings.');
+      }
+      if (robotsMeta) {
+        robotsMeta.setAttribute('content', 'index, follow');
+      }
+    };
+  }, []);
+
+  const scrollToFunnel = () => {
+    setStep("plan");
+    trackStepChange("plan");
+    setTimeout(() => {
+      funnelRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  const getProgress = (): number => {
+    const steps: FunnelStep[] = ["plan", "payment", "care", "treatment", "medications", "gender", "tobacco", "spouse", "age", "zip", "contact"];
+    const currentIndex = steps.indexOf(step);
+    if (currentIndex === -1) return 0;
+    return Math.round(((currentIndex + 1) / steps.length) * 100);
+  };
+
+  const getStepNumber = (): number => {
+    const steps: FunnelStep[] = ["plan", "payment", "care", "treatment", "medications", "gender", "tobacco", "spouse", "age", "zip", "contact"];
+    return steps.indexOf(step) + 1;
+  };
+
+  const handlePlanSelect = (plan: string) => {
+    setFormData(prev => ({ ...prev, plan }));
+    setStep("payment");
+    trackStepChange("payment", plan);
+  };
+
+  const handlePaymentSubmit = () => {
+    if (!formData.currentPayment || parseFloat(formData.currentPayment) <= 0) return;
+    setStep("care");
+    trackStepChange("care", formData.currentPayment);
+  };
+
+  const handleCareAnswer = (answer: string) => {
+    setFormData(prev => ({ ...prev, careOrCondition: answer }));
+    if (answer === "yes") {
+      setDisqualReason("care");
+      trackQualification("disqualified", "care_or_condition");
+      saveSubmission("disqualified", "care_or_condition");
+      navigate("/disqualified?reason=care");
+      return;
+    }
+    setStep("treatment");
+    trackStepChange("treatment", answer);
+  };
+
+  const handleTreatmentAnswer = (answer: string) => {
+    setFormData(prev => ({ ...prev, recentTreatment: answer }));
+    if (answer === "yes") {
+      setDisqualReason("treatment");
+      trackQualification("disqualified", "recent_treatment");
+      saveSubmission("disqualified", "recent_treatment");
+      navigate("/disqualified?reason=treatment");
+      return;
+    }
+    setStep("medications");
+    trackStepChange("medications", answer);
+  };
+
+  const handleMedicationsAnswer = (answer: string) => {
+    setFormData(prev => ({ ...prev, medicationUse: answer }));
+    if (answer === "yes") {
+      setDisqualReason("medications");
+      trackQualification("disqualified", "medication_use");
+      saveSubmission("disqualified", "medication_use");
+      navigate("/disqualified?reason=medications");
+      return;
+    }
+    setStep("gender");
+    trackStepChange("gender", answer);
+  };
+
+  const handleGenderSelect = (gender: string) => {
+    setFormData(prev => ({ ...prev, gender }));
+    setStep("tobacco");
+    trackStepChange("tobacco", gender);
+  };
+
+  const handleTobaccoAnswer = (answer: string) => {
+    setFormData(prev => ({ ...prev, tobacco: answer }));
+    setStep("spouse");
+    trackStepChange("spouse", answer);
+  };
+
+  const handleSpouseAnswer = (answer: string) => {
+    setFormData(prev => ({ ...prev, spouse: answer }));
+    setStep("age");
+    trackStepChange("age", answer);
+  };
+
+  const handleAgeSubmit = () => {
+    const age = parseInt(formData.age);
+    if (isNaN(age) || age < 65 || age > 120) return;
+    setStep("zip");
+    trackStepChange("zip", formData.age);
+  };
+
+  const handleZipSubmit = () => {
+    if (!/^\d{5}$/.test(formData.zipCode)) return;
+    setStep("contact");
+    trackStepChange("contact", formData.zipCode);
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidationErrors({});
+    setError(null);
+    
+    // Step 1: Client-side Zod validation
+    const validationResult = contactSchema.safeParse({
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone,
+    });
+
+    if (!validationResult.success) {
+      const errors: ValidationErrors = {};
+      validationResult.error.errors.forEach((err) => {
+        const field = err.path[0] as keyof ValidationErrors;
+        errors[field] = err.message;
+      });
+      setValidationErrors(errors);
+      return;
+    }
+
+    // Step 2: Server-side API validation
+    setIsValidating(true);
+    
+    try {
+      const { data: validationData, error: validationError } = await supabase.functions.invoke('validate-contact', {
+        body: {
+          email: formData.email.trim(),
+          phone: formData.phone.replace(/\D/g, ''),
+        }
+      });
+
+      if (validationError) {
+        console.error("Validation API error:", validationError);
+        // Continue anyway - fail open
+      } else if (validationData && !validationData.valid) {
+        // Check which field failed
+        const errors: ValidationErrors = {};
+        if (!validationData.email?.valid) {
+          if (validationData.email?.disposable) {
+            errors.email = "Please use a permanent email address (no temporary emails)";
+          } else {
+            errors.email = "We couldn't verify this email. Please check it and try again.";
+          }
+        }
+        if (!validationData.phone?.valid) {
+          errors.phone = "This phone number doesn't appear to be valid. Please double-check it.";
+        }
+        
+        if (Object.keys(errors).length > 0) {
+          setValidationErrors(errors);
+          setIsValidating(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("Validation error:", err);
+      // Continue anyway - fail open
+    }
+
+    setIsValidating(false);
+    setStep("loading");
+    setIsSubmitting(true);
+    trackStepChange("loading");
+
+    try {
+      // Get quote from CSG API
+      const { data, error: quoteError } = await supabase.functions.invoke('get-medicare-quote', {
+        body: {
+          plan: formData.plan,
+          currentPayment: parseFloat(formData.currentPayment),
+          gender: formData.gender,
+          tobacco: formData.tobacco,
+          spouse: formData.spouse,
+          age: parseInt(formData.age),
+          zipCode: formData.zipCode,
+        }
+      });
+
+      if (quoteError) {
+        console.error("Quote error:", quoteError);
+        setError("Unable to retrieve quotes. Please try again or call us directly.");
+        setStep("contact");
+        return;
+      }
+
+      if (data?.cannotBeatRate) {
+        await saveSubmission("knockout");
+        navigate("/great-rate");
+        return;
+      }
+
+      if (data?.error) {
+        setError(data.error);
+        setStep("contact");
+        return;
+      }
+
+      // Success - we have a quote
+      setQuoteResult(data);
+      await saveSubmission("success", undefined, data);
+      
+      // Send lead to GHL webhook
+      await supabase.functions.invoke('send-lead-webhook', {
+        body: {
+          ...formData,
+          currentPayment: parseFloat(formData.currentPayment),
+          age: parseInt(formData.age),
+          quotedRate: data.rate,
+          quotedCarrier: data.carrier,
+          amBestRating: data.amBestRating,
+          savingsPercent: data.savingsPercent,
+          visitorId,
+          sessionId,
+          page: 'suppappt',
+        }
+      });
+
+      // Track qualification (no Facebook/Taboola tracking per requirements)
+      trackQualification("qualified");
+      
+      setStep("qualified");
+
+    } catch (err) {
+      console.error("Error getting quote:", err);
+      setError("An error occurred. Please try again or call us directly.");
+      setStep("contact");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const saveSubmission = async (
+    submissionType: "success" | "disqualified" | "knockout",
+    disqualificationReason?: string,
+    quoteData?: QuoteResult
+  ) => {
+    try {
+      await supabase.from('submissions').insert([{
+        visitor_id: visitorId,
+        session_id: sessionId,
+        plan: formData.plan,
+        current_payment: formData.currentPayment ? parseFloat(formData.currentPayment) : null,
+        care_or_condition: formData.careOrCondition,
+        recent_treatment: formData.recentTreatment,
+        medication_use: formData.medicationUse,
+        gender: formData.gender,
+        tobacco: formData.tobacco,
+        spouse: formData.spouse,
+        age: formData.age ? parseInt(formData.age) : null,
+        zip_code: formData.zipCode,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        submission_type: submissionType,
+        disqualification_reason: disqualificationReason || null,
+        quoted_rate: quoteData?.rate || null,
+        quoted_carrier: quoteData?.carrier || null,
+        am_best_rating: quoteData?.amBestRating || null,
+        monthly_savings: quoteData?.monthlySavings || null,
+        annual_savings: quoteData?.annualSavings || null,
+        page: 'suppappt',
+      }]);
+    } catch (error) {
+      console.error("Error saving submission:", error);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white py-8 md:py-12">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          {/* Breaking News Badge */}
+          <div className="inline-flex items-center bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold mb-6 animate-pulse">
+            <span className="mr-2">🚨</span>
+            EXPOSED: Medicare Supplement "Rate Trap"
+          </div>
+
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+            Seniors on Plan G, F, or N Are Overpaying by $100-200/Month
+          </h1>
+          
+          <p className="text-lg md:text-xl text-blue-100 mb-4 max-w-2xl mx-auto">
+            Your benefits are <span className="font-bold text-white">federally standardized</span> — the only difference is the price.
+          </p>
+          
+          <p className="text-base text-blue-200 mb-8 max-w-xl mx-auto">
+            See your personalized rate in under 2 minutes. No obligation. No pressure.
+          </p>
+
+          {step === "landing" && (
+            <>
+              <Button
+                onClick={scrollToFunnel}
+                size="lg"
+                className="bg-green-500 hover:bg-green-600 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
+              >
+                Check If You Qualify
+              </Button>
+              <div className="mt-6 text-sm text-blue-200">
+                <span>By continuing, you agree to our </span>
+                <Link to="/privacy-policy" className="underline hover:text-white">Privacy Policy</Link>
+                <span> and </span>
+                <Link to="/terms-of-service" className="underline hover:text-white">Terms of Service</Link>
+              </div>
+            </>
+          )}
+
+          {/* Trust Badges */}
+          <div className="flex flex-wrap justify-center gap-6 mt-8">
+            <div className="flex items-center gap-2 text-blue-100">
+              <Shield className="h-5 w-5" />
+              <span className="text-sm">US Based Licensed Agents</span>
+            </div>
+            <div className="flex items-center gap-2 text-blue-100">
+              <Users className="h-5 w-5" />
+              <span className="text-sm">10,000+ Seniors Helped</span>
+            </div>
+            <div className="flex items-center gap-2 text-blue-100">
+              <FileCheck className="h-5 w-5" />
+              <span className="text-sm">100% Free Service</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Funnel Section */}
+      <section ref={funnelRef} className="py-8 md:py-12 bg-gray-50">
+        <div className="max-w-2xl mx-auto px-4">
+          
+          {/* Plan Selection */}
+          {step === "plan" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
+                </div>
+                <Progress value={getProgress()} className="h-2" />
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                Which Medicare Supplement plan are you paying for today?
+              </h2>
+
+              <RadioGroup className="space-y-4">
+                {["Plan G", "Plan N", "Plan F"].map((plan) => (
+                  <div
+                    key={plan}
+                    onClick={() => handlePlanSelect(plan)}
+                    className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                  >
+                    <RadioGroupItem value={plan} id={`plan-${plan}`} className="h-6 w-6" />
+                    <Label htmlFor={`plan-${plan}`} className="text-lg cursor-pointer flex-1">{plan}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Payment Input */}
+          {step === "payment" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
+                </div>
+                <Progress value={getProgress()} className="h-2" />
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                How much does your insurance company charge you each month?
+              </h2>
+
+              <div className="space-y-4">
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-muted-foreground">$</span>
+                  <Input
+                    type="number"
+                    value={formData.currentPayment}
+                    onChange={(e) => setFormData(prev => ({ ...prev, currentPayment: e.target.value }))}
+                    placeholder="0.00"
+                    className="pl-10 text-2xl h-16 rounded-xl"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <Button
+                  onClick={handlePaymentSubmit}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 h-auto rounded-xl"
+                  disabled={!formData.currentPayment || parseFloat(formData.currentPayment) <= 0}
+                >
+                  Continue
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Care/Condition Question */}
+          {step === "care" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
+                </div>
+                <Progress value={getProgress()} className="h-2" />
+              </div>
+
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                Quick Health Check
+              </h2>
+              <p className="text-lg md:text-xl text-muted-foreground mb-6">
+                Do any of these apply to you?
+              </p>
+              
+              <ul className="text-foreground mb-8 space-y-3">
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Nursing home or assisted living</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Need daily help with personal care</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Dementia or Alzheimer's</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Use oxygen at home</span>
+                </li>
+              </ul>
+
+              <RadioGroup className="space-y-4">
+                <div
+                  onClick={() => handleCareAnswer("yes")}
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="yes" id="care-yes" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="care-yes" className="text-xl md:text-2xl cursor-pointer flex-1">Yes</Label>
+                </div>
+                <div
+                  onClick={() => handleCareAnswer("no")}
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="no" id="care-no" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="care-no" className="text-xl md:text-2xl cursor-pointer flex-1">No</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Recent Treatment Question */}
+          {step === "treatment" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
+                </div>
+                <Progress value={getProgress()} className="h-2" />
+              </div>
+
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                Recent Medical History
+              </h2>
+              <p className="text-lg md:text-xl text-muted-foreground mb-6">
+                In the last 2 years, have you had:
+              </p>
+              
+              <ul className="text-foreground mb-8 space-y-3">
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Cancer, heart attack, or stroke</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Kidney dialysis or organ transplant</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>ALS, Parkinson's, or MS</span>
+                </li>
+              </ul>
+
+              <RadioGroup className="space-y-4">
+                <div
+                  onClick={() => handleTreatmentAnswer("yes")}
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="yes" id="treatment-yes" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="treatment-yes" className="text-xl md:text-2xl cursor-pointer flex-1">Yes</Label>
+                </div>
+                <div
+                  onClick={() => handleTreatmentAnswer("no")}
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="no" id="treatment-no" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="treatment-no" className="text-xl md:text-2xl cursor-pointer flex-1">No</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Medications Question */}
+          {step === "medications" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
+                </div>
+                <Progress value={getProgress()} className="h-2" />
+              </div>
+
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                Current Medications
+              </h2>
+              <p className="text-lg md:text-xl text-muted-foreground mb-6">
+                Do any of these apply to you?
+              </p>
+              
+              <ul className="text-foreground mb-8 space-y-3">
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Use insulin</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Take 3+ diabetes medications</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Daily prescription pain medicine (opioids)</span>
+                </li>
+              </ul>
+
+              <RadioGroup className="space-y-4">
+                <div
+                  onClick={() => handleMedicationsAnswer("yes")}
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="yes" id="meds-yes" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="meds-yes" className="text-xl md:text-2xl cursor-pointer flex-1">Yes</Label>
+                </div>
+                <div
+                  onClick={() => handleMedicationsAnswer("no")}
+                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="no" id="meds-no" className="h-7 w-7 md:h-8 md:w-8" />
+                  <Label htmlFor="meds-no" className="text-xl md:text-2xl cursor-pointer flex-1">No</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Gender Question */}
+          {step === "gender" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
+                </div>
+                <Progress value={getProgress()} className="h-2" />
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                What is your gender?
+              </h2>
+
+              <RadioGroup className="space-y-4">
+                <div
+                  onClick={() => handleGenderSelect("male")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="male" id="gender-male" className="h-6 w-6" />
+                  <Label htmlFor="gender-male" className="text-lg cursor-pointer flex-1">Male</Label>
+                </div>
+                <div
+                  onClick={() => handleGenderSelect("female")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="female" id="gender-female" className="h-6 w-6" />
+                  <Label htmlFor="gender-female" className="text-lg cursor-pointer flex-1">Female</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Tobacco Question */}
+          {step === "tobacco" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
+                </div>
+                <Progress value={getProgress()} className="h-2" />
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                Have you used tobacco products in the last 12 months?
+              </h2>
+
+              <RadioGroup className="space-y-4">
+                <div
+                  onClick={() => handleTobaccoAnswer("yes")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="yes" id="tobacco-yes" className="h-6 w-6" />
+                  <Label htmlFor="tobacco-yes" className="text-lg cursor-pointer flex-1">Yes</Label>
+                </div>
+                <div
+                  onClick={() => handleTobaccoAnswer("no")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="no" id="tobacco-no" className="h-6 w-6" />
+                  <Label htmlFor="tobacco-no" className="text-lg cursor-pointer flex-1">No</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Spouse Question */}
+          {step === "spouse" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
+                </div>
+                <Progress value={getProgress()} className="h-2" />
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                Do you have a spouse or domestic partner?
+              </h2>
+              
+              <p className="text-muted-foreground mb-6 text-sm">
+                Some carriers offer household discounts when both partners have coverage.
+              </p>
+
+              <RadioGroup className="space-y-4">
+                <div
+                  onClick={() => handleSpouseAnswer("yes")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="yes" id="spouse-yes" className="h-6 w-6" />
+                  <Label htmlFor="spouse-yes" className="text-lg cursor-pointer flex-1">Yes</Label>
+                </div>
+                <div
+                  onClick={() => handleSpouseAnswer("no")}
+                  className="flex items-center space-x-4 p-4 md:p-5 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                >
+                  <RadioGroupItem value="no" id="spouse-no" className="h-6 w-6" />
+                  <Label htmlFor="spouse-no" className="text-lg cursor-pointer flex-1">No</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Age Input */}
+          {step === "age" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
+                </div>
+                <Progress value={getProgress()} className="h-2" />
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                What is your current age?
+              </h2>
+
+              <div className="space-y-4">
+                <Input
+                  type="number"
+                  value={formData.age}
+                  onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
+                  placeholder="Enter your age"
+                  className="text-2xl h-16 rounded-xl text-center"
+                  min="65"
+                  max="120"
+                />
+                <Button
+                  onClick={handleAgeSubmit}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 h-auto rounded-xl"
+                  disabled={!formData.age || parseInt(formData.age) < 65}
+                >
+                  Continue
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* ZIP Code Input */}
+          {step === "zip" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
+                </div>
+                <Progress value={getProgress()} className="h-2" />
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                What is your ZIP code?
+              </h2>
+
+              <div className="space-y-4">
+                <Input
+                  type="text"
+                  value={formData.zipCode}
+                  onChange={(e) => setFormData(prev => ({ ...prev, zipCode: e.target.value.replace(/\D/g, '').slice(0, 5) }))}
+                  placeholder="12345"
+                  className="text-2xl h-16 rounded-xl text-center"
+                  maxLength={5}
+                />
+                <Button
+                  onClick={handleZipSubmit}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 h-auto rounded-xl"
+                  disabled={!/^\d{5}$/.test(formData.zipCode)}
+                >
+                  Continue
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Contact Form */}
+          {step === "contact" && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
+                </div>
+                <Progress value={getProgress()} className="h-2" />
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
+                Final Step: Enter Your Details to See Your New Rate
+              </h2>
+              <p className="text-muted-foreground mb-6 text-sm">
+                Your information is 100% secure and will never be sold.
+              </p>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-red-800">{error}</p>
+                    <a href={PHONE_TEL} className="text-red-600 hover:underline font-medium">
+                      Call {PHONE_NUMBER} for immediate assistance
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleContactSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      value={formData.firstName}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, firstName: e.target.value }));
+                        if (validationErrors.firstName) setValidationErrors(prev => ({ ...prev, firstName: undefined }));
+                      }}
+                      placeholder="John"
+                      className={`h-12 rounded-xl ${validationErrors.firstName ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                      required
+                    />
+                    {validationErrors.firstName && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.firstName}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, lastName: e.target.value }));
+                        if (validationErrors.lastName) setValidationErrors(prev => ({ ...prev, lastName: undefined }));
+                      }}
+                      placeholder="Smith"
+                      className={`h-12 rounded-xl ${validationErrors.lastName ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                      required
+                    />
+                    {validationErrors.lastName && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.lastName}</p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, email: e.target.value }));
+                      if (validationErrors.email) setValidationErrors(prev => ({ ...prev, email: undefined }));
+                    }}
+                    placeholder="john@example.com"
+                    className={`h-12 rounded-xl ${validationErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                    required
+                  />
+                  {validationErrors.email && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => {
+                      const formatted = formatPhoneNumber(e.target.value);
+                      setFormData(prev => ({ ...prev, phone: formatted }));
+                      if (validationErrors.phone) setValidationErrors(prev => ({ ...prev, phone: undefined }));
+                    }}
+                    placeholder="(555) 123-4567"
+                    className={`h-12 rounded-xl ${validationErrors.phone ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                    maxLength={14}
+                    required
+                  />
+                  {validationErrors.phone && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
+                  )}
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto rounded-xl"
+                  disabled={isSubmitting || isValidating || !formData.firstName || !formData.lastName || !formData.email || !formData.phone}
+                >
+                  {isValidating ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Verifying your information...
+                    </>
+                  ) : isSubmitting ? (
+                    "Comparing Rates..."
+                  ) : (
+                    "See My New Rate"
+                  )}
+                </Button>
+              </form>
+
+              <p className="text-xs text-muted-foreground text-center mt-4 leading-relaxed">
+                By clicking "See My New Rate," I consent to receive calls, text messages, and emails 
+                from Health Helpers and its partners regarding my Medicare inquiry. I understand these 
+                communications may be made using automated telephone dialing systems, artificial intelligence, 
+                and/or prerecorded messages. Message frequency varies. Message and data rates may apply. 
+                I can opt out at any time by texting STOP or calling directly. This consent is not required 
+                to receive a quote. I agree to the{' '}
+                <Link to="/terms-of-service" className="underline hover:text-foreground">Terms of Service</Link>
+                {' '}and{' '}
+                <Link to="/privacy-policy" className="underline hover:text-foreground">Privacy Policy</Link>.
+              </p>
+            </div>
+          )}
+
+          {/* Loading Screen */}
+          {step === "loading" && (
+            <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border text-center">
+              <div className="mb-6">
+                <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              </div>
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
+                Finding your best rate...
+              </h2>
+              <p className="text-muted-foreground">Comparing quotes from top carriers</p>
+            </div>
+          )}
+
+          {/* Qualified/Results Screen - "Answer Your Phone Now" Version */}
+          {step === "qualified" && quoteResult && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border space-y-6">
+              
+              {/* Header Section */}
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="h-10 w-10 text-green-600" />
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                  Great News, {formData.firstName}!
+                </h1>
+                <p className="text-xl md:text-2xl font-semibold text-green-600 mb-2">
+                  You Qualify for {formData.plan} at ${quoteResult.rate.toFixed(2)}/month
+                </p>
+                <p className="text-lg text-foreground font-medium">
+                  That's <span className="text-green-600 font-bold">${quoteResult.monthlySavings.toFixed(2)} LESS</span> than what you're paying now
+                </p>
+                <p className="text-muted-foreground mt-1">
+                  You'll save <span className="font-semibold text-foreground">${quoteResult.annualSavings.toFixed(2)}</span> every year
+                </p>
+              </div>
+
+              {/* Main Call-to-Action Section */}
+              <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-6 text-center">
+                <div className="mb-4">
+                  <Phone className="h-16 w-16 text-blue-600 mx-auto animate-pulse" />
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                  ANSWER YOUR PHONE NOW!
+                </h2>
+                <p className="text-lg text-foreground mb-2">
+                  We're calling you from:
+                </p>
+                <p className="text-3xl md:text-4xl font-bold text-blue-600 mb-4">
+                  {PHONE_NUMBER}
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  Your phone will ring in the next 30 seconds
+                </p>
+              </div>
+
+              {/* Explanation Section */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h3 className="font-bold text-foreground mb-4 text-lg">What happens next:</h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-foreground">A licensed agent will call you from <strong>{PHONE_NUMBER}</strong></span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-foreground">They'll confirm your <strong>${quoteResult.rate.toFixed(2)}/month</strong> rate</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-foreground">Answer any questions you have</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-foreground">Schedule a time to complete the switch (if you want to proceed)</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Trust Elements */}
+              <div className="bg-white rounded-xl p-4 border">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="flex flex-col items-center">
+                    <Shield className="h-6 w-6 text-blue-600 mb-1" />
+                    <span className="text-xs text-muted-foreground">US Based Agents</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <Users className="h-6 w-6 text-blue-600 mb-1" />
+                    <span className="text-xs text-muted-foreground">No Obligation</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <FileCheck className="h-6 w-6 text-blue-600 mb-1" />
+                    <span className="text-xs text-muted-foreground">100% Free</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Disclaimer */}
+              <p className="text-xs text-muted-foreground text-center">
+                This is a free rate comparison service. Quoted rates are estimates and subject to underwriting approval.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Spacer */}
+      <div className="h-[50vh]"></div>
+
+      {/* Footer */}
+      <footer className="py-8 md:py-12 bg-gray-50">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="text-center text-xs text-muted-foreground space-y-4">
+            <p>
+              This is a free rate comparison service. We do not charge fees. By calling, you consent to speak with a licensed insurance agent about Medicare Supplement insurance.
+            </p>
+            <p>
+              Health Helpers is not connected with or endorsed by the U.S. government or the federal Medicare program. Medicare Supplement insurance is sold by private insurance companies.
+            </p>
+            <p>
+              Quoted rates are estimates based on the information provided. Actual rates may vary based on underwriting approval and other factors.
+            </p>
+            <div className="pt-4 border-t flex flex-col items-center gap-2">
+              <div className="flex items-center gap-4">
+                <Link to="/privacy-policy" className="hover:underline">Privacy Policy</Link>
+                <span>•</span>
+                <Link to="/terms-of-service" className="hover:underline">Terms of Service</Link>
+              </div>
+              <p>© {new Date().getFullYear()} Health Helpers. All rights reserved.</p>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Sticky Footer (Mobile - Qualified Only) */}
+      {step === "qualified" && quoteResult && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-blue-600 border-t shadow-lg md:hidden">
+          <div className="text-center text-white">
+            <p className="font-bold">Answer {PHONE_NUMBER}</p>
+            <p className="text-sm opacity-90">We're calling you now!</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MedicareSupplementAppointment;
