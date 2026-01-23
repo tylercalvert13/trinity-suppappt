@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.send-lead-webhook]
 verify_jwt = false
 
+[functions.send-lead-webhook-suppappt]
+verify_jwt = false
+
 [functions.schedule-callback]
 verify_jwt = false
 
