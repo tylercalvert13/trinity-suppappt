@@ -359,8 +359,8 @@ const MedicareSupplementAppointment = () => {
       setQuoteResult(data);
       await saveSubmission("success", undefined, data);
       
-      // Send lead to GHL webhook
-      await supabase.functions.invoke('send-lead-webhook', {
+      // Send lead to GHL webhook (suppappt-specific)
+      await supabase.functions.invoke('send-lead-webhook-suppappt', {
         body: {
           ...formData,
           currentPayment: parseFloat(formData.currentPayment),
