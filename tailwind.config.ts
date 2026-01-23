@@ -105,13 +105,18 @@ export default {
 					'0%, 100%': { transform: 'rotate(0deg) scale(1)' },
 					'10%, 30%, 50%, 70%, 90%': { transform: 'rotate(-8deg) scale(1.1)' },
 					'20%, 40%, 60%, 80%': { transform: 'rotate(8deg) scale(1.1)' }
+				},
+				'gentle-pulse': {
+					'0%, 100%': { transform: 'scale(1)', opacity: '1' },
+					'50%': { transform: 'scale(1.05)', opacity: '0.85' }
 				}
 			},
-			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'ring-phone': 'ring-phone 1.5s ease-in-out infinite'
-			}
+		animation: {
+			'accordion-down': 'accordion-down 0.2s ease-out',
+			'accordion-up': 'accordion-up 0.2s ease-out',
+			'ring-phone': 'ring-phone 1.5s ease-in-out infinite',
+			'gentle-pulse': 'gentle-pulse 2s ease-in-out infinite'
+		}
 		}
 	},
 	plugins: [require("tailwindcss-animate")],

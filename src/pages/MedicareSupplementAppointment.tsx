@@ -92,6 +92,45 @@ const generateApplicationNumber = (): string => {
   return `SM${Math.floor(10000 + Math.random() * 90000)}`;
 };
 
+// Message type for time-based display
+type MessageType = 'answer-now' | 'tomorrow-morning' | 'monday-morning';
+
+// Determine which message to show based on user's local day/time
+const getMessageType = (): MessageType => {
+  try {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+    const currentHour = now.getHours(); // 0-23 in local timezone
+
+    // Sunday - always show "Monday morning" message
+    if (currentDay === 0) {
+      return 'monday-morning';
+    }
+
+    // Monday through Saturday
+    if (currentDay >= 1 && currentDay <= 6) {
+      // Between 8 AM and 9 PM - show "answer now" message
+      if (currentHour >= 8 && currentHour < 21) {
+        return 'answer-now';
+      }
+      
+      // Saturday after 9 PM - show "Monday morning" message
+      if (currentDay === 6 && currentHour >= 21) {
+        return 'monday-morning';
+      }
+      
+      // Before 8 AM or after 9 PM (Mon-Fri) - show "tomorrow morning"
+      return 'tomorrow-morning';
+    }
+
+    // Fallback (should never hit)
+    return 'tomorrow-morning';
+  } catch {
+    // Fallback if anything fails
+    return 'tomorrow-morning';
+  }
+};
+
 const MedicareSupplementAppointment = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<FunnelStep>("landing");
@@ -1049,10 +1088,9 @@ const MedicareSupplementAppointment = () => {
             </div>
           )}
 
-          {/* Qualified/Results Screen - "Answer Your Phone Now" Version */}
-          {step === "qualified" && quoteResult && (
+          {/* Qualified/Results Screen - MESSAGE 1: "Answer Your Phone Now" (Business Hours) */}
+          {step === "qualified" && quoteResult && getMessageType() === 'answer-now' && (
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border space-y-6">
-              
               {/* Header Section */}
               <div className="text-center">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1065,85 +1103,273 @@ const MedicareSupplementAppointment = () => {
                   You Qualify for {formData.plan} at ${quoteResult.rate.toFixed(2)}/month
                 </p>
                 <p className="text-lg text-foreground font-medium">
-                  That's <span className="text-green-600 font-bold">${quoteResult.monthlySavings.toFixed(2)} LESS</span> than what you're paying now
-                </p>
-                <p className="text-muted-foreground mt-1">
-                  You'll save <span className="font-semibold text-foreground">${quoteResult.annualSavings.toFixed(2)}</span> every year
+                  That's <span className="text-green-600 font-bold">${quoteResult.monthlySavings.toFixed(2)} LESS</span> than what you're paying now!
                 </p>
               </div>
 
-        {/* Main Call-to-Action Section */}
-        <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-6 text-center">
-          <div className="mb-4">
-            <Phone className="h-16 w-16 text-blue-600 mx-auto animate-ring-phone" />
-          </div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-orange-600 mb-3">
-            ANSWER YOUR PHONE NOW!
-          </h2>
-          <p className="text-lg text-foreground mb-2">
-            We're calling you from:
-          </p>
-          <p className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">
-            {PHONE_NUMBER}
-          </p>
-          <p className="text-sm text-blue-700 mb-4">
-            Save this number - it's us calling!
-          </p>
-          <p className="text-foreground font-semibold text-base">
-            Your phone will ring in the next 30 seconds
-          </p>
-        </div>
+              {/* Urgent Call-to-Action */}
+              <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-6 text-center">
+                <div className="mb-4">
+                  <Phone className="h-16 w-16 text-blue-600 mx-auto animate-ring-phone" />
+                </div>
+                <h2 className="text-3xl md:text-4xl font-extrabold text-orange-600 mb-3">
+                  ANSWER YOUR PHONE NOW!
+                </h2>
+                <p className="text-lg text-foreground mb-2">
+                  We're calling you from:
+                </p>
+                <p className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">
+                  {PHONE_NUMBER}
+                </p>
+                <p className="text-foreground font-semibold text-base">
+                  Your phone will ring in the next 30 seconds.
+                </p>
+              </div>
 
-        {/* Explanation Section */}
-        <div className="bg-gray-50 rounded-xl p-6">
-          <h3 className="font-bold text-foreground mb-4 text-lg">What happens next:</h3>
-          <ul className="space-y-3">
-            <li className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <span className="text-foreground">We'll call you from <strong>{PHONE_NUMBER}</strong></span>
-            </li>
-            <li className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <span className="text-foreground">We'll confirm your <strong>${quoteResult.rate.toFixed(2)}/month</strong> rate</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <span className="text-foreground">Answer any questions you have about your rate</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <span className="text-foreground">Connect you with a licensed agent to complete the switch (if you'd like to proceed)</span>
-            </li>
-          </ul>
-        </div>
+              {/* What Happens Next */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h3 className="font-bold text-foreground mb-4 text-lg">What happens next:</h3>
+                <ol className="space-y-3 list-decimal list-inside text-foreground">
+                  <li>Your phone rings in 30 seconds</li>
+                  <li>Sarah answers your questions</li>
+                  <li>We'll book you a quick consultation with a licensed agent</li>
+                  <li>You'll get confirmation via text</li>
+                </ol>
+                <p className="mt-4 font-semibold text-foreground">Ready? Keep your phone handy!</p>
+              </div>
 
-        {/* Missed the Call Section */}
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-            <Phone className="h-4 w-4 text-amber-600" />
-            Missed the call?
-          </h3>
-          <p className="text-sm text-foreground">
-            If you missed our call, we'll text you immediately so you can call us back or schedule a time that works better.
-          </p>
-        </div>
+              {/* Phone Number Reminder */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                <p className="text-lg font-bold text-foreground">Our number: {PHONE_NUMBER}</p>
+                <p className="text-sm text-muted-foreground">(Save this number so you know it's us calling!)</p>
+              </div>
 
               {/* Trust Elements */}
               <div className="bg-white rounded-xl p-4 border">
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div className="flex flex-col items-center">
-                    <Shield className="h-6 w-6 text-blue-600 mb-1" />
-                    <span className="text-xs text-muted-foreground">US Based Agents</span>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>Licensed Medicare agents</span>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <Users className="h-6 w-6 text-blue-600 mb-1" />
-                    <span className="text-xs text-muted-foreground">No Obligation</span>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>No obligation consultation</span>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <FileCheck className="h-6 w-6 text-blue-600 mb-1" />
-                    <span className="text-xs text-muted-foreground">100% Free</span>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>Same coverage, lower price</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>Free comparison of all carriers</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Questions Footer */}
+              <div className="text-center text-muted-foreground text-sm">
+                <p>Questions? Text us at {PHONE_NUMBER}</p>
+                <p>We're here to help!</p>
+              </div>
+
+              {/* Disclaimer */}
+              <p className="text-xs text-muted-foreground text-center">
+                This is a free rate comparison service. Quoted rates are estimates and subject to underwriting approval.
+              </p>
+            </div>
+          )}
+
+          {/* Qualified/Results Screen - MESSAGE 2: "Tomorrow Morning" (After Hours Mon-Fri) */}
+          {step === "qualified" && quoteResult && getMessageType() === 'tomorrow-morning' && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border space-y-6">
+              {/* Header Section */}
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="h-10 w-10 text-green-600" />
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                  Great News, {formData.firstName}!
+                </h1>
+                <p className="text-xl md:text-2xl font-semibold text-green-600 mb-2">
+                  You Qualify for {formData.plan} at ${quoteResult.rate.toFixed(2)}/month
+                </p>
+                <p className="text-lg text-foreground font-medium">
+                  That's <span className="text-green-600 font-bold">${quoteResult.monthlySavings.toFixed(2)} LESS</span> than what you're paying now!
+                </p>
+              </div>
+
+              {/* Scheduled Call CTA */}
+              <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-6 text-center">
+                <div className="mb-4">
+                  <Phone className="h-16 w-16 text-blue-600 mx-auto animate-gentle-pulse" />
+                </div>
+                <h2 className="text-2xl md:text-3xl font-extrabold text-blue-700 mb-3">
+                  WE'LL CALL YOU TOMORROW MORNING!
+                </h2>
+                <p className="text-lg text-foreground mb-2">
+                  We're calling from:
+                </p>
+                <p className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">
+                  {PHONE_NUMBER}
+                </p>
+                <p className="text-foreground font-medium text-base">
+                  Watch for our call around 8:00 AM your time
+                </p>
+              </div>
+
+              {/* Saved Quote Message */}
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                <p className="text-foreground font-semibold">We saved your quote!</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  We're outside our calling hours right now, but we'll reach out first thing tomorrow morning to discuss your savings and answer any questions you have.
+                </p>
+              </div>
+
+              {/* What Happens Next */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h3 className="font-bold text-foreground mb-4 text-lg">What happens next:</h3>
+                <ol className="space-y-3 list-decimal list-inside text-foreground">
+                  <li>We'll call you tomorrow around 8 AM your time</li>
+                  <li>Sarah will answer your questions</li>
+                  <li>We'll book you a consultation with a licensed agent</li>
+                  <li>You'll get confirmation via text</li>
+                </ol>
+                <p className="mt-4 font-semibold text-foreground">Watch for our call tomorrow morning!</p>
+              </div>
+
+              {/* Phone Number Reminder */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                <p className="text-lg font-bold text-foreground">Our number: {PHONE_NUMBER}</p>
+                <p className="text-sm text-muted-foreground">(Save this number so you know it's us calling!)</p>
+              </div>
+
+              {/* Trust Elements */}
+              <div className="bg-white rounded-xl p-4 border">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>Licensed Medicare agents</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>No obligation consultation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>Same coverage, lower price</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>Free comparison of all carriers</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Questions Footer */}
+              <div className="text-center text-muted-foreground text-sm">
+                <p>Questions? Text us at {PHONE_NUMBER}</p>
+                <p>We're here to help!</p>
+              </div>
+
+              {/* Disclaimer */}
+              <p className="text-xs text-muted-foreground text-center">
+                This is a free rate comparison service. Quoted rates are estimates and subject to underwriting approval.
+              </p>
+            </div>
+          )}
+
+          {/* Qualified/Results Screen - MESSAGE 3: "Monday Morning" (Sunday or Saturday after 9 PM) */}
+          {step === "qualified" && quoteResult && getMessageType() === 'monday-morning' && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border space-y-6">
+              {/* Header Section */}
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="h-10 w-10 text-green-600" />
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                  Great News, {formData.firstName}!
+                </h1>
+                <p className="text-xl md:text-2xl font-semibold text-green-600 mb-2">
+                  You Qualify for {formData.plan} at ${quoteResult.rate.toFixed(2)}/month
+                </p>
+                <p className="text-lg text-foreground font-medium">
+                  That's <span className="text-green-600 font-bold">${quoteResult.monthlySavings.toFixed(2)} LESS</span> than what you're paying now!
+                </p>
+              </div>
+
+              {/* Monday Call CTA */}
+              <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-6 text-center">
+                <div className="mb-4">
+                  <Phone className="h-16 w-16 text-blue-600 mx-auto animate-gentle-pulse" />
+                </div>
+                <h2 className="text-2xl md:text-3xl font-extrabold text-blue-700 mb-3">
+                  WE'LL CALL YOU MONDAY MORNING!
+                </h2>
+                <p className="text-lg text-foreground mb-2">
+                  We're calling from:
+                </p>
+                <p className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">
+                  {PHONE_NUMBER}
+                </p>
+                <p className="text-foreground font-medium text-base">
+                  Watch for our call around 8:00 AM your time
+                </p>
+              </div>
+
+              {/* Weekend Message */}
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                <p className="text-foreground font-semibold">We saved your quote!</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  We're enjoying our weekend, but we'll reach out first thing Monday morning to discuss your savings and answer any questions you have.
+                </p>
+              </div>
+
+              {/* What Happens Next */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h3 className="font-bold text-foreground mb-4 text-lg">What happens next:</h3>
+                <ol className="space-y-3 list-decimal list-inside text-foreground">
+                  <li>We'll call you Monday around 8 AM your time</li>
+                  <li>Sarah will answer your questions</li>
+                  <li>We'll book you a consultation with a licensed agent</li>
+                  <li>You'll get confirmation via text</li>
+                </ol>
+                <p className="mt-4 font-semibold text-foreground">Watch for our call Monday morning!</p>
+              </div>
+
+              {/* Phone Number Reminder */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                <p className="text-lg font-bold text-foreground">Our number: {PHONE_NUMBER}</p>
+                <p className="text-sm text-muted-foreground">(Save this number so you know it's us calling!)</p>
+              </div>
+
+              {/* Trust Elements */}
+              <div className="bg-white rounded-xl p-4 border">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>Licensed Medicare agents</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>No obligation consultation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>Same coverage, lower price</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span>Free comparison of all carriers</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Questions Footer */}
+              <div className="text-center text-muted-foreground text-sm">
+                <p>Questions? Text us at {PHONE_NUMBER}</p>
+                <p>We're here to help!</p>
               </div>
 
               {/* Disclaimer */}
@@ -1183,12 +1409,26 @@ const MedicareSupplementAppointment = () => {
         </div>
       </footer>
 
-      {/* Sticky Footer (Mobile - Qualified Only) */}
+      {/* Sticky Footer (Mobile - Qualified Only) - Dynamic based on message type */}
       {step === "qualified" && quoteResult && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-blue-600 border-t shadow-lg md:hidden">
           <div className="text-center text-white">
-            <p className="font-bold">Answer {PHONE_NUMBER}</p>
-            <p className="text-sm opacity-90">We're calling you now!</p>
+            {getMessageType() === 'answer-now' ? (
+              <>
+                <p className="font-bold">Answer {PHONE_NUMBER}</p>
+                <p className="text-sm opacity-90">We're calling you now!</p>
+              </>
+            ) : getMessageType() === 'tomorrow-morning' ? (
+              <>
+                <p className="font-bold">Expect our call tomorrow!</p>
+                <p className="text-sm opacity-90">From: {PHONE_NUMBER}</p>
+              </>
+            ) : (
+              <>
+                <p className="font-bold">Expect our call Monday!</p>
+                <p className="text-sm opacity-90">From: {PHONE_NUMBER}</p>
+              </>
+            )}
           </div>
         </div>
       )}
