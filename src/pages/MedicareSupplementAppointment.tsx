@@ -114,6 +114,66 @@ END:VCARD`;
   URL.revokeObjectURL(downloadUrl);
 };
 
+// Get Facebook cookies for conversion tracking
+const getFacebookCookies = () => {
+  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key] = value;
+    return acc;
+  }, {} as Record<string, string>);
+  return { fbc: cookies._fbc, fbp: cookies._fbp };
+};
+
+// Get persistent visitor ID for Facebook external_id matching
+const getVisitorIdForTracking = (): string => {
+  const storageKey = 'funnel_visitor_id';
+  let visitorId = localStorage.getItem(storageKey);
+  if (!visitorId) {
+    visitorId = crypto.randomUUID();
+    localStorage.setItem(storageKey, visitorId);
+  }
+  return visitorId;
+};
+
+// Generate unique event ID for deduplication
+const generateEventId = (): string => {
+  return `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+};
+
+// Track submission event via Facebook Conversion API
+const trackFacebookSubmissionEvent = async (
+  formData: FormData,
+  quoteResult: QuoteResult | null
+) => {
+  try {
+    const { fbc, fbp } = getFacebookCookies();
+    const eventId = generateEventId();
+    
+    await supabase.functions.invoke('fb-conversion', {
+      body: {
+        event_name: 'submission',
+        event_source_url: window.location.href,
+        external_id: getVisitorIdForTracking(),
+        fbc,
+        fbp,
+        event_id: eventId,
+        // Lead data for improved match quality
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        zip_code: formData.zipCode,
+        // Conversion value for optimization
+        value: quoteResult?.monthlySavings || quoteResult?.rate || 0,
+        currency: 'USD',
+      }
+    });
+    console.log('Facebook submission conversion tracked with lead data (suppappt)');
+  } catch (error) {
+    console.error('Error tracking Facebook submission event:', error);
+  }
+};
+
 // Message type for time-based display
 type MessageType = 'answer-now' | 'tomorrow-morning' | 'monday-morning';
 
@@ -440,8 +500,9 @@ const MedicareSupplementAppointment = () => {
         }
       });
 
-      // Track qualification (no Facebook/Taboola tracking per requirements)
+      // Track qualification and Facebook conversion
       trackQualification("qualified");
+      await trackFacebookSubmissionEvent(formData, data);
       
       setStep("qualified");
 
