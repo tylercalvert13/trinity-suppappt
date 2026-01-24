@@ -420,17 +420,6 @@ export function AppointmentBookingWidget({
 
   return (
     <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6">
-      {/* Quote Summary Header */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 mb-4 text-center border border-green-100">
-        <p className="text-gray-600 text-sm mb-1">Your New Rate</p>
-        <p className="text-3xl font-bold text-green-700">${quotedPremium.toFixed(2)}/mo</p>
-        <p className="text-green-600 font-semibold mt-1">
-          You Save ${monthlySavings.toFixed(2)}/mo
-        </p>
-        <p className="text-sm text-green-700 font-medium mt-1">
-          = ${(monthlySavings * 12).toFixed(0)}/year back in YOUR pocket
-        </p>
-      </div>
 
       {/* Rate Expiration Notice */}
       {bookingStep < 5 && (
