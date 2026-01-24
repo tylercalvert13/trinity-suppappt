@@ -186,6 +186,7 @@ const MedicareSupplementAppointment = () => {
   const [applicationNumber] = useState(() => generateApplicationNumber());
   const [error, setError] = useState<string | null>(null);
   const funnelRef = useRef<HTMLDivElement>(null);
+  const [detectedState, setDetectedState] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     plan: '',
@@ -209,6 +210,27 @@ const MedicareSupplementAppointment = () => {
   const [isValidating, setIsValidating] = useState(false);
 
   const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt');
+
+  // Detect user's state via IP geolocation on mount
+  useEffect(() => {
+    const detectLocation = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-user-location');
+        if (error) {
+          console.error('Location detection error:', error);
+          return;
+        }
+        if (data?.state) {
+          setDetectedState(data.state);
+          console.log('Detected user state:', data.state);
+        }
+      } catch (err) {
+        console.error('Failed to detect location:', err);
+        // Fail silently - headline will use fallback
+      }
+    };
+    detectLocation();
+  }, []);
 
   // SEO meta tags
   useEffect(() => {
@@ -527,9 +549,20 @@ const MedicareSupplementAppointment = () => {
             EXPOSED: Medicare Supplement "Rate Trap"
           </div>
 
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
-            Seniors on Plan G, F, or N Are Overpaying by $100-200/Month
-          </h1>
+          {(() => {
+            // Priority: zip-derived state > detected state > no state
+            const displayState = formData.zipCode 
+              ? getStateFromZip(formData.zipCode) 
+              : detectedState;
+            const stateText = displayState && displayState !== "American" 
+              ? `in ${displayState} ` 
+              : "";
+            return (
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+                Seniors {stateText}on Plan G, F, or N Are Overpaying by $100-200/Month
+              </h1>
+            );
+          })()}
           
           <p className="text-lg md:text-xl text-blue-100 mb-4 max-w-2xl mx-auto">
             Your benefits are <span className="font-bold text-white">federally standardized</span> — the only difference is the price.
