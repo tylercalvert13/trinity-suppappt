@@ -1256,6 +1256,30 @@ const MedicareSupplementAppointment = () => {
                 </p>
               </div>
 
+              {/* PRIMARY CTA: Save Our Number */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-center space-y-4 shadow-lg">
+                <div className="bg-white/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
+                  <UserPlus className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white">
+                  Save Our Number Now
+                </h3>
+                <p className="text-blue-100 text-sm">
+                  So you know it's us when we call tomorrow morning!
+                </p>
+                <Button 
+                  onClick={downloadContactCard}
+                  size="lg"
+                  className="w-full bg-white text-blue-600 hover:bg-blue-50 font-bold text-lg py-6 shadow-md"
+                >
+                  <UserPlus className="h-5 w-5 mr-2" />
+                  Add Health Helpers to Contacts
+                </Button>
+                <p className="text-xs text-blue-200">
+                  Works on iPhone & Android
+                </p>
+              </div>
+
               {/* What Happens Next */}
               <div className="bg-gray-50 rounded-xl p-6">
                 <h3 className="font-bold text-foreground mb-4 text-lg">What happens next:</h3>
@@ -1268,18 +1292,10 @@ const MedicareSupplementAppointment = () => {
                 <p className="mt-4 font-semibold text-foreground">Watch for our call tomorrow morning!</p>
               </div>
 
-              {/* Phone Number Reminder */}
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center space-y-3">
-                <p className="text-lg font-bold text-foreground">Our number: {PHONE_NUMBER}</p>
-                <p className="text-sm text-muted-foreground">(Save this number so you know it's us calling!)</p>
-                <Button 
-                  onClick={downloadContactCard}
-                  variant="outline"
-                  className="w-full sm:w-auto border-blue-500 text-blue-600 hover:bg-blue-50"
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Save Our Number to Contacts
-                </Button>
+              {/* Phone Number Reminder - Simplified */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                <p className="text-lg font-bold text-foreground">Our numbers:</p>
+                <p className="text-foreground">(201) 426-9898 • (201) 298-8393</p>
               </div>
 
               {/* Trust Elements */}
@@ -1364,6 +1380,30 @@ const MedicareSupplementAppointment = () => {
                 </p>
               </div>
 
+              {/* PRIMARY CTA: Save Our Number */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-center space-y-4 shadow-lg">
+                <div className="bg-white/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
+                  <UserPlus className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white">
+                  Save Our Number Now
+                </h3>
+                <p className="text-blue-100 text-sm">
+                  So you know it's us when we call Monday morning!
+                </p>
+                <Button 
+                  onClick={downloadContactCard}
+                  size="lg"
+                  className="w-full bg-white text-blue-600 hover:bg-blue-50 font-bold text-lg py-6 shadow-md"
+                >
+                  <UserPlus className="h-5 w-5 mr-2" />
+                  Add Health Helpers to Contacts
+                </Button>
+                <p className="text-xs text-blue-200">
+                  Works on iPhone & Android
+                </p>
+              </div>
+
               {/* What Happens Next */}
               <div className="bg-gray-50 rounded-xl p-6">
                 <h3 className="font-bold text-foreground mb-4 text-lg">What happens next:</h3>
@@ -1376,18 +1416,10 @@ const MedicareSupplementAppointment = () => {
                 <p className="mt-4 font-semibold text-foreground">Watch for our call Monday morning!</p>
               </div>
 
-              {/* Phone Number Reminder */}
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center space-y-3">
-                <p className="text-lg font-bold text-foreground">Our number: {PHONE_NUMBER}</p>
-                <p className="text-sm text-muted-foreground">(Save this number so you know it's us calling!)</p>
-                <Button 
-                  onClick={downloadContactCard}
-                  variant="outline"
-                  className="w-full sm:w-auto border-blue-500 text-blue-600 hover:bg-blue-50"
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Save Our Number to Contacts
-                </Button>
+              {/* Phone Number Reminder - Simplified */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                <p className="text-lg font-bold text-foreground">Our numbers:</p>
+                <p className="text-foreground">(201) 426-9898 • (201) 298-8393</p>
               </div>
 
               {/* Trust Elements */}
