@@ -523,10 +523,9 @@ export function AppointmentBookingWidget({
               onClick={() => handleTimeRangeSelect('morning')}
               className="w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
                        hover:border-green-600 hover:bg-green-50 transition-all
-                       flex flex-col items-center justify-center"
+                       flex items-center justify-center"
             >
               <span className="text-xl font-semibold text-gray-900">Morning</span>
-              <span className="text-gray-500">9 AM - 12 PM</span>
             </button>
           )}
 
@@ -535,10 +534,9 @@ export function AppointmentBookingWidget({
               onClick={() => handleTimeRangeSelect('afternoon')}
               className="w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
                        hover:border-green-600 hover:bg-green-50 transition-all
-                       flex flex-col items-center justify-center"
+                       flex items-center justify-center"
             >
               <span className="text-xl font-semibold text-gray-900">Afternoon</span>
-              <span className="text-gray-500">12 - 4 PM</span>
             </button>
           )}
 
