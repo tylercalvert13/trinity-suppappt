@@ -446,7 +446,7 @@ export function AppointmentBookingWidget({
       {/* Heading */}
       {bookingStep < 5 && (
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Schedule Your Call</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Book Your 10-Minute Call</h2>
           <p className="text-gray-600 mt-1">Pick a time to lock in this rate</p>
         </div>
       )}
