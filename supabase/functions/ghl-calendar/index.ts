@@ -53,13 +53,24 @@ function getEasternDayEndMs(dateStr: string): number {
   return date.getTime();
 }
 
-// Add 30 minutes to a time string
+// Add minutes to a time string (handles various ISO formats)
 function addMinutes(isoTime: string, minutes: number): string {
   const date = new Date(isoTime);
   date.setMinutes(date.getMinutes() + minutes);
   
-  // Format back to ISO with the original offset
-  const offset = isoTime.slice(-6); // Get the timezone offset like "-05:00"
+  // Detect the timezone offset format from the input
+  let offset = '-05:00'; // Default to Eastern
+  
+  // Check for +HH:MM or -HH:MM at the end
+  const offsetMatch = isoTime.match(/([+-]\d{2}:\d{2})$/);
+  if (offsetMatch) {
+    offset = offsetMatch[1];
+  } else if (isoTime.endsWith('Z')) {
+    // UTC format - keep Eastern offset for GHL
+    offset = '-05:00';
+  }
+  // If no offset found (e.g., .000Z or plain), default to Eastern
+  
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
