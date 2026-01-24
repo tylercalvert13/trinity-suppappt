@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.validate-contact]
 verify_jwt = false
+
+[functions.ghl-calendar]
+verify_jwt = false
