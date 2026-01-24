@@ -104,6 +104,37 @@ function convertToUserTimezone(easternIsoString: string, userTimezone: string): 
   }
 }
 
+// Get Eastern time display with proper formatting
+function getEasternTimeDisplay(isoString: string): string {
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: 'America/New_York',
+      hour12: true
+    });
+  } catch {
+    return new Date(isoString).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+}
+
+// Check if user's timezone is different from Eastern
+function isTimezoneDifferent(userTimezone: string): boolean {
+  try {
+    const now = new Date();
+    const easternTime = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+    const userTime = now.toLocaleString('en-US', { timeZone: userTimezone });
+    return easternTime !== userTime;
+  } catch {
+    return false;
+  }
+}
+
 // Check if a slot is in the morning (9 AM - 12 PM Eastern)
 function isMorningSlot(isoString: string): boolean {
   const date = new Date(isoString);
@@ -210,6 +241,7 @@ export function AppointmentBookingWidget({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmedTime, setConfirmedTime] = useState<string | null>(null);
+  const [agentName, setAgentName] = useState<string | null>(null);
 
   // Get next 4 available weekdays
   const availableWeekdays = useMemo(() => getNextAvailableWeekdays(4), []);
@@ -363,6 +395,7 @@ export function AppointmentBookingWidget({
       }
 
       console.log('Appointment booked:', bookingData);
+      setAgentName(bookingData?.assignedUser || null);
       setConfirmedTime(selectedSlot.original);
       setBookingStep(5);
       onComplete?.();
@@ -586,21 +619,62 @@ export function AppointmentBookingWidget({
       {/* Step 5: Success */}
       {bookingStep === 5 && confirmedTime && (
         <div className="text-center">
-          {/* Success Checkmark */}
+          {/* 1. Success Checkmark */}
           <div className="w-20 h-20 rounded-full bg-green-600 text-white flex items-center justify-center mx-auto mb-5">
             <Check className="w-10 h-10" strokeWidth={3} />
           </div>
 
+          {/* 2. You're All Set! */}
           <h2 className="text-2xl font-bold text-gray-900 mb-2">You're All Set!</h2>
           
-          <p className="text-gray-600 mb-2">We'll call you on</p>
+          {/* 3. Agent name + call message */}
+          <p className="text-gray-600 mb-2">
+            {agentName ? `${agentName} will call you on` : "We'll call you on"}
+          </p>
+          
+          {/* 4. Date + Time with Timezone */}
           <p className="text-xl font-bold text-gray-900">{getSelectedDateDisplay()}</p>
-          <p className="text-3xl font-bold text-green-700 mt-1 mb-6">
-            {convertToUserTimezone(confirmedTime, userTimezone)}
+          <p className="text-3xl font-bold text-green-700 mt-1">
+            {getEasternTimeDisplay(confirmedTime)} Eastern
+          </p>
+          {isTimezoneDifferent(userTimezone) && (
+            <p className="text-gray-500 text-sm mt-1">
+              ({convertToUserTimezone(confirmedTime, userTimezone)} your time)
+            </p>
+          )}
+
+          {/* 5. Confirmation text */}
+          <p className="text-sm text-gray-500 mt-3 flex items-center justify-center gap-1">
+            <span>📱</span> We've sent a confirmation to your phone
           </p>
 
-          {/* Save Number Warning */}
-          <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-4 mb-6">
+          {/* 6. Action Buttons (flipped order - Calendar first) */}
+          <div className="space-y-3 mt-6">
+            {/* PRIMARY: Add to Calendar */}
+            <Button
+              onClick={() => downloadIcsFile(confirmedTime, firstName, lastName)}
+              className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-lg font-semibold rounded-xl"
+            >
+              <Calendar className="w-5 h-5 mr-2" />
+              🗓️ Add to Calendar - Don't Miss Your Savings
+            </Button>
+            <p className="text-xs text-gray-500 text-center">
+              Rates can change daily - calendar reminder helps you lock in this price
+            </p>
+
+            {/* SECONDARY: Save Contact */}
+            <Button
+              onClick={downloadContactCard}
+              variant="outline"
+              className="w-full min-h-[60px] border-2 border-gray-200 text-lg font-semibold rounded-xl hover:bg-gray-50"
+            >
+              <Phone className="w-5 h-5 mr-2" />
+              Add Health Helpers to Contacts
+            </Button>
+          </div>
+
+          {/* 7. Save Number Warning (keep as-is) */}
+          <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-4 mt-6">
             <div className="flex items-center justify-center gap-2 mb-2">
               <AlertTriangle className="w-5 h-5 text-amber-600" />
               <span className="font-semibold text-amber-800">Save This Number!</span>
@@ -609,24 +683,29 @@ export function AppointmentBookingWidget({
             <p className="text-sm text-gray-600">Save as "Health Helpers" so you know it's us calling!</p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="space-y-3">
-            <Button
-              onClick={downloadContactCard}
-              className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-lg font-semibold rounded-xl"
-            >
-              <Phone className="w-5 h-5 mr-2" />
-              Add Health Helpers to Contacts
-            </Button>
-
-            <Button
-              onClick={() => downloadIcsFile(confirmedTime, firstName, lastName)}
-              variant="outline"
-              className="w-full min-h-[60px] border-2 border-gray-200 text-lg font-semibold rounded-xl hover:bg-gray-50"
-            >
-              <Calendar className="w-5 h-5 mr-2" />
-              Add to Calendar
-            </Button>
+          {/* 8. What to Expect Section */}
+          <div className="bg-gray-50 rounded-xl p-4 mt-6 text-left">
+            <p className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <span>📋</span> What to Expect on Your Call (15-20 min)
+            </p>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold">✓</span>
+                Review your current coverage
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold">✓</span>
+                Compare Plan G rates from top carriers
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold">✓</span>
+                Answer any questions you have
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold">✓</span>
+                No pressure - just information to help you decide
+              </li>
+            </ul>
           </div>
         </div>
       )}
