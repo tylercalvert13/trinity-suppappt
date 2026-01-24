@@ -650,17 +650,17 @@ export function AppointmentBookingWidget({
 
           {/* 6. Action Buttons (flipped order - Calendar first) */}
           <div className="space-y-3 mt-6">
-            {/* PRIMARY: Add to Calendar */}
-            <Button
-              onClick={() => downloadIcsFile(confirmedTime, firstName, lastName)}
-              className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-lg font-semibold rounded-xl"
-            >
-              <Calendar className="w-5 h-5 mr-2" />
-              🗓️ Add to Calendar - Don't Miss Your Savings
-            </Button>
-            <p className="text-xs text-gray-500 text-center">
-              Rates can change daily - calendar reminder helps you lock in this price
-            </p>
+      {/* PRIMARY: Add to Calendar */}
+      <Button
+        onClick={() => downloadIcsFile(confirmedTime, firstName, lastName)}
+        className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-lg font-semibold rounded-xl"
+      >
+        <Calendar className="w-5 h-5 mr-2 flex-shrink-0" />
+        Add to Calendar
+      </Button>
+      <p className="text-xs text-gray-500 text-center">
+        Don't miss your savings - rates can change daily
+      </p>
 
             {/* SECONDARY: Save Contact */}
             <Button
