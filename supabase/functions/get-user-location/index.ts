@@ -5,8 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Map Cloudflare region codes to full state names
-const REGION_CODE_TO_STATE: Record<string, string> = {
+// Map state abbreviations to full names
+const STATE_ABBREV_TO_NAME: Record<string, string> = {
   "AL": "Alabama",
   "AK": "Alaska",
   "AZ": "Arizona",
@@ -58,12 +58,6 @@ const REGION_CODE_TO_STATE: Record<string, string> = {
   "WI": "Wisconsin",
   "WY": "Wyoming",
   "DC": "Washington D.C.",
-  // Territories
-  "PR": "Puerto Rico",
-  "VI": "Virgin Islands",
-  "GU": "Guam",
-  "AS": "American Samoa",
-  "MP": "Northern Mariana Islands",
 };
 
 serve(async (req) => {
@@ -73,32 +67,53 @@ serve(async (req) => {
   }
 
   try {
-    // Try to get region from Cloudflare headers
-    const cfRegion = req.headers.get("cf-region");
-    const cfCountry = req.headers.get("cf-ipcountry");
+    // Get the user's IP from headers
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    const cfConnectingIp = req.headers.get("cf-connecting-ip");
     
-    console.log('Location detection headers:', {
-      cfRegion,
-      cfCountry,
-      allHeaders: Object.fromEntries(req.headers.entries())
-    });
+    // Parse the first IP from x-forwarded-for (client's original IP)
+    const userIp = forwardedFor?.split(',')[0]?.trim() || cfConnectingIp;
+    
+    console.log('IP detection:', { userIp, forwardedFor, cfConnectingIp });
 
-    // Only return state if it's a US visitor
-    if (cfCountry && cfCountry !== "US") {
-      console.log('Non-US visitor detected:', cfCountry);
+    if (!userIp) {
+      console.log('No IP detected');
       return new Response(
-        JSON.stringify({ state: null, country: cfCountry }),
+        JSON.stringify({ state: null, error: 'No IP available' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Map the region code to full state name
-    const state = cfRegion ? REGION_CODE_TO_STATE[cfRegion] || null : null;
+    // Use ip-api.com for free IP geolocation (no API key needed, 45 req/min limit)
+    const geoResponse = await fetch(`http://ip-api.com/json/${userIp}?fields=status,country,regionName,region`);
+    const geoData = await geoResponse.json();
     
-    console.log('State detection result:', { cfRegion, state });
+    console.log('Geolocation result:', geoData);
+
+    if (geoData.status !== 'success') {
+      console.log('Geolocation failed:', geoData);
+      return new Response(
+        JSON.stringify({ state: null, error: 'Geolocation failed' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Only return state for US visitors
+    if (geoData.country !== 'United States') {
+      console.log('Non-US visitor:', geoData.country);
+      return new Response(
+        JSON.stringify({ state: null, country: geoData.country }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Use the full region name directly from the API, or map from abbreviation
+    const state = geoData.regionName || STATE_ABBREV_TO_NAME[geoData.region] || null;
+    
+    console.log('State detected:', { region: geoData.region, regionName: geoData.regionName, state });
 
     return new Response(
-      JSON.stringify({ state, regionCode: cfRegion }),
+      JSON.stringify({ state, regionCode: geoData.region }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
