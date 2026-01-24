@@ -390,10 +390,10 @@ export function AppointmentBookingWidget({
       {/* Quote Summary Header */}
       <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 mb-6 text-center border border-green-100">
         <p className="text-gray-600 text-sm mb-1">Your New Rate</p>
-        <p className="text-3xl font-bold text-green-700">${quotedPremium}/mo</p>
-        <p className="text-green-600 font-semibold mt-1">
-          You Save ${monthlySavings}/mo
-        </p>
+                <p className="text-3xl font-bold text-green-700">${quotedPremium.toFixed(2)}/mo</p>
+                <p className="text-green-600 font-semibold mt-1">
+                  You Save ${monthlySavings.toFixed(2)}/mo
+                </p>
       </div>
 
       {/* Step Indicator */}

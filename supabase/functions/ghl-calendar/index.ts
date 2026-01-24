@@ -137,22 +137,27 @@ serve(async (req) => {
 
       const data = JSON.parse(responseText);
       
-      // Parse the response - slots are time-only strings like "T09:00:00-05:00"
+      // Parse the response - GHL may return full ISO timestamps or time-only strings
       // The response has a dynamic date key
       let slots: string[] = [];
       for (const dateKey of Object.keys(data)) {
         if (dateKey === 'traceId') continue; // Skip metadata
         if (data[dateKey]?.slots && Array.isArray(data[dateKey].slots)) {
-          // Combine date with time-only slots to create full ISO timestamps
           slots = data[dateKey].slots.map((slot: string) => {
-            // slot is like "T09:00:00-05:00", dateKey is like "2026-01-27"
-            return `${dateKey}${slot}`;
+            // Check if slot already contains the full date or is time-only
+            if (slot.startsWith('T')) {
+              // Time-only format: combine with date key
+              return `${dateKey}${slot}`;
+            } else {
+              // Already a full ISO timestamp: return as-is
+              return slot;
+            }
           });
           break;
         }
       }
 
-      console.log('Parsed slots:', slots);
+      console.log('Processed slots:', slots);
 
       return new Response(
         JSON.stringify({ slots, date }),
