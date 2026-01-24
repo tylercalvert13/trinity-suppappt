@@ -668,8 +668,8 @@ export function AppointmentBookingWidget({
               variant="outline"
               className="w-full min-h-[60px] border-2 border-gray-200 text-lg font-semibold rounded-xl hover:bg-gray-50"
             >
-              <Phone className="w-5 h-5 mr-2" />
-              Add Health Helpers to Contacts
+              <Phone className="w-5 h-5 mr-2 flex-shrink-0" />
+              Save Our Contact
             </Button>
           </div>
 
