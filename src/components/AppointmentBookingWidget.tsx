@@ -421,13 +421,24 @@ export function AppointmentBookingWidget({
   return (
     <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6">
       {/* Quote Summary Header */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 mb-6 text-center border border-green-100">
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 mb-4 text-center border border-green-100">
         <p className="text-gray-600 text-sm mb-1">Your New Rate</p>
-                <p className="text-3xl font-bold text-green-700">${quotedPremium.toFixed(2)}/mo</p>
-                <p className="text-green-600 font-semibold mt-1">
-                  You Save ${monthlySavings.toFixed(2)}/mo
-                </p>
+        <p className="text-3xl font-bold text-green-700">${quotedPremium.toFixed(2)}/mo</p>
+        <p className="text-green-600 font-semibold mt-1">
+          You Save ${monthlySavings.toFixed(2)}/mo
+        </p>
+        <p className="text-sm text-green-700 font-medium mt-1">
+          = ${(monthlySavings * 12).toFixed(0)}/year back in YOUR pocket
+        </p>
       </div>
+
+      {/* Rate Expiration Notice */}
+      {bookingStep < 5 && (
+        <div className="text-center text-sm text-gray-500 mb-4 flex items-center justify-center gap-1 px-4">
+          <span>⏱️</span>
+          <span>This rate is based on today's pricing. Rates are reviewed weekly and can increase without notice.</span>
+        </div>
+      )}
 
       {/* Step Indicator */}
       {bookingStep < 5 && (
@@ -446,8 +457,8 @@ export function AppointmentBookingWidget({
       {/* Heading */}
       {bookingStep < 5 && (
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Book Your 10-Minute Call</h2>
-          <p className="text-gray-600 mt-1">Pick a time to lock in this rate</p>
+          <h2 className="text-2xl font-bold text-gray-900">Lock In Your ${monthlySavings.toFixed(2)} Savings</h2>
+          <p className="text-gray-600 mt-1 text-sm">Medicare rates can change daily – this quote is only guaranteed once we confirm your policy</p>
         </div>
       )}
 
@@ -472,6 +483,12 @@ export function AppointmentBookingWidget({
       {/* Step 1: Pick a Day */}
       {bookingStep === 1 && !isLoading && (
         <div className="space-y-3">
+          {/* Availability Indicator */}
+          <div className="text-center mb-4 flex items-center justify-center gap-2 text-gray-600">
+            <span>📅</span>
+            <span className="text-sm">Our agents have limited openings this week</span>
+          </div>
+
           {availableWeekdays.map((date, index) => {
             const { primary, secondary } = formatDateLabel(date, index);
             return (
@@ -484,21 +501,54 @@ export function AppointmentBookingWidget({
               >
                 <span className="text-xl font-semibold text-gray-900">{primary}</span>
                 <span className="text-gray-500">{secondary}</span>
+                <span className="text-xs text-green-600 mt-1">Morning & Afternoon</span>
               </button>
             );
           })}
 
-          {/* Alternative: Call now */}
-          <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-            <p className="text-gray-500 mb-2">— or —</p>
-            <p className="text-gray-600 mb-1">Prefer we call you now?</p>
-            <a 
-              href="tel:+12012988393" 
-              className="inline-flex items-center gap-2 text-xl font-bold text-green-700 hover:text-green-800"
-            >
-              <Phone className="w-5 h-5" />
-              (201) 298-8393
-            </a>
+          {/* What Happens on Your Call - Collapsible */}
+          <details className="mt-6 bg-gray-50 rounded-xl">
+            <summary className="p-4 cursor-pointer text-gray-700 font-medium flex items-center gap-2">
+              <span>📞</span> What Happens on Your Call? <span className="text-xs text-gray-500">(tap to expand)</span>
+            </summary>
+            <div className="px-4 pb-4 text-sm text-gray-600 space-y-2">
+              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> Quick review of your current coverage (2 min)</p>
+              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> Compare your rate against 20+ carriers (5 min)</p>
+              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> Get your questions answered – no pressure</p>
+              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> If you want to switch, we handle all the paperwork</p>
+              <p className="text-gray-500 mt-2 text-xs">Average call: 10-15 minutes</p>
+            </div>
+          </details>
+
+          {/* Strengthened Call Now Alternative */}
+          <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+            <p className="text-gray-400 mb-3">— or —</p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="font-semibold text-gray-800 flex items-center justify-center gap-1 mb-2">
+                <span>🔥</span> Want to lock this in RIGHT NOW?
+              </p>
+              <a 
+                href="tel:+12012988393" 
+                className="inline-flex items-center gap-2 text-xl font-bold text-green-700 hover:text-green-800 transition-colors"
+              >
+                <Phone className="w-5 h-5" />
+                Call Us: (201) 298-8393
+              </a>
+              <p className="text-sm text-gray-600 mt-2">We'll quote you live in under 5 minutes</p>
+            </div>
+          </div>
+
+          {/* Social Proof */}
+          <div className="mt-6 text-center text-sm text-gray-600 flex items-center justify-center gap-2">
+            <span className="text-green-600">✓</span>
+            <span>135+ Georgia seniors saved on Medicare this month</span>
+          </div>
+
+          {/* Trust Badges */}
+          <div className="mt-4 grid grid-cols-1 gap-2 text-xs text-gray-500 text-center">
+            <span>🛡️ Licensed Medicare Agents</span>
+            <span>⚡ Compare 20+ top carriers in 10 minutes</span>
+            <span>✓ 100% free – hang up anytime</span>
           </div>
         </div>
       )}
