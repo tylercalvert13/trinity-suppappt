@@ -53,32 +53,31 @@ function getEasternDayEndMs(dateStr: string): number {
   return date.getTime();
 }
 
-// Add minutes to a time string (handles various ISO formats)
+// Add minutes to an ISO time string WITHOUT timezone conversion issues
+// Uses pure string parsing to avoid Date object timezone problems
 function addMinutes(isoTime: string, minutes: number): string {
-  const date = new Date(isoTime);
-  date.setMinutes(date.getMinutes() + minutes);
+  // Parse: 2026-01-27T10:00:00-05:00 or 2026-01-27T10:00:00Z
+  const match = isoTime.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})([+-]\d{2}:\d{2}|Z)?$/);
   
-  // Detect the timezone offset format from the input
-  let offset = '-05:00'; // Default to Eastern
-  
-  // Check for +HH:MM or -HH:MM at the end
-  const offsetMatch = isoTime.match(/([+-]\d{2}:\d{2})$/);
-  if (offsetMatch) {
-    offset = offsetMatch[1];
-  } else if (isoTime.endsWith('Z')) {
-    // UTC format - keep Eastern offset for GHL
-    offset = '-05:00';
+  if (!match) {
+    console.error('addMinutes: Invalid ISO time format:', isoTime);
+    throw new Error(`Invalid time format: ${isoTime}`);
   }
-  // If no offset found (e.g., .000Z or plain), default to Eastern
   
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const mins = String(date.getMinutes()).padStart(2, '0');
-  const secs = String(date.getSeconds()).padStart(2, '0');
+  const [, datePart, hoursStr, minsStr, secs, offset] = match;
   
-  return `${year}-${month}-${day}T${hours}:${mins}:${secs}${offset}`;
+  // Do the math directly on the parsed time components (no Date conversion)
+  const totalMinutes = parseInt(hoursStr, 10) * 60 + parseInt(minsStr, 10) + minutes;
+  
+  const newHours = Math.floor(totalMinutes / 60);
+  const newMins = totalMinutes % 60;
+  
+  // Preserve original offset or default to Eastern
+  const finalOffset = offset === 'Z' ? '-05:00' : (offset || '-05:00');
+  
+  console.log(`addMinutes: ${isoTime} + ${minutes}min = ${datePart}T${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}:${secs}${finalOffset}`);
+  
+  return `${datePart}T${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}:${secs}${finalOffset}`;
 }
 
 // Normalize phone number to E.164 format
