@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 import { z } from 'zod';
 import { AppointmentBookingWidget } from '@/components/AppointmentBookingWidget';
+import { getStateFromZip } from '@/lib/zipToState';
 
 // Outbound call number for this funnel
 const PHONE_NUMBER = "(201) 426-9898";
@@ -1163,6 +1164,7 @@ const MedicareSupplementAppointment = () => {
                 monthlySavings={quoteResult.monthlySavings}
                 planType={formData.plan}
                 userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
+                userState={getStateFromZip(formData.zipCode)}
               />
 
               {/* Trust Elements */}

@@ -12,6 +12,7 @@ interface AppointmentWidgetProps {
   monthlySavings: number;
   planType: string;
   userTimezone: string;
+  userState: string;
   onComplete?: () => void;
 }
 
@@ -231,6 +232,7 @@ export function AppointmentBookingWidget({
   monthlySavings,
   planType,
   userTimezone,
+  userState,
   onComplete
 }: AppointmentWidgetProps) {
   const [bookingStep, setBookingStep] = useState(1);
@@ -530,7 +532,7 @@ export function AppointmentBookingWidget({
           {/* Social Proof */}
           <div className="mt-6 text-center text-sm text-gray-600 flex items-center justify-center gap-2">
             <span className="text-green-600">✓</span>
-            <span>135+ Georgia seniors saved on Medicare this month</span>
+            <span>135+ {userState} seniors saved on Medicare this month</span>
           </div>
 
           {/* Trust Badges */}
