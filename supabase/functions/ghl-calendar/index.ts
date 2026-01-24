@@ -290,8 +290,15 @@ serve(async (req) => {
       const data = JSON.parse(responseText);
       console.log('Appointment created successfully:', data);
 
+      // Extract assigned user name if available from GHL response
+      const assignedUser = data.assignedUsers?.[0]?.name || data.calendarName || null;
+
       return new Response(
-        JSON.stringify({ success: true, appointmentId: data.id || data.appointmentId }),
+        JSON.stringify({ 
+          success: true, 
+          appointmentId: data.id || data.appointmentId,
+          assignedUser 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
