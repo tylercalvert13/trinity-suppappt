@@ -187,6 +187,7 @@ const MedicareSupplementAppointment = () => {
   const [error, setError] = useState<string | null>(null);
   const funnelRef = useRef<HTMLDivElement>(null);
   const [detectedState, setDetectedState] = useState<string | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   
   const [formData, setFormData] = useState<FormData>({
     plan: '',
@@ -226,10 +227,17 @@ const MedicareSupplementAppointment = () => {
         }
       } catch (err) {
         console.error('Failed to detect location:', err);
-        // Fail silently - headline will use fallback
+      } finally {
+        setIsLoadingLocation(false);
       }
     };
-    detectLocation();
+    
+    // Set a timeout fallback in case the API is slow
+    const timeout = setTimeout(() => {
+      setIsLoadingLocation(false);
+    }, 1500);
+    
+    detectLocation().finally(() => clearTimeout(timeout));
   }, []);
 
   // SEO meta tags
@@ -557,6 +565,16 @@ const MedicareSupplementAppointment = () => {
             const stateText = displayState && displayState !== "American" 
               ? `in ${displayState} ` 
               : "";
+            
+            // Show skeleton while loading location (only if no zip entered yet)
+            if (isLoadingLocation && !formData.zipCode) {
+              return (
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+                  Seniors <span className="inline-block bg-white/20 rounded animate-pulse w-24 h-8 align-middle mx-1"></span> on Plan G, F, or N Are Overpaying by $100-200/Month
+                </h1>
+              );
+            }
+            
             return (
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
                 Seniors {stateText}on Plan G, F, or N Are Overpaying by $100-200/Month
