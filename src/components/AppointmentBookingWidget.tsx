@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Check, ChevronLeft, Phone, Calendar, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -316,10 +316,10 @@ export function AppointmentBookingWidget({
     setBookingStep(3);
   };
 
-  // Handle slot selection
+  // Handle slot selection - no longer navigates, just selects
   const handleSlotSelect = (slot: SlotData) => {
     setSelectedSlot(slot);
-    setBookingStep(4);
+    // No navigation - inline confirmation will appear below
   };
 
   // Handle back navigation
@@ -332,11 +332,22 @@ export function AppointmentBookingWidget({
     } else if (bookingStep === 3) {
       setBookingStep(2);
       setSelectedTimeRange(null);
-    } else if (bookingStep === 4) {
-      setBookingStep(3);
       setSelectedSlot(null);
     }
   };
+
+  // Ref for auto-scrolling to inline confirmation
+  const confirmationRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll when a slot is selected
+  useEffect(() => {
+    if (selectedSlot && confirmationRef.current) {
+      confirmationRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'nearest' 
+      });
+    }
+  }, [selectedSlot]);
 
   // Book the appointment
   const handleConfirmBooking = async () => {
@@ -399,7 +410,7 @@ export function AppointmentBookingWidget({
       console.log('Appointment booked:', bookingData);
       setAgentName(bookingData?.assignedUser || null);
       setConfirmedTime(selectedSlot.original);
-      setBookingStep(5);
+      setBookingStep(4); // Success is now step 4
       onComplete?.();
 
     } catch (err) {
@@ -424,17 +435,17 @@ export function AppointmentBookingWidget({
     <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6">
 
       {/* Rate Expiration Notice */}
-      {bookingStep < 5 && (
+      {bookingStep < 4 && !confirmedTime && (
         <div className="text-center text-sm text-gray-500 mb-4 flex items-center justify-center gap-1 px-4">
           <span>⏱️</span>
           <span>This rate is based on today's pricing. Rates are reviewed weekly and can increase without notice.</span>
         </div>
       )}
 
-      {/* Step Indicator */}
-      {bookingStep < 5 && (
+      {/* Step Indicator - 3 steps (excludes success) */}
+      {bookingStep < 4 && !confirmedTime && (
         <div className="flex justify-center gap-2 mb-6">
-          {[1, 2, 3, 4].map((step) => (
+          {[1, 2, 3].map((step) => (
             <span
               key={step}
               className={`w-3 h-3 rounded-full transition-colors ${
@@ -446,7 +457,7 @@ export function AppointmentBookingWidget({
       )}
 
       {/* Heading */}
-      {bookingStep < 5 && (
+      {bookingStep < 4 && !confirmedTime && (
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Lock In Your ${monthlySavings.toFixed(2)} Savings</h2>
           <p className="text-gray-600 mt-1 text-sm">Medicare rates can change daily – this quote is only guaranteed once we confirm your policy</p>
@@ -461,13 +472,11 @@ export function AppointmentBookingWidget({
         </div>
       )}
 
-      {/* Loading State */}
-      {isLoading && (
+      {/* Loading State - only show full-screen loader when fetching slots, not when booking inline */}
+      {isLoading && !selectedSlot && (
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="w-10 h-10 text-green-600 animate-spin mb-4" />
-          <p className="text-gray-600 text-lg">
-            {bookingStep === 4 ? 'Booking your appointment...' : 'Checking availability...'}
-          </p>
+          <p className="text-gray-600 text-lg">Checking availability...</p>
         </div>
       )}
 
@@ -589,8 +598,8 @@ export function AppointmentBookingWidget({
         </div>
       )}
 
-      {/* Step 3: Pick a Time */}
-      {bookingStep === 3 && !isLoading && (
+      {/* Step 3: Pick a Time + Inline Confirmation */}
+      {bookingStep === 3 && (
         <div className="space-y-3">
           <button
             onClick={handleBack}
@@ -604,59 +613,86 @@ export function AppointmentBookingWidget({
             {getSelectedDateDisplay()} • {selectedTimeRange === 'morning' ? 'Morning' : 'Afternoon'}
           </p>
 
-          {filteredSlots.map((slot) => (
-            <button
-              key={slot.original}
-              onClick={() => handleSlotSelect(slot)}
-              className="w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
-                       hover:border-green-600 hover:bg-green-50 transition-all
-                       flex items-center justify-center"
-            >
-              <span className="text-2xl font-semibold text-gray-900">{slot.display}</span>
-            </button>
-          ))}
+          {/* Time slots with selected state */}
+          {filteredSlots.map((slot) => {
+            const isSelected = selectedSlot?.original === slot.original;
+            return (
+              <button
+                key={slot.original}
+                onClick={() => handleSlotSelect(slot)}
+                disabled={isLoading}
+                className={`w-full min-h-[70px] p-4 border-2 rounded-xl transition-all
+                           flex items-center justify-center relative
+                           ${isSelected 
+                             ? 'bg-green-50 border-green-600' 
+                             : 'bg-white border-gray-200 hover:border-green-600 hover:bg-green-50'}
+                           ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {isSelected && (
+                  <Check className="w-5 h-5 text-green-600 absolute left-4" />
+                )}
+                <span className={`text-2xl font-semibold ${isSelected ? 'text-green-700' : 'text-gray-900'}`}>
+                  {slot.display}
+                </span>
+              </button>
+            );
+          })}
 
           {filteredSlots.length === 0 && (
             <p className="text-center text-gray-600 py-4">
               No times available in this range. Please pick a different time range.
             </p>
           )}
+
+          {/* Inline Confirmation Panel - only shows when a time is selected */}
+          {selectedSlot && (
+            <div 
+              ref={confirmationRef}
+              className="mt-6 p-5 bg-gray-50 rounded-xl border-2 border-gray-200 animate-fade-in"
+            >
+              {/* Confirmation Summary */}
+              <div className="text-center mb-4">
+                <p className="text-sm text-gray-500 mb-2">You selected:</p>
+                <p className="text-lg font-semibold text-gray-900 flex items-center justify-center gap-2">
+                  <Calendar className="w-5 h-5 text-gray-600" />
+                  {getSelectedDateDisplay()}
+                </p>
+                <p className="text-2xl font-bold text-green-700 flex items-center justify-center gap-2 mt-1">
+                  <span>⏰</span>
+                  {selectedSlot.display}
+                </p>
+              </div>
+
+              {/* Book Button */}
+              <Button
+                onClick={handleConfirmBooking}
+                disabled={isLoading}
+                className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-xl font-semibold rounded-xl"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    Booking...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-5 h-5 mr-2" />
+                    Book My Call
+                  </>
+                )}
+              </Button>
+
+              {/* Change hint */}
+              <p className="text-center text-sm text-gray-500 mt-3">
+                Tap a different time above to change
+              </p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Step 4: Confirmation */}
-      {bookingStep === 4 && !isLoading && selectedSlot && (
-        <div className="space-y-4">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-1 text-gray-600 hover:text-gray-800 mb-4"
-          >
-            <ChevronLeft className="w-5 h-5" />
-            <span>Pick a different time</span>
-          </button>
-
-          <div className="bg-gray-50 rounded-xl p-6 text-center mb-6">
-            <p className="text-gray-600 mb-2">Your appointment</p>
-            <p className="text-xl font-bold text-gray-900">{getSelectedDateDisplay()}</p>
-            <p className="text-3xl font-bold text-green-700 mt-2">{selectedSlot.display}</p>
-          </div>
-
-          <Button
-            onClick={handleConfirmBooking}
-            disabled={isLoading}
-            className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-xl font-semibold rounded-xl"
-          >
-            {isLoading ? (
-              <Loader2 className="w-6 h-6 animate-spin" />
-            ) : (
-              'Confirm Appointment'
-            )}
-          </Button>
-        </div>
-      )}
-
-      {/* Step 5: Success */}
-      {bookingStep === 5 && confirmedTime && (
+      {/* Step 4: Success */}
+      {bookingStep === 4 && confirmedTime && (
         <div className="text-center">
           {/* 1. Success Checkmark */}
           <div className="w-20 h-20 rounded-full bg-green-600 text-white flex items-center justify-center mx-auto mb-5">
