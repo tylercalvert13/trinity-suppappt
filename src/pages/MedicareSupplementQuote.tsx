@@ -962,11 +962,19 @@ const MedicareSupplementQuote = () => {
                 </li>
                 <li className="flex items-start gap-3 text-lg md:text-xl">
                   <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Hospice or home health care</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
                   <span>Dementia or Alzheimer's</span>
                 </li>
                 <li className="flex items-start gap-3 text-lg md:text-xl">
                   <span className="text-blue-600 font-bold mt-0.5">•</span>
                   <span>Use oxygen at home</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Wheelchair-bound or bedridden</span>
                 </li>
               </ul>
 
@@ -1011,6 +1019,14 @@ const MedicareSupplementQuote = () => {
                 <li className="flex items-start gap-3 text-lg md:text-xl">
                   <span className="text-blue-600 font-bold mt-0.5">•</span>
                   <span>Cancer, heart attack, or stroke</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Congestive heart failure (CHF) or COPD</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Heart procedure: bypass, stent, or pacemaker</span>
                 </li>
                 <li className="flex items-start gap-3 text-lg md:text-xl">
                   <span className="text-blue-600 font-bold mt-0.5">•</span>
@@ -1071,6 +1087,10 @@ const MedicareSupplementQuote = () => {
                 <li className="flex items-start gap-3 text-lg md:text-xl">
                   <span className="text-blue-600 font-bold mt-0.5">•</span>
                   <span>Daily prescription pain medicine (opioids)</span>
+                </li>
+                <li className="flex items-start gap-3 text-lg md:text-xl">
+                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span>Biologic injections or infusions (e.g., Humira, Enbrel)</span>
                 </li>
               </ul>
 
