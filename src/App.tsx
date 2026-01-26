@@ -19,6 +19,7 @@ import Disqualified from "./pages/Disqualified";
 import GreatRate from "./pages/GreatRate";
 import Analytics from "./pages/Analytics";
 import AnalyticsLogin from "./pages/AnalyticsLogin";
+import ContactCard from "./pages/ContactCard";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/great-rate" element={<GreatRate />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/analytics-login" element={<AnalyticsLogin />} />
+          <Route path="/contactcard" element={<ContactCard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
