@@ -8,12 +8,14 @@ interface AppointmentWidgetProps {
   lastName: string;
   phone: string;
   email: string;
-  quotedPremium: number;
-  monthlySavings: number;
-  planType: string;
+  quotedPremium?: number;
+  monthlySavings?: number;
+  planType?: string;
   userTimezone: string;
-  userState: string;
+  userState?: string;
   onComplete?: () => void;
+  isStandalone?: boolean;
+  contactId?: string; // Pre-created contact ID for standalone mode
 }
 
 interface SlotData {
@@ -228,12 +230,14 @@ export function AppointmentBookingWidget({
   lastName,
   phone,
   email,
-  quotedPremium,
-  monthlySavings,
-  planType,
+  quotedPremium = 0,
+  monthlySavings = 0,
+  planType = 'N/A',
   userTimezone,
-  userState,
-  onComplete
+  userState = '',
+  onComplete,
+  isStandalone = false,
+  contactId: preCreatedContactId
 }: AppointmentWidgetProps) {
   const [bookingStep, setBookingStep] = useState(1);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -357,27 +361,33 @@ export function AppointmentBookingWidget({
     setError(null);
 
     try {
-      // Step 1: Look up the contact
-      console.log('Looking up contact for phone:', phone);
-      const { data: contactData, error: contactError } = await supabase.functions.invoke('ghl-calendar', {
-        body: { action: 'search-contact', phone }
-      });
+      let contactIdToUse = preCreatedContactId;
 
-      if (contactError || contactData?.error) {
-        const errorMsg = contactData?.message || "We're still setting up your account. Please try again in a moment or call us at (201) 298-8393.";
-        setError(errorMsg);
-        setIsLoading(false);
-        return;
+      // Step 1: Look up the contact (skip if we have a pre-created contactId from standalone mode)
+      if (!contactIdToUse) {
+        console.log('Looking up contact for phone:', phone);
+        const { data: contactData, error: contactError } = await supabase.functions.invoke('ghl-calendar', {
+          body: { action: 'search-contact', phone }
+        });
+
+        if (contactError || contactData?.error) {
+          const errorMsg = contactData?.message || "We're still setting up your account. Please try again in a moment or call us at (201) 298-8393.";
+          setError(errorMsg);
+          setIsLoading(false);
+          return;
+        }
+
+        contactIdToUse = contactData.contactId;
       }
 
-      console.log('Found contact:', contactData.contactId);
+      console.log('Using contact:', contactIdToUse);
 
       // Step 2: Book the appointment
       console.log('Booking appointment at:', selectedSlot.original);
       const { data: bookingData, error: bookingError } = await supabase.functions.invoke('ghl-calendar', {
         body: {
           action: 'book-appointment',
-          contactId: contactData.contactId,
+          contactId: contactIdToUse,
           startTime: selectedSlot.original,
           firstName,
           lastName,
@@ -434,8 +444,8 @@ export function AppointmentBookingWidget({
   return (
     <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6">
 
-      {/* Rate Expiration Notice */}
-      {bookingStep < 4 && !confirmedTime && (
+      {/* Rate Expiration Notice - only show for funnel mode with quote data */}
+      {bookingStep < 4 && !confirmedTime && !isStandalone && monthlySavings > 0 && (
         <div className="text-center text-sm text-gray-500 mb-4 flex items-center justify-center gap-1 px-4">
           <span>⏱️</span>
           <span>This rate is based on today's pricing. Rates are reviewed weekly and can increase without notice.</span>
@@ -459,8 +469,17 @@ export function AppointmentBookingWidget({
       {/* Heading */}
       {bookingStep < 4 && !confirmedTime && (
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Lock In Your ${monthlySavings.toFixed(2)} Savings</h2>
-          <p className="text-gray-600 mt-1 text-sm">Medicare rates can change daily – this quote is only guaranteed once we confirm your policy</p>
+          {isStandalone ? (
+            <>
+              <h2 className="text-2xl font-bold text-gray-900">Schedule Your Consultation</h2>
+              <p className="text-gray-600 mt-1 text-sm">Pick a convenient time for your free Medicare consultation</p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold text-gray-900">Lock In Your ${monthlySavings.toFixed(2)} Savings</h2>
+              <p className="text-gray-600 mt-1 text-sm">Medicare rates can change daily – this quote is only guaranteed once we confirm your policy</p>
+            </>
+          )}
         </div>
       )}
 
@@ -523,9 +542,13 @@ export function AppointmentBookingWidget({
           {/* Strengthened Call Now Alternative */}
           <div className="mt-6 pt-4 border-t border-gray-200 text-center">
             <p className="text-gray-400 mb-3">— or —</p>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className={`${isStandalone ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'} border rounded-xl p-4`}>
               <p className="font-semibold text-gray-800 flex items-center justify-center gap-1 mb-2">
-                <span>🔥</span> Want to lock this in RIGHT NOW?
+                {isStandalone ? (
+                  <>📞 Prefer to call now?</>
+                ) : (
+                  <><span>🔥</span> Want to lock this in RIGHT NOW?</>
+                )}
               </p>
               <a 
                 href="tel:+12012988393" 
@@ -534,14 +557,16 @@ export function AppointmentBookingWidget({
                 <Phone className="w-5 h-5" />
                 Call Us: (201) 298-8393
               </a>
-              <p className="text-sm text-gray-600 mt-2">We'll quote you live in under 5 minutes</p>
+              <p className="text-sm text-gray-600 mt-2">
+                {isStandalone ? "We're available Mon-Fri, 9 AM - 5 PM Eastern" : "We'll quote you live in under 5 minutes"}
+              </p>
             </div>
           </div>
 
-          {/* Social Proof */}
+          {/* Social Proof - only show state-specific message when we have state data */}
           <div className="mt-6 text-center text-sm text-gray-600 flex items-center justify-center gap-2">
             <span className="text-green-600">✓</span>
-            <span>135+ {userState} seniors saved on Medicare this month</span>
+            <span>{userState ? `135+ ${userState} seniors saved on Medicare this month` : '135+ seniors saved on Medicare this month'}</span>
           </div>
 
           {/* Trust Badges */}

@@ -20,6 +20,7 @@ import GreatRate from "./pages/GreatRate";
 import Analytics from "./pages/Analytics";
 import AnalyticsLogin from "./pages/AnalyticsLogin";
 import ContactCard from "./pages/ContactCard";
+import StandaloneBooking from "./pages/StandaloneBooking";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/analytics-login" element={<AnalyticsLogin />} />
           <Route path="/contactcard" element={<ContactCard />} />
+          <Route path="/booking" element={<StandaloneBooking />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -24,6 +24,14 @@ interface SearchContactRequest {
   phone: string; // E.164 format
 }
 
+interface CreateContactRequest {
+  action: 'create-contact';
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
 interface BookAppointmentRequest {
   action: 'book-appointment';
   contactId: string;
@@ -35,7 +43,7 @@ interface BookAppointmentRequest {
   planType: string;
 }
 
-type RequestBody = FreeSlotsRequest | SearchContactRequest | BookAppointmentRequest;
+type RequestBody = FreeSlotsRequest | SearchContactRequest | CreateContactRequest | BookAppointmentRequest;
 
 // Convert date string to epoch milliseconds for start of day in Eastern timezone
 function getEasternDayStartMs(dateStr: string): number {
@@ -236,6 +244,95 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ contactId }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ========== CREATE CONTACT ==========
+    if (body.action === 'create-contact') {
+      const { firstName, lastName, email, phone } = body as CreateContactRequest;
+      const normalizedPhone = normalizePhone(phone);
+      console.log('Creating/finding contact:', { firstName, lastName, email, phone: normalizedPhone });
+
+      // First check if contact already exists by phone
+      const encodedPhone = encodeURIComponent(normalizedPhone);
+      const searchUrl = `${GHL_BASE_URL}/contacts/search/duplicate?locationId=${LOCATION_ID}&number=${encodedPhone}`;
+
+      console.log('Checking if contact exists:', searchUrl);
+
+      const searchResponse = await fetch(searchUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${GHL_API_TOKEN}`,
+          'Version': CONTACTS_API_VERSION,
+        },
+      });
+
+      const searchText = await searchResponse.text();
+      console.log('Contact search response:', searchText);
+
+      if (searchResponse.ok) {
+        const searchData = JSON.parse(searchText);
+        if (searchData?.contact?.id) {
+          console.log('Contact already exists:', searchData.contact.id);
+          return new Response(
+            JSON.stringify({ contactId: searchData.contact.id, existing: true }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+
+      // Contact not found, create new one
+      console.log('Contact not found, creating new contact...');
+      const createResponse = await fetch(`${GHL_BASE_URL}/contacts/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GHL_API_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Version': CONTACTS_API_VERSION,
+        },
+        body: JSON.stringify({
+          locationId: LOCATION_ID,
+          firstName,
+          lastName,
+          email,
+          phone: normalizedPhone,
+          source: 'Standalone Booking Page',
+        }),
+      });
+
+      const createText = await createResponse.text();
+      console.log('Create contact response status:', createResponse.status);
+      console.log('Create contact response:', createText);
+
+      if (!createResponse.ok) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'create_failed', 
+            message: 'Unable to create contact. Please try again or call us at (201) 298-8393.',
+            details: createText 
+          }),
+          { status: createResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const createData = JSON.parse(createText);
+      const contactId = createData?.contact?.id;
+
+      if (!contactId) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'create_failed', 
+            message: 'Unable to create contact. Please try again or call us at (201) 298-8393.' 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Contact created successfully:', contactId);
+
+      return new Response(
+        JSON.stringify({ contactId, existing: false }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
