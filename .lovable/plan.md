@@ -1,195 +1,160 @@
 
 
-## Plan: Standalone Booking Page at /booking
+## Plan: Expand Screening Questions to Catch More Auto-Decline Conditions
 
 ### Overview
-Create a standalone booking page at `/booking` that collects contact information (first name, last name, email, phone) and then uses the same appointment booking widget to schedule calls on the GHL calendar. This is perfect for sharing a direct booking link without requiring users to go through the full quote funnel.
-
-### Key Challenge
-The current booking widget requires the contact to already exist in GHL (created via webhook during the funnel flow). For a standalone page, we need to create the contact first.
-
-**Solution:** Add a `create-contact` action to the `ghl-calendar` edge function that creates a contact in GHL, then proceeds with booking.
+Enhance the existing 3 screening questions in both `/suppquote` and `/suppappt` funnels to capture additional high-risk conditions that currently slip through. This will improve lead quality by filtering out uninsurable applicants earlier.
 
 ---
 
-### Files to Create/Modify
+### Current Questions vs. Proposed Changes
 
-| File | Action |
-|------|--------|
-| `src/pages/StandaloneBooking.tsx` | **Create** - New standalone booking page |
-| `src/App.tsx` | **Modify** - Add `/booking` route |
-| `supabase/functions/ghl-calendar/index.ts` | **Modify** - Add `create-contact` action |
-| `src/components/AppointmentBookingWidget.tsx` | **Modify** - Make `quotedPremium`, `monthlySavings`, `planType` optional |
+#### Question 1: Quick Health Check (Care/Living Situation)
 
----
+**Current:**
+- Nursing home or assisted living
+- Need daily help with personal care
+- Dementia or Alzheimer's
+- Use oxygen at home
 
-### Implementation Details
+**Proposed (add 2 items):**
+- Nursing home or assisted living
+- Need daily help with personal care
+- **Hospice or home health care services** _(NEW - catches functional limitations)_
+- Dementia or Alzheimer's
+- Use oxygen at home
+- **Wheelchair-bound or bedridden** _(NEW - catches mobility limitations)_
 
-#### 1. Modify `ghl-calendar` Edge Function
-
-Add a new `create-contact` action that creates a contact in GHL if it doesn't exist:
-
-```typescript
-interface CreateContactRequest {
-  action: 'create-contact';
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-}
-
-// In the handler, add:
-if (body.action === 'create-contact') {
-  const { firstName, lastName, email, phone } = body;
-  const normalizedPhone = normalizePhone(phone);
-  
-  // First check if contact exists
-  // ... search by phone ...
-  
-  // If not found, create new contact via GHL API
-  const createResponse = await fetch(`${GHL_BASE_URL}/contacts/`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${GHL_API_TOKEN}`,
-      'Content-Type': 'application/json',
-      'Version': CONTACTS_API_VERSION,
-    },
-    body: JSON.stringify({
-      locationId: LOCATION_ID,
-      firstName,
-      lastName,
-      email,
-      phone: normalizedPhone,
-      source: 'Standalone Booking Page',
-    }),
-  });
-  
-  return { contactId: data.contact.id };
-}
-```
-
-#### 2. Update `AppointmentBookingWidget` Props
-
-Make quote-related props optional (with defaults) since the standalone page won't have quote data:
-
-```typescript
-interface AppointmentWidgetProps {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email: string;
-  quotedPremium?: number;      // Optional - default to 0
-  monthlySavings?: number;     // Optional - default to 0
-  planType?: string;           // Optional - default to 'N/A'
-  userTimezone: string;
-  userState?: string;          // Optional
-  onComplete?: () => void;
-  isStandalone?: boolean;      // New flag for standalone mode
-}
-```
-
-When `isStandalone` is true:
-- Hide the savings-focused messaging ("Lock In Your $X Savings")
-- Show a simpler "Schedule Your Consultation" heading instead
-- Skip the contact lookup (it was just created)
-- Pass a contactId prop directly if available
-
-#### 3. Create `StandaloneBooking.tsx` Page
-
-```text
-+----------------------------------+
-|      Health Helpers Logo         |
-+----------------------------------+
-|                                  |
-|   Schedule a Medicare            |
-|   Consultation                   |
-|                                  |
-|   Speak with a licensed agent    |
-|   about your Medicare options.   |
-|                                  |
-+----------------------------------+
-|   [ CONTACT FORM ]               |
-|                                  |
-|   First Name: [____________]     |
-|   Last Name:  [____________]     |
-|   Email:      [____________]     |
-|   Phone:      [____________]     |
-|                                  |
-|   [ Continue to Schedule → ]     |
-+----------------------------------+
-```
-
-After form submission:
-1. Validate the contact info (same zod schema as existing funnel)
-2. Call `ghl-calendar` with `action: 'create-contact'`
-3. Show the `AppointmentBookingWidget` with `isStandalone={true}`
-
-#### 4. Flow Diagram
-
-```text
-User visits /booking
-        │
-        ▼
-┌─────────────────────┐
-│  Contact Info Form  │
-│  (name, email,      │
-│   phone)            │
-└─────────────────────┘
-        │
-        ▼ Submit
-┌─────────────────────┐
-│  Create Contact     │
-│  (ghl-calendar API) │
-└─────────────────────┘
-        │
-        ▼
-┌─────────────────────┐
-│  Booking Widget     │
-│  (same as /suppappt)│
-│  - Pick day         │
-│  - Pick time range  │
-│  - Pick time +      │
-│    inline confirm   │
-│  - Success          │
-└─────────────────────┘
-```
-
-#### 5. Page Styling
-
-The page will use the same styling patterns as the existing funnels:
-- Blue gradient header
-- White card for form/widget
-- Green primary buttons
-- Mobile-responsive with senior-friendly sizing (70px+ buttons, 18px+ text)
+**Conditions Now Caught:**
+- Hospice care
+- Home health services
+- Wheelchair/bedridden status
+- Functional ADL limitations
 
 ---
 
-### Technical Notes
+#### Question 2: Recent Medical History (Treatment/Conditions)
 
-**Contact Lookup vs Create:**
-- The widget currently searches for a contact by phone before booking
-- For standalone mode, we'll create the contact first, then pass the `contactId` directly to skip the lookup
-- This avoids the "contact not found" error that would otherwise occur
+**Current:**
+- Cancer, heart attack, or stroke
+- Kidney dialysis or organ transplant
+- ALS, Parkinson's, or MS
 
-**Optional Props Handling:**
-- When no quote data is provided, the widget will hide savings messaging
-- Appointment description will say "Medicare Consultation" instead of "$X savings"
+**Proposed (expand and add):**
+- Cancer, heart attack, or stroke
+- **Congestive heart failure (CHF) or COPD** _(NEW - high-volume declines)_
+- **Heart procedure: bypass, stent, or pacemaker** _(NEW - cardiac procedures)_
+- Kidney dialysis or organ transplant
+- ALS, Parkinson's, or MS
 
-**Validation:**
-- Uses the same zod schema and Abstract API validation as the existing funnel
-- Phone validation ensures valid US numbers
-- Email validation catches disposable addresses
+**Conditions Now Caught:**
+- CHF (congestive heart failure)
+- COPD / emphysema
+- Cardiomyopathy (often diagnosed as CHF)
+- Coronary artery disease with bypass/stent/angioplasty
+- Pacemaker or defibrillator
+- Atrial fibrillation (often accompanies pacemaker)
+
+---
+
+#### Question 3: Current Medications
+
+**Current:**
+- Use insulin
+- Take 3+ diabetes medications
+- Daily prescription pain medicine (opioids)
+
+**Proposed (add 1 item):**
+- Use insulin
+- Take 3+ diabetes medications
+- Daily prescription pain medicine (opioids)
+- **Biologic injections or infusions (e.g., Humira, Enbrel)** _(NEW - catches autoimmune)_
+
+**Conditions Now Caught:**
+- Rheumatoid arthritis
+- Lupus
+- Crohn's disease / Ulcerative colitis
+- Psoriatic arthritis
+- Any autoimmune requiring biologics/immunosuppressants
+
+---
+
+### Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/pages/MedicareSupplementAppointment.tsx` | Update care, treatment, and medications question bullet lists |
+| `src/pages/MedicareSupplementQuote.tsx` | Update care, treatment, and medications question bullet lists (identical changes) |
+
+---
+
+### Updated Question Text (Final Copy)
+
+#### Question 1: Quick Health Check
+```
+Do any of these apply to you?
+
+• Nursing home or assisted living
+• Need daily help with personal care
+• Hospice or home health care
+• Dementia or Alzheimer's
+• Use oxygen at home
+• Wheelchair-bound or bedridden
+```
+
+#### Question 2: Recent Medical History
+```
+In the last 2 years, have you had:
+
+• Cancer, heart attack, or stroke
+• Congestive heart failure (CHF) or COPD
+• Heart procedure: bypass, stent, or pacemaker
+• Kidney dialysis or organ transplant
+• ALS, Parkinson's, or MS
+```
+
+#### Question 3: Current Medications
+```
+Do any of these apply to you?
+
+• Use insulin
+• Take 3+ diabetes medications
+• Daily prescription pain medicine (opioids)
+• Biologic injections or infusions (e.g., Humira, Enbrel)
+```
+
+---
+
+### Conditions This Now Screens Out
+
+| Category | Conditions Now Caught |
+|----------|----------------------|
+| Cardiac | CHF, bypass, stents, pacemaker, cardiomyopathy |
+| Pulmonary | COPD, emphysema (bundled with CHF question) |
+| Autoimmune | RA, Lupus, Crohn's, UC, psoriatic arthritis (via biologics) |
+| Functional | Hospice, home health, wheelchair/bedridden |
+| Neurologic | Already covered (ALS, Parkinson's, MS, dementia) |
+| Diabetes | Already covered (insulin, 3+ meds) |
+| Cancer | Already covered (2-year lookback) |
+
+---
+
+### Design Considerations
+
+**Senior-Friendly Formatting:**
+- Keep same large text (text-lg/text-xl)
+- Bullet points remain scannable
+- Plain language maintained (e.g., "heart procedure" not "CABG")
+- Parenthetical examples help clarify (e.g., "Humira, Enbrel")
+
+**UI Impact:**
+- Question 1: 6 items (was 4) - still fits on mobile
+- Question 2: 5 items (was 3) - still fits on mobile
+- Question 3: 4 items (was 3) - minimal change
 
 ---
 
 ### Summary
 
-| Step | Description |
-|------|-------------|
-| 1 | User visits `/booking` |
-| 2 | Fills out contact form (first name, last name, email, phone) |
-| 3 | Form validates and creates contact in GHL |
-| 4 | Booking widget appears with same UX as `/suppappt` |
-| 5 | User picks day → time range → time → books |
-| 6 | Success screen shows confirmation |
+This plan adds **5 new screening items** across the 3 existing questions, targeting the highest-volume gaps identified (CHF, COPD, cardiac procedures, biologics, hospice/home health). It maintains the senior-friendly design and requires no new questions or flow changes.
 
