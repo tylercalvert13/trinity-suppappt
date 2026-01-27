@@ -3,6 +3,14 @@ import { Check, ChevronLeft, Phone, Calendar, Loader2, AlertTriangle } from 'luc
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 
+interface TrackEventParams {
+  eventType: string;
+  step?: string;
+  answer?: string;
+  outcome?: string;
+  metadata?: Record<string, string | number | boolean>;
+}
+
 interface AppointmentWidgetProps {
   firstName: string;
   lastName: string;
@@ -16,6 +24,7 @@ interface AppointmentWidgetProps {
   onComplete?: () => void;
   isStandalone?: boolean;
   contactId?: string; // Pre-created contact ID for standalone mode
+  onTrackEvent?: (params: TrackEventParams) => void; // Analytics callback
 }
 
 interface SlotData {
@@ -237,11 +246,12 @@ export function AppointmentBookingWidget({
   userState = '',
   onComplete,
   isStandalone = false,
-  contactId: preCreatedContactId
+  contactId: preCreatedContactId,
+  onTrackEvent
 }: AppointmentWidgetProps) {
+  // Step 1 = Pick Day, Step 2 = Pick Time + Confirm, Step 3 = Success
   const [bookingStep, setBookingStep] = useState(1);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTimeRange, setSelectedTimeRange] = useState<'morning' | 'afternoon' | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<SlotData | null>(null);
   const [availableSlots, setAvailableSlots] = useState<SlotData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -257,13 +267,10 @@ export function AppointmentBookingWidget({
   // Get next 4 available weekdays
   const availableWeekdays = useMemo(() => getNextAvailableWeekdays(4), []);
 
-  // Filter slots by time range
-  const filteredSlots = useMemo(() => {
-    if (!selectedTimeRange) return availableSlots;
-    return availableSlots.filter(slot => 
-      selectedTimeRange === 'morning' ? isMorningSlot(slot.original) : isAfternoonSlot(slot.original)
-    );
-  }, [availableSlots, selectedTimeRange]);
+  // Track widget view on mount
+  useEffect(() => {
+    onTrackEvent?.({ eventType: 'booking_widget_view' });
+  }, [onTrackEvent]);
 
   // Check if morning/afternoon have slots
   const hasMorningSlots = useMemo(() => 
@@ -321,7 +328,7 @@ export function AppointmentBookingWidget({
   }, [availableWeekdays, userTimezone, preloadedSlots]);
 
   // Fetch available slots for a date (uses cache if available)
-  const fetchSlots = async (date: Date) => {
+  const fetchSlots = async (date: Date, dayLabel: string) => {
     const dateStr = formatDateString(date);
     
     // Check if we already have preloaded data
@@ -329,7 +336,12 @@ export function AppointmentBookingWidget({
     if (cached && cached.length > 0) {
       console.log('[Cache Hit] Using preloaded slots for', dateStr);
       setAvailableSlots(cached);
+      // Go directly to Step 2 (Pick Time) - skipping old morning/afternoon step
       setBookingStep(2);
+      onTrackEvent?.({ 
+        eventType: 'booking_day_selected', 
+        metadata: { day: dateStr, dayLabel, slotCount: cached.length, cached: true }
+      });
       return;
     }
     
@@ -350,6 +362,10 @@ export function AppointmentBookingWidget({
       if (!data.slots || data.slots.length === 0) {
         setError('No times available on this day. Please pick another day.');
         setBookingStep(1);
+        onTrackEvent?.({ 
+          eventType: 'booking_error', 
+          metadata: { error: 'no_slots', step: 'day_select', day: dateStr }
+        });
         return;
       }
 
@@ -364,33 +380,38 @@ export function AppointmentBookingWidget({
       // Also cache for future
       setPreloadedSlots(prev => new Map(prev).set(dateStr, slotsWithDisplay));
       
+      // Go directly to Step 2 (Pick Time) - skipping old morning/afternoon step
       setBookingStep(2);
+      onTrackEvent?.({ 
+        eventType: 'booking_day_selected', 
+        metadata: { day: dateStr, dayLabel, slotCount: slotsWithDisplay.length, cached: false }
+      });
     } catch (err) {
       console.error('Error fetching slots:', err);
       setError('Connection issue. Please try again.');
+      onTrackEvent?.({ 
+        eventType: 'booking_error', 
+        metadata: { error: 'fetch_failed', step: 'day_select', day: dateStr }
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   // Handle day selection
-  const handleDaySelect = (date: Date) => {
+  const handleDaySelect = (date: Date, dayLabel: string) => {
     setSelectedDate(date);
-    setSelectedTimeRange(null);
     setSelectedSlot(null);
-    fetchSlots(date);
-  };
-
-  // Handle time range selection
-  const handleTimeRangeSelect = (range: 'morning' | 'afternoon') => {
-    setSelectedTimeRange(range);
-    setSelectedSlot(null);
-    setBookingStep(3);
+    fetchSlots(date, dayLabel);
   };
 
   // Handle slot selection - no longer navigates, just selects
   const handleSlotSelect = (slot: SlotData) => {
     setSelectedSlot(slot);
+    onTrackEvent?.({ 
+      eventType: 'booking_time_selected', 
+      metadata: { time: slot.display, slotOriginal: slot.original }
+    });
     // No navigation - inline confirmation will appear below
   };
 
@@ -401,9 +422,6 @@ export function AppointmentBookingWidget({
       setBookingStep(1);
       setSelectedDate(null);
       setAvailableSlots([]);
-    } else if (bookingStep === 3) {
-      setBookingStep(2);
-      setSelectedTimeRange(null);
       setSelectedSlot(null);
     }
   };
@@ -427,6 +445,11 @@ export function AppointmentBookingWidget({
 
     setIsLoading(true);
     setError(null);
+    
+    onTrackEvent?.({ 
+      eventType: 'booking_confirm_clicked', 
+      metadata: { slotTime: selectedSlot.original, contactLookupRequired: !preCreatedContactId }
+    });
 
     try {
       let contactIdToUse = preCreatedContactId;
@@ -442,6 +465,10 @@ export function AppointmentBookingWidget({
           const errorMsg = contactData?.message || "We're still setting up your account. Please try again in a moment or call us at (201) 298-8393.";
           setError(errorMsg);
           setIsLoading(false);
+          onTrackEvent?.({ 
+            eventType: 'booking_error', 
+            metadata: { error: 'contact_lookup_failed', step: 'confirm' }
+          });
           return;
         }
 
@@ -470,30 +497,51 @@ export function AppointmentBookingWidget({
       // Handle slot taken
       if (bookingData?.error === 'slot_taken') {
         setError(bookingData.message);
-        // Refresh slots and go back to step 3
+        // Refresh slots and stay on step 2
         if (selectedDate) {
-          await fetchSlots(selectedDate);
-          setBookingStep(3);
+          const dayLabel = formatDateLabel(selectedDate, 0).primary;
+          await fetchSlots(selectedDate, dayLabel);
         }
         setIsLoading(false);
+        onTrackEvent?.({ 
+          eventType: 'booking_error', 
+          metadata: { error: 'slot_taken', step: 'confirm' }
+        });
         return;
       }
 
       if (bookingData?.error) {
         setError(bookingData.message || 'Something went wrong. Please try again or call us at (201) 298-8393.');
         setIsLoading(false);
+        onTrackEvent?.({ 
+          eventType: 'booking_error', 
+          metadata: { error: 'booking_failed', step: 'confirm', message: bookingData.message }
+        });
         return;
       }
 
       console.log('Appointment booked:', bookingData);
       setAgentName(bookingData?.assignedUser || null);
       setConfirmedTime(selectedSlot.original);
-      setBookingStep(4); // Success is now step 4
+      setBookingStep(3); // Success is now step 3
+      
+      onTrackEvent?.({ 
+        eventType: 'booking_completed', 
+        metadata: { 
+          appointmentId: bookingData?.id || '', 
+          agentName: bookingData?.assignedUser || '' 
+        }
+      });
+      
       onComplete?.();
 
     } catch (err) {
       console.error('Booking error:', err);
       setError('Something went wrong. Please try again or call us at (201) 298-8393.');
+      onTrackEvent?.({ 
+        eventType: 'booking_error', 
+        metadata: { error: 'exception', step: 'confirm' }
+      });
     } finally {
       setIsLoading(false);
     }
@@ -513,17 +561,17 @@ export function AppointmentBookingWidget({
     <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6">
 
       {/* Rate Expiration Notice - only show for funnel mode with quote data */}
-      {bookingStep < 4 && !confirmedTime && !isStandalone && monthlySavings > 0 && (
+      {bookingStep < 3 && !confirmedTime && !isStandalone && monthlySavings > 0 && (
         <div className="text-center text-sm text-gray-500 mb-4 flex items-center justify-center gap-1 px-4">
           <span>⏱️</span>
           <span>This rate is based on today's pricing. Rates are reviewed weekly and can increase without notice.</span>
         </div>
       )}
 
-      {/* Step Indicator - 3 steps (excludes success) */}
-      {bookingStep < 4 && !confirmedTime && (
+      {/* Step Indicator - 2 steps (excludes success) */}
+      {bookingStep < 3 && !confirmedTime && (
         <div className="flex justify-center gap-2 mb-6">
-          {[1, 2, 3].map((step) => (
+          {[1, 2].map((step) => (
             <span
               key={step}
               className={`w-3 h-3 rounded-full transition-colors ${
@@ -535,7 +583,7 @@ export function AppointmentBookingWidget({
       )}
 
       {/* Heading */}
-      {bookingStep < 4 && !confirmedTime && (
+      {bookingStep < 3 && !confirmedTime && (
         <div className="text-center mb-6">
           {isStandalone ? (
             <>
@@ -610,7 +658,7 @@ export function AppointmentBookingWidget({
             return (
               <button
                 key={date.toISOString()}
-                onClick={() => handleDaySelect(date)}
+                onClick={() => handleDaySelect(date, primary)}
                 disabled={isLoading}
                 className={`w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
                          hover:border-green-600 hover:bg-green-50 transition-all
@@ -680,7 +728,7 @@ export function AppointmentBookingWidget({
         </div>
       )}
 
-      {/* Step 2: Morning or Afternoon */}
+      {/* Step 2: Pick a Time + Inline Confirmation (merged step, skipping morning/afternoon) */}
       {bookingStep === 2 && !isLoading && (
         <div className="space-y-3">
           <button
@@ -695,53 +743,8 @@ export function AppointmentBookingWidget({
             {getSelectedDateDisplay()}
           </p>
 
-          {hasMorningSlots && (
-            <button
-              onClick={() => handleTimeRangeSelect('morning')}
-              className="w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
-                       hover:border-green-600 hover:bg-green-50 transition-all
-                       flex items-center justify-center"
-            >
-              <span className="text-xl font-semibold text-gray-900">Morning</span>
-            </button>
-          )}
-
-          {hasAfternoonSlots && (
-            <button
-              onClick={() => handleTimeRangeSelect('afternoon')}
-              className="w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
-                       hover:border-green-600 hover:bg-green-50 transition-all
-                       flex items-center justify-center"
-            >
-              <span className="text-xl font-semibold text-gray-900">Afternoon</span>
-            </button>
-          )}
-
-          {!hasMorningSlots && !hasAfternoonSlots && (
-            <p className="text-center text-gray-600 py-4">
-              No times available on this day. Please pick another day.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Step 3: Pick a Time + Inline Confirmation */}
-      {bookingStep === 3 && (
-        <div className="space-y-3">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-1 text-gray-600 hover:text-gray-800 mb-4"
-          >
-            <ChevronLeft className="w-5 h-5" />
-            <span>Pick a different time range</span>
-          </button>
-
-          <p className="text-center text-gray-600 mb-4">
-            {getSelectedDateDisplay()} • {selectedTimeRange === 'morning' ? 'Morning' : 'Afternoon'}
-          </p>
-
-          {/* Time slots with selected state */}
-          {filteredSlots.map((slot) => {
+          {/* All time slots (no morning/afternoon filter) */}
+          {availableSlots.map((slot) => {
             const isSelected = selectedSlot?.original === slot.original;
             return (
               <button
@@ -765,9 +768,9 @@ export function AppointmentBookingWidget({
             );
           })}
 
-          {filteredSlots.length === 0 && (
+          {availableSlots.length === 0 && (
             <p className="text-center text-gray-600 py-4">
-              No times available in this range. Please pick a different time range.
+              No times available on this day. Please pick a different day.
             </p>
           )}
 
@@ -818,8 +821,8 @@ export function AppointmentBookingWidget({
         </div>
       )}
 
-      {/* Step 4: Success */}
-      {bookingStep === 4 && confirmedTime && (
+      {/* Step 3: Success */}
+      {bookingStep === 3 && confirmedTime && (
         <div className="text-center">
           {/* 1. Success Checkmark */}
           <div className="w-20 h-20 rounded-full bg-green-600 text-white flex items-center justify-center mx-auto mb-5">
