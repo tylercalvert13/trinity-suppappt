@@ -43,7 +43,11 @@ interface BookAppointmentRequest {
   planType: string;
 }
 
-type RequestBody = FreeSlotsRequest | SearchContactRequest | CreateContactRequest | BookAppointmentRequest;
+interface WarmupRequest {
+  action: 'warmup';
+}
+
+type RequestBody = FreeSlotsRequest | SearchContactRequest | CreateContactRequest | BookAppointmentRequest | WarmupRequest;
 
 // Convert date string to epoch milliseconds for start of day in Eastern timezone
 function getEasternDayStartMs(dateStr: string): number {
@@ -119,6 +123,15 @@ serve(async (req) => {
 
     const body: RequestBody = await req.json();
     console.log('GHL Calendar request:', body.action);
+
+    // ========== WARMUP (lightweight ping to prevent cold starts) ==========
+    if (body.action === 'warmup') {
+      console.log('Warmup ping received');
+      return new Response(
+        JSON.stringify({ status: 'warm', timestamp: Date.now() }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // ========== FREE SLOTS ==========
     if (body.action === 'free-slots') {
