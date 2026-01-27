@@ -55,7 +55,7 @@ const getDeviceType = (): string => {
   return 'desktop';
 };
 
-export const useFunnelAnalytics = (page: 'supp' | 'supp1' | 'suppquote' | 'suppappt') => {
+export const useFunnelAnalytics = (page: 'supp' | 'supp1' | 'suppquote' | 'suppappt' | 'suppappt1') => {
   const visitorId = useRef(getVisitorId());
   const sessionId = useRef(getSessionId(page));
   const sessionCreated = useRef(false);
