@@ -443,12 +443,15 @@ export function AppointmentBookingWidget({
   const handleConfirmBooking = async () => {
     if (!selectedSlot || !selectedDate) return;
 
+    // Capture slot early to prevent race conditions if state changes during async operations
+    const slotToBook = selectedSlot.original;
+
     setIsLoading(true);
     setError(null);
     
     onTrackEvent?.({ 
       eventType: 'booking_confirm_clicked', 
-      metadata: { slotTime: selectedSlot.original, contactLookupRequired: !preCreatedContactId }
+      metadata: { slotTime: slotToBook, contactLookupRequired: !preCreatedContactId }
     });
 
     try {
@@ -478,12 +481,12 @@ export function AppointmentBookingWidget({
       console.log('Using contact:', contactIdToUse);
 
       // Step 2: Book the appointment
-      console.log('Booking appointment at:', selectedSlot.original);
+      console.log('Booking appointment at:', slotToBook);
       const { data: bookingData, error: bookingError } = await supabase.functions.invoke('ghl-calendar', {
         body: {
           action: 'book-appointment',
           contactId: contactIdToUse,
-          startTime: selectedSlot.original,
+          startTime: slotToBook,
           firstName,
           lastName,
           quotedRate: quotedPremium,
@@ -522,7 +525,7 @@ export function AppointmentBookingWidget({
 
       console.log('Appointment booked:', bookingData);
       setAgentName(bookingData?.assignedUser || null);
-      setConfirmedTime(selectedSlot.original);
+      setConfirmedTime(slotToBook);
       setBookingStep(3); // Success is now step 3
       
       onTrackEvent?.({ 
@@ -729,7 +732,7 @@ export function AppointmentBookingWidget({
       )}
 
       {/* Step 2: Pick a Time + Inline Confirmation (merged step, skipping morning/afternoon) */}
-      {bookingStep === 2 && !isLoading && (
+      {bookingStep === 2 && (
         <div className="space-y-3">
           <button
             onClick={handleBack}
