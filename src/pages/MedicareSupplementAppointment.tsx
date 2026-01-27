@@ -1240,6 +1240,7 @@ const MedicareSupplementAppointment = () => {
                 planType={formData.plan}
                 userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
                 userState={getStateFromZip(formData.zipCode)}
+                onTrackEvent={trackEvent}
               />
 
               {/* Trust Elements */}
