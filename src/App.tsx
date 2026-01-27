@@ -15,6 +15,7 @@ import MedicareSupplementLP from "./pages/MedicareSupplementLP";
 import MedicareSupplementLP1 from "./pages/MedicareSupplementLP1";
 import MedicareSupplementQuote from "./pages/MedicareSupplementQuote";
 import MedicareSupplementAppointment from "./pages/MedicareSupplementAppointment";
+import MedicareSupplementAppointment1 from "./pages/MedicareSupplementAppointment1";
 import Disqualified from "./pages/Disqualified";
 import GreatRate from "./pages/GreatRate";
 import Analytics from "./pages/Analytics";
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/supp1" element={<MedicareSupplementLP1 />} />
           <Route path="/suppquote" element={<MedicareSupplementQuote />} />
           <Route path="/suppappt" element={<MedicareSupplementAppointment />} />
+          <Route path="/suppappt1" element={<MedicareSupplementAppointment1 />} />
           <Route path="/disqualified" element={<Disqualified />} />
           <Route path="/great-rate" element={<GreatRate />} />
           <Route path="/analytics" element={<Analytics />} />
