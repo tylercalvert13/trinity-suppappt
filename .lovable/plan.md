@@ -1,160 +1,151 @@
 
 
-## Plan: Expand Screening Questions to Catch More Auto-Decline Conditions
+## Plan: Optimize Booking Widget Speed & UX for Maximum Appointments
 
-### Overview
-Enhance the existing 3 screening questions in both `/suppquote` and `/suppappt` funnels to capture additional high-risk conditions that currently slip through. This will improve lead quality by filtering out uninsurable applicants earlier.
-
----
-
-### Current Questions vs. Proposed Changes
-
-#### Question 1: Quick Health Check (Care/Living Situation)
-
-**Current:**
-- Nursing home or assisted living
-- Need daily help with personal care
-- Dementia or Alzheimer's
-- Use oxygen at home
-
-**Proposed (add 2 items):**
-- Nursing home or assisted living
-- Need daily help with personal care
-- **Hospice or home health care services** _(NEW - catches functional limitations)_
-- Dementia or Alzheimer's
-- Use oxygen at home
-- **Wheelchair-bound or bedridden** _(NEW - catches mobility limitations)_
-
-**Conditions Now Caught:**
-- Hospice care
-- Home health services
-- Wheelchair/bedridden status
-- Functional ADL limitations
+### Problem Summary
+Cold starts on the `ghl-calendar` edge function are causing 20-30 second delays before users see available time slots. This long wait causes users to abandon before booking, directly hurting appointment rates.
 
 ---
 
-#### Question 2: Recent Medical History (Treatment/Conditions)
+### Solution: Multi-Pronged Optimization
 
-**Current:**
-- Cancer, heart attack, or stroke
-- Kidney dialysis or organ transplant
-- ALS, Parkinson's, or MS
-
-**Proposed (expand and add):**
-- Cancer, heart attack, or stroke
-- **Congestive heart failure (CHF) or COPD** _(NEW - high-volume declines)_
-- **Heart procedure: bypass, stent, or pacemaker** _(NEW - cardiac procedures)_
-- Kidney dialysis or organ transplant
-- ALS, Parkinson's, or MS
-
-**Conditions Now Caught:**
-- CHF (congestive heart failure)
-- COPD / emphysema
-- Cardiomyopathy (often diagnosed as CHF)
-- Coronary artery disease with bypass/stent/angioplasty
-- Pacemaker or defibrillator
-- Atrial fibrillation (often accompanies pacemaker)
+We'll implement 4 improvements that work together to eliminate perceived wait time and keep users engaged:
 
 ---
 
-#### Question 3: Current Medications
+### 1. Preload Slots on Widget Mount (Biggest Impact)
 
-**Current:**
-- Use insulin
-- Take 3+ diabetes medications
-- Daily prescription pain medicine (opioids)
+**Current behavior**: User clicks a day → starts fetching slots → waits 5-30 seconds  
+**New behavior**: Slots for the first available day are fetched immediately when the widget appears
 
-**Proposed (add 1 item):**
-- Use insulin
-- Take 3+ diabetes medications
-- Daily prescription pain medicine (opioids)
-- **Biologic injections or infusions (e.g., Humira, Enbrel)** _(NEW - catches autoimmune)_
+**Technical approach**:
+- Add a `useEffect` that runs on widget mount
+- Preload slots for the first weekday (typically "Today" or "Tomorrow")
+- Store in state so clicking that day shows slots instantly
+- Continue fetching in background for other days if needed
 
-**Conditions Now Caught:**
-- Rheumatoid arthritis
-- Lupus
-- Crohn's disease / Ulcerative colitis
-- Psoriatic arthritis
-- Any autoimmune requiring biologics/immunosuppressants
+```typescript
+// On mount, preload first day's slots
+useEffect(() => {
+  const firstDay = availableWeekdays[0];
+  if (firstDay) {
+    prefetchSlots(firstDay);
+  }
+}, []);
+```
+
+**Result**: By the time the user reads the heading and decides to click a day, slots are already loaded.
 
 ---
 
-### Files to Modify
+### 2. Skeleton Loading State Instead of Spinner
+
+**Current behavior**: Full-screen spinner with "Checking availability..."  
+**New behavior**: Show the day buttons immediately with a subtle loading indicator
+
+**Technical approach**:
+- Show the 4 day buttons right away (clickable)
+- Display a small "Loading availability..." badge on the first day
+- When slots arrive, badge updates to "Morning & Afternoon available"
+
+```typescript
+// Show days immediately, with loading badge on first day
+<button>
+  <span>Today</span>
+  <span>{isPreloading ? "Loading..." : "Morning & Afternoon"}</span>
+</button>
+```
+
+**Result**: Users see content immediately, reducing perceived wait time.
+
+---
+
+### 3. Edge Function Warmup Endpoint
+
+**Purpose**: Keep the function warm so cold starts don't happen during business hours
+
+**Technical approach**:
+- Add a lightweight `warmup` action to the edge function
+- Returns immediately with `{ status: "warm" }`
+- Can be pinged via cron job or client-side prefetch
+
+```typescript
+// Add to ghl-calendar edge function
+if (body.action === 'warmup') {
+  return new Response(
+    JSON.stringify({ status: 'warm', timestamp: Date.now() }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+```
+
+**Plus**: Add a warmup call from the main funnel page before user reaches booking widget:
+- On `/suppappt` funnel, fire a warmup request when user lands or progresses
+- By the time they reach the booking step, function is already warm
+
+---
+
+### 4. Optimistic Day Selection with Parallel Fetch
+
+**Current behavior**: Click day → wait → see morning/afternoon options  
+**New behavior**: Click day → immediately see morning/afternoon buttons (loading) → buttons activate when data arrives
+
+**Technical approach**:
+- Show Step 2 (Morning/Afternoon) immediately with skeleton state
+- Buttons show "Loading..." until slots confirm availability
+- If a time range has no slots, it fades/disables instead of disappearing
+
+---
+
+### Implementation Files
 
 | File | Changes |
 |------|---------|
-| `src/pages/MedicareSupplementAppointment.tsx` | Update care, treatment, and medications question bullet lists |
-| `src/pages/MedicareSupplementQuote.tsx` | Update care, treatment, and medications question bullet lists (identical changes) |
+| `src/components/AppointmentBookingWidget.tsx` | Add preload on mount, skeleton states, optimistic transitions |
+| `supabase/functions/ghl-calendar/index.ts` | Add `warmup` action |
+| `src/pages/MedicareSupplementAppointment.tsx` | Add background warmup call when funnel loads |
+| `src/pages/MedicareSupplementQuote.tsx` | Add background warmup call when funnel loads |
 
 ---
 
-### Updated Question Text (Final Copy)
+### User Experience Flow (After Changes)
 
-#### Question 1: Quick Health Check
-```
-Do any of these apply to you?
+```text
+1. User arrives on /suppappt
+   └── Background: warmup request sent to edge function
 
-• Nursing home or assisted living
-• Need daily help with personal care
-• Hospice or home health care
-• Dementia or Alzheimer's
-• Use oxygen at home
-• Wheelchair-bound or bedridden
-```
+2. User completes form, sees quote, reaches booking widget
+   └── Widget mounts → immediately starts preloading first day's slots
+   └── User sees 4 day buttons instantly (with loading badge on first)
 
-#### Question 2: Recent Medical History
-```
-In the last 2 years, have you had:
+3. User clicks "Today" (or first day)
+   └── If preload complete: slots appear instantly
+   └── If still loading: show skeleton Morning/Afternoon buttons
 
-• Cancer, heart attack, or stroke
-• Congestive heart failure (CHF) or COPD
-• Heart procedure: bypass, stent, or pacemaker
-• Kidney dialysis or organ transplant
-• ALS, Parkinson's, or MS
-```
-
-#### Question 3: Current Medications
-```
-Do any of these apply to you?
-
-• Use insulin
-• Take 3+ diabetes medications
-• Daily prescription pain medicine (opioids)
-• Biologic injections or infusions (e.g., Humira, Enbrel)
+4. User selects Morning/Afternoon → Time
+   └── No additional network calls needed
 ```
 
 ---
 
-### Conditions This Now Screens Out
+### Expected Impact
 
-| Category | Conditions Now Caught |
-|----------|----------------------|
-| Cardiac | CHF, bypass, stents, pacemaker, cardiomyopathy |
-| Pulmonary | COPD, emphysema (bundled with CHF question) |
-| Autoimmune | RA, Lupus, Crohn's, UC, psoriatic arthritis (via biologics) |
-| Functional | Hospice, home health, wheelchair/bedridden |
-| Neurologic | Already covered (ALS, Parkinson's, MS, dementia) |
-| Diabetes | Already covered (insulin, 3+ meds) |
-| Cancer | Already covered (2-year lookback) |
-
----
-
-### Design Considerations
-
-**Senior-Friendly Formatting:**
-- Keep same large text (text-lg/text-xl)
-- Bullet points remain scannable
-- Plain language maintained (e.g., "heart procedure" not "CABG")
-- Parenthetical examples help clarify (e.g., "Humira, Enbrel")
-
-**UI Impact:**
-- Question 1: 6 items (was 4) - still fits on mobile
-- Question 2: 5 items (was 3) - still fits on mobile
-- Question 3: 4 items (was 3) - minimal change
+| Metric | Before | After |
+|--------|--------|-------|
+| Time to see day buttons | 0-30 sec | 0 sec |
+| Time to see time slots | 5-30 sec | 0-2 sec |
+| Perceived wait | "Is this broken?" | Smooth, instant |
+| Appointment completion rate | Lower | Higher |
 
 ---
 
 ### Summary
 
-This plan adds **5 new screening items** across the 3 existing questions, targeting the highest-volume gaps identified (CHF, COPD, cardiac procedures, biologics, hospice/home health). It maintains the senior-friendly design and requires no new questions or flow changes.
+This plan eliminates perceived wait time through:
+1. **Preloading** - Fetch data before user needs it
+2. **Skeleton states** - Show UI immediately, fill in data
+3. **Function warmup** - Prevent cold starts during peak hours
+4. **Optimistic transitions** - Move forward immediately, confirm async
+
+All changes maintain existing functionality while dramatically improving the booking experience.
 
