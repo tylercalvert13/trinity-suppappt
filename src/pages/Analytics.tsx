@@ -18,6 +18,7 @@ import { CTABreakdown } from "@/components/analytics/CTABreakdown";
 import { TrafficSourcePerformance } from "@/components/analytics/TrafficSourcePerformance";
 import { DemographicInsights } from "@/components/analytics/DemographicInsights";
 import { QuoteFunnelTimeSeries } from "@/components/analytics/QuoteFunnelTimeSeries";
+import { AppointmentFunnelTab } from "@/components/analytics/AppointmentFunnelTab";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -123,7 +124,7 @@ const Analytics = () => {
         supabase
           .from('submissions')
           .select('*')
-          .eq('page', 'suppquote')
+          .in('page', ['suppquote', 'suppappt', 'suppappt1'])
           .gte('created_at', startDate)
           .lte('created_at', endDate)
           .order('created_at', { ascending: false }),
@@ -267,11 +268,12 @@ const Analytics = () => {
   // ============= SUPPQUOTE SPECIFIC METRICS =============
   const suppquoteSessions = sessions.filter(s => s.page === 'suppquote');
   const suppquoteEvents = events.filter(e => e.page === 'suppquote');
+  const suppquoteSubmissions = submissions.filter(s => s.page === 'suppquote');
   
-  // Submission metrics
-  const successSubmissions = submissions.filter(s => s.submission_type === 'success');
-  const knockoutSubmissions = submissions.filter(s => s.submission_type === 'knockout');
-  const disqualifiedSubmissions = submissions.filter(s => s.submission_type === 'disqualified');
+  // Submission metrics (suppquote only)
+  const successSubmissions = suppquoteSubmissions.filter(s => s.submission_type === 'success');
+  const knockoutSubmissions = suppquoteSubmissions.filter(s => s.submission_type === 'knockout');
+  const disqualifiedSubmissions = suppquoteSubmissions.filter(s => s.submission_type === 'disqualified');
   
   // Beat rate = success submissions with positive monthly savings
   const beatRateSubmissions = successSubmissions.filter(s => s.monthly_savings && s.monthly_savings > 0);
@@ -302,8 +304,8 @@ const Analytics = () => {
 
   // Today's suppquote metrics
   const todaySuppquoteSessions = suppquoteSessions.filter(s => s.started_at.startsWith(today));
-  const todaySubmissions = submissions.filter(s => s.created_at.startsWith(today));
-  const todayQuotes = todaySubmissions.filter(s => s.submission_type === 'success').length;
+  const todaySuppquoteSubmissions = suppquoteSubmissions.filter(s => s.created_at.startsWith(today));
+  const todayQuotes = todaySuppquoteSubmissions.filter(s => s.submission_type === 'success').length;
 
   // 12-step funnel drop-off for suppquote
   const funnelSteps = [
@@ -579,7 +581,7 @@ const Analytics = () => {
     });
   });
   
-  submissions.forEach(s => {
+  suppquoteSubmissions.forEach(s => {
     const date = format(new Date(s.created_at), 'MM/dd');
     const current = quoteFunnelTimeSeriesMap.get(date) || { 
       visitors: 0, 
@@ -608,6 +610,85 @@ const Analytics = () => {
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
+  // ============= APPOINTMENT FUNNEL METRICS =============
+  const createAppointmentFunnelData = (page: 'suppappt' | 'suppappt1') => {
+    const pageSessions = sessions.filter(s => s.page === page);
+    const pageEvents = events.filter(e => e.page === page);
+    const pageSubmissions = submissions.filter(s => s.page === page);
+    
+    const qualifiedCount = pageSessions.filter(s => s.completed).length;
+    const disqualifiedCount = pageSessions.filter(s => s.last_step === 'disqualified').length;
+    
+    // Booking events
+    const bookingWidgetViews = pageEvents.filter(e => e.event_type === 'booking_widget_view').length;
+    const bookingDaySelected = pageEvents.filter(e => e.event_type === 'booking_day_selected').length;
+    const bookingTimeSelected = pageEvents.filter(e => e.event_type === 'booking_time_selected').length;
+    const bookingConfirmClicked = pageEvents.filter(e => e.event_type === 'booking_confirm_clicked').length;
+    const bookingCompleted = pageEvents.filter(e => e.event_type === 'booking_completed').length;
+    
+    // Average savings from successful quotes
+    const successSubs = pageSubmissions.filter(s => s.submission_type === 'success' && (s.monthly_savings || 0) > 0);
+    const avgMonthlySavings = successSubs.length > 0
+      ? successSubs.reduce((sum, s) => sum + (s.monthly_savings || 0), 0) / successSubs.length
+      : 0;
+    
+    // Today's metrics
+    const todayPageSessions = pageSessions.filter(s => s.started_at.startsWith(today));
+    const todayBookedEvents = pageEvents.filter(e => 
+      e.event_type === 'booking_completed' && e.created_at.startsWith(today)
+    ).length;
+    
+    // 12-step funnel dropoff
+    const dropoffData = funnelSteps.map((funnelStep, index) => {
+      const stepIndex = stepOrder.indexOf(funnelStep.step);
+      const reachedThisStep = pageSessions.filter(s => {
+        const sessionStepIndex = stepOrder.indexOf(s.last_step);
+        return sessionStepIndex >= stepIndex;
+      }).length;
+      
+      const previousCount = index > 0 
+        ? pageSessions.filter(s => {
+            const sessionStepIndex = stepOrder.indexOf(s.last_step);
+            return sessionStepIndex >= stepOrder.indexOf(funnelSteps[index - 1].step);
+          }).length
+        : pageSessions.length;
+      
+      const dropoff = previousCount > 0 ? ((previousCount - reachedThisStep) / previousCount) * 100 : 0;
+      
+      return {
+        step: funnelStep.step,
+        label: funnelStep.label,
+        count: reachedThisStep,
+        percentage: pageSessions.length > 0 ? (reachedThisStep / pageSessions.length) * 100 : 0,
+        dropoff: index === 0 ? 0 : dropoff,
+      };
+    });
+    
+    // Booking widget funnel
+    const bookingFunnelData = [
+      { step: 'widget_view', label: 'Widget View', count: bookingWidgetViews, percentage: 100 },
+      { step: 'day_selected', label: 'Day Selected', count: bookingDaySelected, percentage: bookingWidgetViews > 0 ? (bookingDaySelected / bookingWidgetViews) * 100 : 0 },
+      { step: 'time_selected', label: 'Time Selected', count: bookingTimeSelected, percentage: bookingWidgetViews > 0 ? (bookingTimeSelected / bookingWidgetViews) * 100 : 0 },
+      { step: 'confirm_clicked', label: 'Confirm Clicked', count: bookingConfirmClicked, percentage: bookingWidgetViews > 0 ? (bookingConfirmClicked / bookingWidgetViews) * 100 : 0 },
+      { step: 'completed', label: 'Booked', count: bookingCompleted, percentage: bookingWidgetViews > 0 ? (bookingCompleted / bookingWidgetViews) * 100 : 0 },
+    ];
+    
+    return {
+      totalVisitors: pageSessions.length,
+      qualifiedCount,
+      appointmentsBooked: bookingCompleted,
+      disqualifiedCount,
+      avgMonthlySavings,
+      todayVisitors: todayPageSessions.length,
+      todayBooked: todayBookedEvents,
+      funnelDropoffData: dropoffData,
+      bookingFunnelData,
+    };
+  };
+  
+  const suppapptData = createAppointmentFunnelData('suppappt');
+  const suppappt1Data = createAppointmentFunnelData('suppappt1');
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -617,7 +698,7 @@ const Analytics = () => {
             <div>
               <h1 className="text-xl font-bold">Funnel Analytics</h1>
               <p className="text-sm text-muted-foreground">
-                Tracking /supp, /supp1, and /suppquote pages
+                Tracking all Medicare landing pages
               </p>
             </div>
           </div>
@@ -650,6 +731,8 @@ const Analytics = () => {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="funnels">Funnels</TabsTrigger>
             <TabsTrigger value="suppquote" className="bg-green-100 dark:bg-green-900/30">Quote Funnel</TabsTrigger>
+            <TabsTrigger value="suppappt" className="bg-blue-100 dark:bg-blue-900/30">Appt Funnel</TabsTrigger>
+            <TabsTrigger value="suppappt1" className="bg-purple-100 dark:bg-purple-900/30">Appt1 Funnel</TabsTrigger>
             <TabsTrigger value="sources">Traffic Sources</TabsTrigger>
             <TabsTrigger value="live">Live Activity</TabsTrigger>
           </TabsList>
@@ -719,6 +802,36 @@ const Analytics = () => {
             <TrafficSourcePerformance data={trafficSourcePerformance} />
 
             <QuoteFunnelTimeSeries data={quoteFunnelTimeSeriesData} />
+          </TabsContent>
+
+          <TabsContent value="suppappt" className="space-y-6">
+            <AppointmentFunnelTab
+              pageName="suppappt"
+              totalVisitors={suppapptData.totalVisitors}
+              qualifiedCount={suppapptData.qualifiedCount}
+              appointmentsBooked={suppapptData.appointmentsBooked}
+              disqualifiedCount={suppapptData.disqualifiedCount}
+              avgMonthlySavings={suppapptData.avgMonthlySavings}
+              todayVisitors={suppapptData.todayVisitors}
+              todayBooked={suppapptData.todayBooked}
+              funnelDropoffData={suppapptData.funnelDropoffData}
+              bookingFunnelData={suppapptData.bookingFunnelData}
+            />
+          </TabsContent>
+
+          <TabsContent value="suppappt1" className="space-y-6">
+            <AppointmentFunnelTab
+              pageName="suppappt1"
+              totalVisitors={suppappt1Data.totalVisitors}
+              qualifiedCount={suppappt1Data.qualifiedCount}
+              appointmentsBooked={suppappt1Data.appointmentsBooked}
+              disqualifiedCount={suppappt1Data.disqualifiedCount}
+              avgMonthlySavings={suppappt1Data.avgMonthlySavings}
+              todayVisitors={suppappt1Data.todayVisitors}
+              todayBooked={suppappt1Data.todayBooked}
+              funnelDropoffData={suppappt1Data.funnelDropoffData}
+              bookingFunnelData={suppappt1Data.bookingFunnelData}
+            />
           </TabsContent>
 
           <TabsContent value="sources" className="space-y-4">

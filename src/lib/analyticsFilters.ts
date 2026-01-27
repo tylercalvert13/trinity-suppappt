@@ -2,6 +2,7 @@
 export const INTERNAL_TEAM_MEMBERS = [
   { firstName: 'tyler', lastName: 'calvert' },
   { firstName: 'josh', lastName: 'foret' },
+  { firstName: 'justin', lastName: 'falck' },
 ];
 
 // Check if a submission is from an internal team member
