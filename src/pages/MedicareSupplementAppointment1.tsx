@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Clock, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
@@ -885,6 +885,21 @@ const MedicareSupplementAppointment1 = () => {
                 <p className="text-lg text-foreground font-medium">
                   That's <span className="text-green-600 font-bold">${quoteResult.monthlySavings.toFixed(2)} LESS</span> than what you're paying now!
                 </p>
+              </div>
+
+              {/* Lock In Rate CTA */}
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center">
+                <div className="flex items-center justify-center gap-2 text-amber-800 mb-2">
+                  <Clock className="h-5 w-5" />
+                  <span className="font-semibold">This rate won't last forever</span>
+                </div>
+                <p className="text-lg text-foreground">
+                  To lock in your <span className="font-bold text-green-600">${quoteResult.monthlySavings.toFixed(2)}/month savings</span>,
+                  <br />pick a time below for a quick 2-minute call — no obligation.
+                </p>
+                <div className="mt-4 flex justify-center">
+                  <ChevronDown className="h-8 w-8 text-amber-600 animate-bounce" />
+                </div>
               </div>
 
               {/* Appointment Booking Widget with Contact Opt-In */}
