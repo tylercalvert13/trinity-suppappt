@@ -308,6 +308,24 @@ const MedicareSupplementQuote = () => {
   const [isValidating, setIsValidating] = useState(false);
 
   const { visitorId, sessionId, trackStepChange, trackQualification, trackCallClick, trackEvent } = useFunnelAnalytics('suppquote');
+  
+  // Warmup the calendar edge function early to prevent cold starts (if this funnel might use it)
+  // Note: suppquote doesn't have booking widget but warmup helps if user is later redirected
+  useEffect(() => {
+    const warmupCalendar = async () => {
+      try {
+        console.log('[Warmup] Sending warmup request to ghl-calendar...');
+        await supabase.functions.invoke('ghl-calendar', {
+          body: { action: 'warmup' }
+        });
+        console.log('[Warmup] Calendar function warmed up');
+      } catch (err) {
+        // Silently fail - warmup is best-effort
+      }
+    };
+    const timer = setTimeout(warmupCalendar, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Check business hours and calculate callback date when reaching qualified step
   useEffect(() => {

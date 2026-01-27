@@ -248,6 +248,11 @@ export function AppointmentBookingWidget({
   const [error, setError] = useState<string | null>(null);
   const [confirmedTime, setConfirmedTime] = useState<string | null>(null);
   const [agentName, setAgentName] = useState<string | null>(null);
+  
+  // Preload state - track slots loaded in background before user clicks
+  const [preloadedSlots, setPreloadedSlots] = useState<Map<string, SlotData[]>>(new Map());
+  const [isPreloading, setIsPreloading] = useState(false);
+  const [preloadError, setPreloadError] = useState<string | null>(null);
 
   // Get next 4 available weekdays
   const availableWeekdays = useMemo(() => getNextAvailableWeekdays(4), []);
@@ -266,13 +271,72 @@ export function AppointmentBookingWidget({
   const hasAfternoonSlots = useMemo(() => 
     availableSlots.some(slot => isAfternoonSlot(slot.original)), [availableSlots]);
 
-  // Fetch available slots for a date
+  // Preload first day's slots on mount
+  useEffect(() => {
+    const firstDay = availableWeekdays[0];
+    if (!firstDay) return;
+    
+    const dateStr = formatDateString(firstDay);
+    
+    // Skip if already preloaded
+    if (preloadedSlots.has(dateStr)) return;
+    
+    const preloadSlots = async () => {
+      setIsPreloading(true);
+      setPreloadError(null);
+      
+      try {
+        console.log('[Preload] Fetching slots for first day:', dateStr);
+        const startTime = Date.now();
+        
+        const { data, error: fetchError } = await supabase.functions.invoke('ghl-calendar', {
+          body: { action: 'free-slots', date: dateStr }
+        });
+
+        const duration = Date.now() - startTime;
+        console.log(`[Preload] Slots loaded in ${duration}ms`);
+
+        if (fetchError) throw fetchError;
+
+        if (data.slots && data.slots.length > 0) {
+          const slotsWithDisplay: SlotData[] = data.slots.map((slot: string) => ({
+            original: slot,
+            display: convertToUserTimezone(slot, userTimezone)
+          }));
+          
+          setPreloadedSlots(prev => new Map(prev).set(dateStr, slotsWithDisplay));
+          console.log('[Preload] Cached', slotsWithDisplay.length, 'slots for', dateStr);
+        } else {
+          setPreloadError('No availability');
+        }
+      } catch (err) {
+        console.error('[Preload] Error:', err);
+        setPreloadError('Unable to load');
+      } finally {
+        setIsPreloading(false);
+      }
+    };
+
+    preloadSlots();
+  }, [availableWeekdays, userTimezone, preloadedSlots]);
+
+  // Fetch available slots for a date (uses cache if available)
   const fetchSlots = async (date: Date) => {
+    const dateStr = formatDateString(date);
+    
+    // Check if we already have preloaded data
+    const cached = preloadedSlots.get(dateStr);
+    if (cached && cached.length > 0) {
+      console.log('[Cache Hit] Using preloaded slots for', dateStr);
+      setAvailableSlots(cached);
+      setBookingStep(2);
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     
     try {
-      const dateStr = formatDateString(date);
       console.log('Fetching slots for:', dateStr);
 
       const { data, error: fetchError } = await supabase.functions.invoke('ghl-calendar', {
@@ -296,6 +360,10 @@ export function AppointmentBookingWidget({
       }));
 
       setAvailableSlots(slotsWithDisplay);
+      
+      // Also cache for future
+      setPreloadedSlots(prev => new Map(prev).set(dateStr, slotsWithDisplay));
+      
       setBookingStep(2);
     } catch (err) {
       console.error('Error fetching slots:', err);
@@ -491,16 +559,16 @@ export function AppointmentBookingWidget({
         </div>
       )}
 
-      {/* Loading State - only show full-screen loader when fetching slots, not when booking inline */}
-      {isLoading && !selectedSlot && (
+      {/* Loading State - only show full-screen loader when fetching slots after clicking (not preloading) */}
+      {isLoading && !selectedSlot && bookingStep !== 1 && (
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="w-10 h-10 text-green-600 animate-spin mb-4" />
           <p className="text-gray-600 text-lg">Checking availability...</p>
         </div>
       )}
 
-      {/* Step 1: Pick a Day */}
-      {bookingStep === 1 && !isLoading && (
+      {/* Step 1: Pick a Day - Always show immediately (no blocking loader) */}
+      {bookingStep === 1 && (
         <div className="space-y-3">
           {/* Availability Indicator */}
           <div className="text-center mb-4 flex items-center justify-center gap-2 text-gray-600">
@@ -510,17 +578,51 @@ export function AppointmentBookingWidget({
 
           {availableWeekdays.map((date, index) => {
             const { primary, secondary } = formatDateLabel(date, index);
+            const dateStr = formatDateString(date);
+            const isFirstDay = index === 0;
+            const hasPreloadedData = preloadedSlots.has(dateStr);
+            const preloadedData = preloadedSlots.get(dateStr);
+            const slotCount = preloadedData?.length || 0;
+            
+            // Determine availability badge text
+            let availabilityBadge = 'Morning & Afternoon';
+            let badgeColor = 'text-green-600';
+            
+            if (isFirstDay && isPreloading) {
+              availabilityBadge = 'Loading times...';
+              badgeColor = 'text-gray-400';
+            } else if (isFirstDay && preloadError) {
+              availabilityBadge = preloadError;
+              badgeColor = 'text-amber-600';
+            } else if (hasPreloadedData && slotCount > 0) {
+              const hasMorning = preloadedData?.some(s => isMorningSlot(s.original));
+              const hasAfternoon = preloadedData?.some(s => isAfternoonSlot(s.original));
+              if (hasMorning && hasAfternoon) {
+                availabilityBadge = `${slotCount} times available`;
+              } else if (hasMorning) {
+                availabilityBadge = 'Morning available';
+              } else if (hasAfternoon) {
+                availabilityBadge = 'Afternoon available';
+              }
+              badgeColor = 'text-green-600';
+            }
+            
             return (
               <button
                 key={date.toISOString()}
                 onClick={() => handleDaySelect(date)}
-                className="w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
+                disabled={isLoading}
+                className={`w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
                          hover:border-green-600 hover:bg-green-50 transition-all
-                         flex flex-col items-center justify-center"
+                         flex flex-col items-center justify-center
+                         ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <span className="text-xl font-semibold text-gray-900">{primary}</span>
                 <span className="text-gray-500">{secondary}</span>
-                <span className="text-xs text-green-600 mt-1">Morning & Afternoon</span>
+                <span className={`text-xs mt-1 flex items-center gap-1 ${badgeColor}`}>
+                  {isFirstDay && isPreloading && <Loader2 className="w-3 h-3 animate-spin" />}
+                  {availabilityBadge}
+                </span>
               </button>
             );
           })}

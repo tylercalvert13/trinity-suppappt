@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
+import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
 import { z } from 'zod';
 import { AppointmentBookingWidget } from '@/components/AppointmentBookingWidget';
 import { getStateFromZip } from '@/lib/zipToState';
@@ -211,6 +212,9 @@ const MedicareSupplementAppointment = () => {
   const [isValidating, setIsValidating] = useState(false);
 
   const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt');
+  
+  // Warmup the calendar edge function early to prevent cold starts
+  useCalendarWarmup();
 
   // Detect user's state via IP geolocation on mount
   useEffect(() => {
