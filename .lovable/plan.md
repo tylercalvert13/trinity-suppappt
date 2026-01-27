@@ -1,52 +1,92 @@
 
-## Plan: Add Auto-Scroll and Optimize Booking Speed (COMPLETED)
 
-### Overview
-This plan addressed three requests:
-1. ✅ Auto-scroll to the top of each question when navigating between funnel steps
-2. ✅ Auto-scroll to the success section when an appointment is booked
-3. ✅ Pre-validation optimization to reduce booking time on `/suppappt1`
+## Plan: Make User's Local Timezone Primary on Confirmation Screen
 
----
+### The Problem
+Currently, the appointment confirmation screen shows:
+- **Primary (large)**: Eastern time (e.g., "10:00 AM Eastern")
+- **Secondary (small, conditional)**: User's local time (e.g., "(12:00 PM your time)")
 
-### Changes Made
+This can confuse users in Pacific, Mountain, or Central timezones who see "10:00 AM" prominently and may miss the smaller local time note.
 
-#### 1. Auto-Scroll Between Funnel Questions
-- Added `questionContainerRef` to both `MedicareSupplementAppointment.tsx` and `MedicareSupplementAppointment1.tsx`
-- Added `useEffect` that scrolls to the question container when `step` changes
-- Uses `scroll-mt-4` class for visual breathing room at top
+### Solution
+Flip the display so the user's local time is shown prominently, with Eastern time as the secondary reference.
 
-#### 2. Auto-Scroll to Success on Booking Complete
-- Added `successRef` to both booking widgets
-- Added `useEffect` that scrolls to success section when booking is confirmed
-- `AppointmentBookingWidget.tsx`: Scrolls when `bookingStep === 3`
-- `AppointmentBookingWidgetWithOptIn.tsx`: Scrolls when `bookingStep === 4`
-
-#### 3. Pre-Validation Optimization (suppappt1 only)
-- Added `handlePhoneBlur` function that pre-validates phone numbers when user tabs/clicks out of field
-- Cached validation results to avoid duplicate API calls on submit
-- Shows subtle validation status indicator (checkmark) next to phone label
-- Reduces perceived booking time by ~1-2 seconds
+**New layout:**
+- **Primary (large, green)**: User's local time (e.g., "10:00 AM your time")
+- **Secondary (smaller, gray)**: Eastern time only shown if different (e.g., "(1:00 PM Eastern)")
 
 ---
 
-### Files Modified
+### Visual Before/After
+
+**Before:**
+```
+┌────────────────────────────────┐
+│    10:00 AM Eastern           │  ← Large, green
+│    (7:00 AM your time)         │  ← Small, gray (easy to miss)
+└────────────────────────────────┘
+```
+
+**After:**
+```
+┌────────────────────────────────┐
+│    7:00 AM                     │  ← Large, green (user's local)
+│    (10:00 AM Eastern)          │  ← Small, gray (reference)
+└────────────────────────────────┘
+```
+
+---
+
+### Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/MedicareSupplementAppointment.tsx` | Added `questionContainerRef` and auto-scroll on step change |
-| `src/pages/MedicareSupplementAppointment1.tsx` | Added `questionContainerRef` and auto-scroll on step change |
-| `src/components/AppointmentBookingWidget.tsx` | Added `successRef` and auto-scroll to success |
-| `src/components/AppointmentBookingWidgetWithOptIn.tsx` | Added `successRef`, auto-scroll to success, and pre-validation on phone blur |
+| `src/components/AppointmentBookingWidget.tsx` | Swap timezone display order in success section (lines 856-864) |
+| `src/components/AppointmentBookingWidgetWithOptIn.tsx` | Swap timezone display order in success section (lines 1104-1112) |
 
 ---
 
-### Booking Time Analysis
+### Code Changes
 
-The 10-15 second booking time on `/suppappt1` is primarily due to:
-1. `validate-contact`: ~1-2 seconds (now runs in background on phone blur)
-2. `ghl-calendar` create-contact: ~2 seconds
-3. `ghl-calendar` book-appointment: ~6 seconds (GHL API latency - cannot be optimized)
-4. `send-lead-webhook-suppappt1`: ~1 second
+**Both files - Success section timezone display:**
 
-With pre-validation, the perceived booking time is now ~8-10 seconds (validation happens before clicking "Book").
+```jsx
+{/* BEFORE */}
+<p className="text-3xl font-bold text-green-700 mt-1">
+  {getEasternTimeDisplay(confirmedTime)} Eastern
+</p>
+{isTimezoneDifferent(userTimezone) && (
+  <p className="text-gray-500 text-sm mt-1">
+    ({convertToUserTimezone(confirmedTime, userTimezone)} your time)
+  </p>
+)}
+
+{/* AFTER */}
+<p className="text-3xl font-bold text-green-700 mt-1">
+  {convertToUserTimezone(confirmedTime, userTimezone)}
+</p>
+{isTimezoneDifferent(userTimezone) && (
+  <p className="text-gray-500 text-sm mt-1">
+    ({getEasternTimeDisplay(confirmedTime)} Eastern)
+  </p>
+)}
+```
+
+---
+
+### Notes
+
+1. **No "your time" label needed** when it's the primary - users naturally assume the displayed time is their local time
+2. **Eastern shown as reference** only when the timezone differs (for users in Eastern timezone, no extra note appears)
+3. **Calendar .ics file** already uses the correct ISO timestamp, so calendar events will show correctly regardless of timezone display
+
+---
+
+### Summary
+
+This small change makes the confirmation screen more intuitive:
+- Users see their actual local appointment time prominently
+- Eastern time is still available as a reference for those who need it
+- Reduces confusion for users in Pacific, Mountain, and Central timezones
+
