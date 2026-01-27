@@ -287,6 +287,9 @@ export function AppointmentBookingWidgetWithOptIn({
   const [confirmedTime, setConfirmedTime] = useState<string | null>(null);
   const [agentName, setAgentName] = useState<string | null>(null);
   
+  // Refs for auto-scroll
+  const successRef = useRef<HTMLDivElement>(null);
+  
   // Contact form state
   const [contactForm, setContactForm] = useState<ContactFormData>({
     firstName: '',
@@ -297,10 +300,72 @@ export function AppointmentBookingWidgetWithOptIn({
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isValidating, setIsValidating] = useState(false);
   
+  // Pre-validation state for faster booking
+  const [preValidationResult, setPreValidationResult] = useState<{ valid: boolean; email?: any; phone?: any } | null>(null);
+  const [isPreValidating, setIsPreValidating] = useState(false);
+  const [preValidatedPhone, setPreValidatedPhone] = useState<string>('');
+  
   // Preload state
   const [preloadedSlots, setPreloadedSlots] = useState<Map<string, SlotData[]>>(new Map());
   const [isPreloading, setIsPreloading] = useState(false);
   const [preloadError, setPreloadError] = useState<string | null>(null);
+
+  // Pre-validate phone when user finishes entering it
+  const handlePhoneBlur = async () => {
+    const phoneDigits = contactForm.phone.replace(/\D/g, '');
+    
+    // Only validate if phone is complete and hasn't been validated yet
+    if (phoneDigits.length === 10 && phoneDigits !== preValidatedPhone) {
+      setIsPreValidating(true);
+      try {
+        console.log('[Pre-validation] Validating phone:', phoneDigits);
+        const startTime = Date.now();
+        
+        const { data: validationData, error: validationError } = await supabase.functions.invoke('validate-contact', {
+          body: {
+            email: contactForm.email.trim() || 'placeholder@example.com', // Use placeholder if email not entered yet
+            phone: phoneDigits,
+          }
+        });
+        
+        const duration = Date.now() - startTime;
+        console.log(`[Pre-validation] Complete in ${duration}ms:`, validationData);
+        
+        if (!validationError && validationData) {
+          setPreValidationResult(validationData);
+          setPreValidatedPhone(phoneDigits);
+          
+          // Show phone error immediately if invalid
+          if (!validationData.phone?.valid) {
+            setValidationErrors(prev => ({
+              ...prev,
+              phone: "This phone number doesn't appear to be valid. Please double-check it."
+            }));
+          } else {
+            // Clear phone error if valid
+            setValidationErrors(prev => {
+              const { phone, ...rest } = prev;
+              return rest;
+            });
+          }
+        }
+      } catch (err) {
+        console.error('[Pre-validation] Error:', err);
+        // Fail silently - will validate on submit
+      } finally {
+        setIsPreValidating(false);
+      }
+    }
+  };
+
+  // Auto-scroll to success when booking completes
+  useEffect(() => {
+    if (bookingStep === 4 && confirmedTime) {
+      setTimeout(() => {
+        successRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [bookingStep, confirmedTime]);
 
   const availableWeekdays = useMemo(() => getNextAvailableWeekdays(4), []);
 
@@ -472,43 +537,62 @@ export function AppointmentBookingWidgetWithOptIn({
       return;
     }
 
-    // Server-side validation
-    setIsValidating(true);
-    try {
-      const { data: validationData, error: validationError } = await supabase.functions.invoke('validate-contact', {
-        body: {
-          email: contactForm.email.trim(),
-          phone: contactForm.phone.replace(/\D/g, ''),
-        }
-      });
-
-      if (validationError) {
-        console.error("Validation API error:", validationError);
-        // Continue anyway - fail open
-      } else if (validationData && !validationData.valid) {
+    // Server-side validation - use cached result if available for same phone
+    const phoneDigits = contactForm.phone.replace(/\D/g, '');
+    const hasCachedValidation = preValidatedPhone === phoneDigits && preValidationResult !== null;
+    
+    if (hasCachedValidation) {
+      console.log('[Validation] Using cached pre-validation result');
+      // Use cached result - only need to check if it was invalid
+      if (!preValidationResult.valid) {
         const errors: ValidationErrors = {};
-        if (!validationData.email?.valid) {
-          if (validationData.email?.disposable) {
-            errors.email = "Please use a permanent email address (no temporary emails)";
-          } else {
-            errors.email = "We couldn't verify this email. Please check it and try again.";
-          }
-        }
-        if (!validationData.phone?.valid) {
+        if (!preValidationResult.phone?.valid) {
           errors.phone = "This phone number doesn't appear to be valid. Please double-check it.";
         }
-        
         if (Object.keys(errors).length > 0) {
           setValidationErrors(errors);
-          setIsValidating(false);
           return;
         }
       }
-    } catch (err) {
-      console.error("Validation error:", err);
-      // Continue anyway - fail open
+    } else {
+      // No cached result - do full validation
+      setIsValidating(true);
+      try {
+        const { data: validationData, error: validationError } = await supabase.functions.invoke('validate-contact', {
+          body: {
+            email: contactForm.email.trim(),
+            phone: phoneDigits,
+          }
+        });
+
+        if (validationError) {
+          console.error("Validation API error:", validationError);
+          // Continue anyway - fail open
+        } else if (validationData && !validationData.valid) {
+          const errors: ValidationErrors = {};
+          if (!validationData.email?.valid) {
+            if (validationData.email?.disposable) {
+              errors.email = "Please use a permanent email address (no temporary emails)";
+            } else {
+              errors.email = "We couldn't verify this email. Please check it and try again.";
+            }
+          }
+          if (!validationData.phone?.valid) {
+            errors.phone = "This phone number doesn't appear to be valid. Please double-check it.";
+          }
+          
+          if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            setIsValidating(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Validation error:", err);
+        // Continue anyway - fail open
+      }
+      setIsValidating(false);
     }
-    setIsValidating(false);
 
     // Capture slot early to prevent race conditions
     const slotToBook = selectedSlot.original;
@@ -938,7 +1022,15 @@ export function AppointmentBookingWidgetWithOptIn({
               )}
             </div>
             <div>
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone" className="flex items-center gap-2">
+                Phone Number
+                {isPreValidating && (
+                  <span className="text-xs text-muted-foreground">(checking...)</span>
+                )}
+                {!isPreValidating && preValidatedPhone === contactForm.phone.replace(/\D/g, '') && preValidationResult?.phone?.valid && (
+                  <span className="text-xs text-green-600">✓</span>
+                )}
+              </Label>
               <Input
                 id="phone"
                 type="tel"
@@ -948,6 +1040,7 @@ export function AppointmentBookingWidgetWithOptIn({
                   setContactForm(prev => ({ ...prev, phone: formatted }));
                   if (validationErrors.phone) setValidationErrors(prev => ({ ...prev, phone: undefined }));
                 }}
+                onBlur={handlePhoneBlur}
                 placeholder="(555) 123-4567"
                 className={`h-12 rounded-xl ${validationErrors.phone ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                 maxLength={14}
@@ -997,7 +1090,7 @@ export function AppointmentBookingWidgetWithOptIn({
 
       {/* Step 4: Success */}
       {bookingStep === 4 && confirmedTime && (
-        <div className="text-center">
+        <div ref={successRef} className="text-center scroll-mt-4">
           <div className="w-20 h-20 rounded-full bg-green-600 text-white flex items-center justify-center mx-auto mb-5">
             <Check className="w-10 h-10" strokeWidth={3} />
           </div>
