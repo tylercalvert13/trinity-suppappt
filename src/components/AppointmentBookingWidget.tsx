@@ -855,11 +855,11 @@ export function AppointmentBookingWidget({
           {/* 4. Date + Time with Timezone */}
           <p className="text-xl font-bold text-gray-900">{getSelectedDateDisplay()}</p>
           <p className="text-3xl font-bold text-green-700 mt-1">
-            {getEasternTimeDisplay(confirmedTime)} Eastern
+            {convertToUserTimezone(confirmedTime, userTimezone)}
           </p>
           {isTimezoneDifferent(userTimezone) && (
             <p className="text-gray-500 text-sm mt-1">
-              ({convertToUserTimezone(confirmedTime, userTimezone)} your time)
+              ({getEasternTimeDisplay(confirmedTime)} Eastern)
             </p>
           )}
 
