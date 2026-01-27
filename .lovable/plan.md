@@ -1,92 +1,130 @@
 
 
-## Plan: Make User's Local Timezone Primary on Confirmation Screen
+## Plan: Add Appointment Funnel Analytics Tabs + Clean Test Data
 
-### The Problem
-Currently, the appointment confirmation screen shows:
-- **Primary (large)**: Eastern time (e.g., "10:00 AM Eastern")
-- **Secondary (small, conditional)**: User's local time (e.g., "(12:00 PM your time)")
-
-This can confuse users in Pacific, Mountain, or Central timezones who see "10:00 AM" prominently and may miss the smaller local time note.
-
-### Solution
-Flip the display so the user's local time is shown prominently, with Eastern time as the secondary reference.
-
-**New layout:**
-- **Primary (large, green)**: User's local time (e.g., "10:00 AM your time")
-- **Secondary (smaller, gray)**: Eastern time only shown if different (e.g., "(1:00 PM Eastern)")
+### Overview
+This plan adds two new analytics tabs for the `/suppappt` and `/suppappt1` funnels to track drop-off rates and booking conversions. It also updates the internal team member filter to exclude Justin Falck's test data.
 
 ---
 
-### Visual Before/After
+### Part 1: Add Justin Falck to Internal Team Filter
 
-**Before:**
-```
-┌────────────────────────────────┐
-│    10:00 AM Eastern           │  ← Large, green
-│    (7:00 AM your time)         │  ← Small, gray (easy to miss)
-└────────────────────────────────┘
+**File:** `src/lib/analyticsFilters.ts`
+
+Add Justin Falck to the existing `INTERNAL_TEAM_MEMBERS` array so his test submissions are automatically filtered out from all analytics views.
+
+```typescript
+export const INTERNAL_TEAM_MEMBERS = [
+  { firstName: 'tyler', lastName: 'calvert' },
+  { firstName: 'josh', lastName: 'foret' },
+  { firstName: 'justin', lastName: 'falck' },  // NEW
+];
 ```
 
-**After:**
+This will automatically filter out their data from:
+- Submissions table (quotes)
+- Live Activity Feed
+
+---
+
+### Part 2: Add Two New Tabs to Analytics Dashboard
+
+**File:** `src/pages/Analytics.tsx`
+
+Add two new tabs: "Appt Funnel" and "Appt1 Funnel" that show:
+- Overview KPI cards (visitors, qualified, booked appointments, disqualified)
+- 12-step funnel drop-off chart (same format as suppquote)
+- Booking widget conversion metrics (booking_widget_view → booking_completed)
+
+**New Tab Structure:**
+
+```text
+[Overview] [Funnels] [Quote Funnel] [Appt Funnel] [Appt1 Funnel] [Traffic Sources] [Live Activity]
+                                     ^^^^^^^       ^^^^^^^^^^^^
+                                       NEW             NEW
 ```
-┌────────────────────────────────┐
-│    7:00 AM                     │  ← Large, green (user's local)
-│    (10:00 AM Eastern)          │  ← Small, gray (reference)
-└────────────────────────────────┘
+
+---
+
+### Part 3: Technical Implementation Details
+
+#### Data Fetching Changes
+Modify `fetchData()` to also fetch submissions for `suppappt` and `suppappt1` pages:
+
+```typescript
+// Current: only fetches suppquote
+.eq('page', 'suppquote')
+
+// New: fetch all funnel pages
+.in('page', ['suppquote', 'suppappt', 'suppappt1'])
 ```
+
+#### Funnel Steps for Appointment Funnels
+Based on the database, both `/suppappt` and `/suppappt1` track these steps:
+- start → plan → payment → care → treatment → medications → gender → tobacco → spouse → age → zip → contact → loading → qualified/disqualified
+
+Plus booking-specific events:
+- booking_widget_view
+- booking_day_selected
+- booking_time_selected
+- booking_confirm_clicked
+- booking_completed
+
+#### New Metrics to Display
+
+| Metric | Description |
+|--------|-------------|
+| Total Visitors | Sessions with page = suppappt/suppappt1 |
+| Qualified | Sessions with completed = true |
+| Appointments Booked | Count of booking_completed events |
+| Booking Conversion | booking_completed / qualified (%) |
+| Disqualified | Sessions with last_step = disqualified |
+| Avg Savings | Average monthly_savings from successful quotes |
+
+#### Booking Funnel Mini-Chart
+Show the booking widget conversion funnel:
+```text
+Widget View → Day Selected → Time Selected → Confirm Clicked → Booked
+```
+
+This uses the tracked events:
+- booking_widget_view
+- booking_day_selected  
+- booking_time_selected
+- booking_confirm_clicked
+- booking_completed
 
 ---
 
 ### Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/components/AppointmentBookingWidget.tsx` | Swap timezone display order in success section (lines 856-864) |
-| `src/components/AppointmentBookingWidgetWithOptIn.tsx` | Swap timezone display order in success section (lines 1104-1112) |
+| File | Changes |
+|------|---------|
+| `src/lib/analyticsFilters.ts` | Add Justin Falck to INTERNAL_TEAM_MEMBERS |
+| `src/pages/Analytics.tsx` | Add suppappt and suppappt1 tabs with KPI cards, funnel dropoff charts, and booking conversion metrics |
 
 ---
 
-### Code Changes
+### New Component: AppointmentFunnelOverview (inline)
 
-**Both files - Success section timezone display:**
-
-```jsx
-{/* BEFORE */}
-<p className="text-3xl font-bold text-green-700 mt-1">
-  {getEasternTimeDisplay(confirmedTime)} Eastern
-</p>
-{isTimezoneDifferent(userTimezone) && (
-  <p className="text-gray-500 text-sm mt-1">
-    ({convertToUserTimezone(confirmedTime, userTimezone)} your time)
-  </p>
-)}
-
-{/* AFTER */}
-<p className="text-3xl font-bold text-green-700 mt-1">
-  {convertToUserTimezone(confirmedTime, userTimezone)}
-</p>
-{isTimezoneDifferent(userTimezone) && (
-  <p className="text-gray-500 text-sm mt-1">
-    ({getEasternTimeDisplay(confirmedTime)} Eastern)
-  </p>
-)}
-```
-
----
-
-### Notes
-
-1. **No "your time" label needed** when it's the primary - users naturally assume the displayed time is their local time
-2. **Eastern shown as reference** only when the timezone differs (for users in Eastern timezone, no extra note appears)
-3. **Calendar .ics file** already uses the correct ISO timestamp, so calendar events will show correctly regardless of timezone display
+Similar to `QuoteFunnelOverview` but tailored for appointment funnels:
+- Total Visitors
+- Qualified (got a quote)
+- Appointments Booked
+- Booking Rate (% of qualified who booked)
+- Disqualified
+- Avg Monthly Savings
 
 ---
 
 ### Summary
 
-This small change makes the confirmation screen more intuitive:
-- Users see their actual local appointment time prominently
-- Eastern time is still available as a reference for those who need it
-- Reduces confusion for users in Pacific, Mountain, and Central timezones
+After implementation:
+1. Justin Falck's test data will be automatically filtered from analytics
+2. Tyler Calvert and Josh Foret data continues to be filtered (already in place)
+3. New "Appt Funnel" tab shows `/suppappt` drop-off at each step
+4. New "Appt1 Funnel" tab shows `/suppappt1` drop-off at each step
+5. Both tabs include booking widget conversion metrics (widget view → completed)
+
+This will help identify where users are dropping off in the appointment funnels and measure booking widget effectiveness.
 
