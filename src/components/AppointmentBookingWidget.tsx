@@ -259,10 +259,22 @@ export function AppointmentBookingWidget({
   const [confirmedTime, setConfirmedTime] = useState<string | null>(null);
   const [agentName, setAgentName] = useState<string | null>(null);
   
+  // Refs for auto-scroll
+  const successRef = useRef<HTMLDivElement>(null);
+  
   // Preload state - track slots loaded in background before user clicks
   const [preloadedSlots, setPreloadedSlots] = useState<Map<string, SlotData[]>>(new Map());
   const [isPreloading, setIsPreloading] = useState(false);
   const [preloadError, setPreloadError] = useState<string | null>(null);
+
+  // Auto-scroll to success when booking completes
+  useEffect(() => {
+    if (bookingStep === 3 && confirmedTime) {
+      setTimeout(() => {
+        successRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [bookingStep, confirmedTime]);
 
   // Get next 4 available weekdays
   const availableWeekdays = useMemo(() => getNextAvailableWeekdays(4), []);
@@ -826,7 +838,7 @@ export function AppointmentBookingWidget({
 
       {/* Step 3: Success */}
       {bookingStep === 3 && confirmedTime && (
-        <div className="text-center">
+        <div ref={successRef} className="text-center scroll-mt-4">
           {/* 1. Success Checkmark */}
           <div className="w-20 h-20 rounded-full bg-green-600 text-white flex items-center justify-center mx-auto mb-5">
             <Check className="w-10 h-10" strokeWidth={3} />

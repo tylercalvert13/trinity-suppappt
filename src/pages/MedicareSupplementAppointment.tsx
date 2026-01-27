@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,9 @@ import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
 import { z } from 'zod';
 import { AppointmentBookingWidget } from '@/components/AppointmentBookingWidget';
 import { getStateFromZip } from '@/lib/zipToState';
+
+// Question steps that should trigger auto-scroll
+const QUESTION_STEPS = ['plan', 'payment', 'care', 'treatment', 'medications', 'gender', 'tobacco', 'spouse', 'age', 'zip', 'contact'];
 
 // Outbound call number for this funnel
 const PHONE_NUMBER = "(201) 426-9898";
@@ -187,6 +190,7 @@ const MedicareSupplementAppointment = () => {
   const [applicationNumber] = useState(() => generateApplicationNumber());
   const [error, setError] = useState<string | null>(null);
   const funnelRef = useRef<HTMLDivElement>(null);
+  const questionContainerRef = useRef<HTMLDivElement>(null);
   const [detectedState, setDetectedState] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   
@@ -215,6 +219,15 @@ const MedicareSupplementAppointment = () => {
   
   // Warmup the calendar edge function early to prevent cold starts
   useCalendarWarmup();
+
+  // Auto-scroll to question container when step changes
+  useEffect(() => {
+    if (QUESTION_STEPS.includes(step)) {
+      setTimeout(() => {
+        questionContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [step]);
 
   // Detect user's state via IP geolocation on mount
   useEffect(() => {
@@ -632,7 +645,7 @@ const MedicareSupplementAppointment = () => {
 
       {/* Funnel Section */}
       <section ref={funnelRef} className="py-8 md:py-12 bg-gray-50">
-        <div className="max-w-2xl mx-auto px-4">
+        <div ref={questionContainerRef} className="max-w-2xl mx-auto px-4 scroll-mt-4">
           
           {/* Plan Selection */}
           {step === "plan" && (
