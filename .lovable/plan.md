@@ -1,132 +1,79 @@
 
 
-## Plan: Simplify Booking Flow + Add Booking Widget Analytics
+## Bug Fix: Blank Screen When Clicking "Book My Call"
 
-### Overview
-Two changes to improve conversions and visibility:
-1. **Remove the Morning/Afternoon step** - When a user selects a day, show ALL available times immediately (skip the extra click)
-2. **Add booking widget analytics** - Track every micro-step in the booking widget so you can see exactly where users drop off
+### Root Cause
 
----
+When the user clicks "Book My Call", the screen goes blank because of a rendering condition bug in the recently simplified booking flow.
 
-### Change 1: Remove Morning/Afternoon Step
+**The Problem:**
+- Line 732: `{bookingStep === 2 && !isLoading && (` - Step 2 content **hides** when `isLoading = true`
+- Line 611: `{isLoading && !selectedSlot && bookingStep !== 1 && (` - The loading spinner only shows when `selectedSlot` is null
 
-**Current Flow (4 steps):**
-```text
-Day → Morning/Afternoon → Pick Time → Book
-```
+When booking is in progress:
+- `isLoading = true`
+- `selectedSlot !== null` (user has selected a time)
+- `bookingStep = 2`
 
-**New Flow (3 steps):**
-```text
-Day → Pick Time → Book
-```
-
-**Benefits:**
-- One less click = less friction
-- Users see all available times at once (clearer picture of availability)
-- Faster path to booking
-
-**Technical Changes:**
-
-| File | Changes |
-|------|---------|
-| `src/components/AppointmentBookingWidget.tsx` | Skip step 2 entirely, go from day selection (step 1) directly to time selection (previously step 3) |
-
-**Key modifications:**
-- When a day is selected, go directly to showing ALL time slots (not filtered by morning/afternoon)
-- Remove the `selectedTimeRange` state dependency for displaying slots
-- Update the back button text to say "Pick a different day" instead of "Pick a different time range"
-- Update the step indicator to show 3 steps instead of 4 (Day → Time → Confirm)
-- Remove the Morning/Afternoon filter buttons (step 2) entirely
-- Keep the morning/afternoon utility functions for badge display on step 1 (e.g., "Morning & Afternoon available")
+This means:
+- Step 2 content won't render (fails `!isLoading` check)
+- Loading spinner won't render (fails `!selectedSlot` check)
+- Result: **Empty white card**
 
 ---
 
-### Change 2: Add Booking Widget Analytics
+### Solution
 
-**New Events to Track:**
+Change the Step 2 rendering condition to **keep showing the content during booking**, while the inline confirmation panel shows its own "Booking..." state (which already exists at line 802-805).
 
-| Event | When | Metadata |
-|-------|------|----------|
-| `booking_widget_view` | Widget mounts | None |
-| `booking_day_selected` | User clicks a day | `{ day: "2025-01-28", dayLabel: "Today" }` |
-| `booking_time_selected` | User clicks a time slot | `{ time: "10:30 AM", slotOriginal: "..." }` |
-| `booking_confirm_clicked` | User clicks "Book My Call" | `{ slotTime: "...", contactLookupRequired: true/false }` |
-| `booking_completed` | Appointment successfully booked | `{ appointmentId: "...", agentName: "..." }` |
-| `booking_error` | Any error occurs | `{ error: "slot_taken", step: "confirm" }` |
-| `booking_call_now_clicked` | User clicks "Call Us" alternative | `{ step: 1 }` |
+**Single line change:**
 
-**Technical Changes:**
+| File | Line | Before | After |
+|------|------|--------|-------|
+| `src/components/AppointmentBookingWidget.tsx` | 732 | `{bookingStep === 2 && !isLoading && (` | `{bookingStep === 2 && (` |
 
-| File | Changes |
-|------|---------|
-| `src/components/AppointmentBookingWidget.tsx` | Add analytics tracking calls at each user action point |
-
-**Implementation approach:**
-- Accept an optional `onTrackEvent` callback prop from the parent page
-- The parent page (`MedicareSupplementAppointment.tsx`) already has access to `useFunnelAnalytics` and can pass its `trackEvent` function
-- For standalone booking (`/booking`), we can either add its own analytics session or skip tracking (since it's a different funnel)
-
----
-
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/AppointmentBookingWidget.tsx` | 1) Remove step 2 (morning/afternoon), 2) Add tracking callback calls throughout |
-| `src/pages/MedicareSupplementAppointment.tsx` | Pass `trackEvent` function to the booking widget |
-| `src/pages/StandaloneBooking.tsx` | Optionally add tracking (or leave as-is for now) |
-
----
-
-### Updated User Flow (After Changes)
-
-```text
-/suppappt funnel:
-
-1. User qualifies → sees booking widget
-   └── Event: booking_widget_view
-
-2. User sees 4 day buttons → clicks "Today"
-   └── Event: booking_day_selected { day: "2025-01-28" }
-
-3. User sees ALL times (9:00 AM, 9:30 AM, 10:00 AM, etc.) → clicks 10:30 AM
-   └── Event: booking_time_selected { time: "10:30 AM" }
-
-4. Inline confirmation appears → user clicks "Book My Call"
-   └── Event: booking_confirm_clicked
-
-5. Appointment booked → success screen
-   └── Event: booking_completed { appointmentId: "xyz" }
+This keeps Step 2 visible during booking. The inline confirmation panel already handles its own loading state:
+```jsx
+{isLoading ? (
+  <>
+    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+    Booking...
+  </>
+) : (
+  ...
+)}
 ```
 
 ---
 
-### Analytics Dashboard Impact
+### Additional Safety Improvement
 
-With these new events, you'll be able to see:
-- How many users saw the booking widget vs. selected a day
-- How many selected a time vs. clicked "Book My Call"
-- How many completed vs. got errors
-- Exact dropoff point for today's low conversion
+While fixing this, I'll also add protection against the `selectedSlot` becoming null during async operations (race condition edge case):
 
-**Example query you could run:**
-```sql
-SELECT event_type, COUNT(*) 
-FROM funnel_events 
-WHERE page = 'suppappt' 
-  AND created_at > now() - interval '24 hours'
-  AND event_type LIKE 'booking_%'
-GROUP BY event_type
-ORDER BY COUNT(*) DESC;
+| Location | Change |
+|----------|--------|
+| `handleConfirmBooking` | Store `selectedSlot.original` in a local variable at the start of the function |
+
+Before:
+```javascript
+setConfirmedTime(selectedSlot.original);
+```
+
+After:
+```javascript
+const slotToBook = selectedSlot.original; // Capture early
+// ... async operations ...
+setConfirmedTime(slotToBook);
 ```
 
 ---
 
 ### Summary
 
-This plan:
-1. **Simplifies the booking flow** by removing the Morning/Afternoon step (3 clicks instead of 4)
-2. **Adds granular tracking** so you can see exactly where users drop off in the booking widget
-3. **Maintains all existing functionality** - times still display correctly, preloading still works, success screen unchanged
+This is a one-line fix that will:
+1. Keep the booking UI visible during the booking process
+2. Show the "Booking..." spinner inside the confirmation panel
+3. Prevent the blank screen issue
+
+No changes to the edge function or booking logic - just fixing the rendering condition that was too restrictive.
 
