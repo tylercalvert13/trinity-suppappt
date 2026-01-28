@@ -1,107 +1,71 @@
 
 
-## Plan: Fix Mobile Button Text Overflow
+## Plan: Fix Exit-Intent Modal Mobile Positioning
 
 ### Problem
-The dynamic CTA button text "Book My Call — Tomorrow at 10:00 AM" is too long for mobile screens, causing text to be cut off or truncated.
+The exit-intent modal is being cut off at the top on mobile screens (as shown in the screenshot). The modal uses `top-[50%] translate-y-[-50%]` centering which can push content outside the viewport when the modal height is significant on smaller screens.
 
 ### Solution
-Use a two-line stacked layout on mobile to show all the information clearly:
-- Line 1: "Book My Call"  
-- Line 2: "Tomorrow at 10:00 AM" (smaller text)
-
-This keeps the full information visible while fitting the mobile button width.
+Add mobile-specific positioning constraints to ensure the modal stays within the viewport:
+1. Add `max-h-[90vh]` to limit modal height to 90% of viewport
+2. Add `overflow-y-auto` for scrolling if content exceeds available space
+3. Ensure proper margin from top/bottom edges on mobile
 
 ---
 
-### Files to Modify
+### File to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/AppointmentBookingWidget.tsx` | Stack button text on two lines |
-| `src/components/StickyBookingCTA.tsx` | Same two-line stacked layout |
-
----
-
-### Visual Change
-
-**Before (truncated on mobile):**
-```
-┌─────────────────────────────────┐
-│ ✓ Book My Call — Tomorrow a... │
-└─────────────────────────────────┘
-```
-
-**After (stacked layout):**
-```
-┌─────────────────────────────────┐
-│           ✓ Book My Call        │
-│      Tomorrow at 10:00 AM       │
-└─────────────────────────────────┘
-```
+| `src/components/ExitIntentModal.tsx` | Add mobile-safe positioning classes |
 
 ---
 
 ### Code Changes
 
-**AppointmentBookingWidget.tsx (lines 902-907):**
-```jsx
+**ExitIntentModal.tsx (line 98):**
+
+```tsx
 // BEFORE
-<>
-  <Check className="w-5 h-5 mr-2 flex-shrink-0" />
-  <span className="truncate">
-    Book My Call — {getSelectedDayLabel()} at {selectedSlot.display}
-  </span>
-</>
+<DialogContent className="sm:max-w-md mx-4 rounded-2xl">
 
 // AFTER
-<div className="flex flex-col items-center">
-  <span className="flex items-center gap-2">
-    <Check className="w-5 h-5 flex-shrink-0" />
-    Book My Call
-  </span>
-  <span className="text-sm font-normal opacity-90">
-    {getSelectedDayLabel()} at {selectedSlot.display}
-  </span>
-</div>
+<DialogContent className="sm:max-w-md mx-4 rounded-2xl max-h-[85vh] overflow-y-auto top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] fixed">
 ```
 
-**StickyBookingCTA.tsx (lines 79-85):**
-```jsx
-// BEFORE
-<Button ...>
-  <Calendar className="w-5 h-5 mr-2" />
-  {buttonText}
-</Button>
+However, since the Dialog component already handles positioning, we need a different approach. The real fix is to ensure the modal content itself is constrained and uses proper mobile viewport handling:
 
+```tsx
 // AFTER
-<Button ...>
-  {selectedTime && dayLabel ? (
-    <div className="flex flex-col items-center">
-      <span className="flex items-center gap-2">
-        <Calendar className="w-5 h-5 flex-shrink-0" />
-        Book My Call
-      </span>
-      <span className="text-sm font-normal opacity-90">
-        {dayLabel} at {selectedTime}
-      </span>
-    </div>
-  ) : (
-    <>
-      <Calendar className="w-5 h-5 mr-2" />
-      Book My Call
-    </>
-  )}
-</Button>
+<DialogContent className="sm:max-w-md w-[calc(100%-2rem)] mx-auto rounded-2xl max-h-[85vh] overflow-y-auto">
 ```
 
 ---
 
 ### Why This Works
 
-1. **Full visibility** - All text is visible without truncation
-2. **Clear hierarchy** - Primary action ("Book My Call") stands out, time is secondary
-3. **Mobile-optimized** - Stacked layout fits narrow screens perfectly
-4. **Consistent** - Same pattern in both main CTA and sticky CTA
-5. **Senior-friendly** - Larger, more readable text presentation
+1. **`max-h-[85vh]`** - Limits the modal to 85% of viewport height, leaving room for safe area insets
+2. **`overflow-y-auto`** - Allows scrolling if content still exceeds the constrained height
+3. **`w-[calc(100%-2rem)]`** - Consistent horizontal margins on mobile instead of just `mx-4`
+
+---
+
+### Visual Result
+
+**Before (clipped at top):**
+```text
+ [Modal clipped]
+┌────────────────┐
+│    Content...  │
+└────────────────┘
+```
+
+**After (fully visible):**
+```text
+┌────────────────┐
+│   ⏰ Clock     │
+│ Wait! Your... │
+│  [Book Call]  │
+└────────────────┘
+```
 
