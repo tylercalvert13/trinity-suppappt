@@ -1,193 +1,187 @@
 
 
-## Plan: Remove Auto-Selection + Performance Optimizations for Facebook Mobile Traffic
+## Plan: Batch-Fetch All 4 Days of Slots in a Single API Call
 
-### Overview
-This plan addresses two main concerns:
-1. **Fix the booking widget bug**: Remove the auto-selection of the first day that immediately jumps to time selection and prevents going back
-2. **Optimize for Facebook in-app browser**: Implement code splitting and defer third-party scripts to improve load times
+### Problem Analysis
+The current slot loading is slow (20-30 seconds) because:
+1. **Sequential Fetching**: Each day's slots are fetched one at a time
+2. **Cold Starts**: Each edge function call can hit cold start delays (up to 5+ seconds each)
+3. **Network Overhead**: 4 separate HTTP requests instead of 1
 
----
+### Solution: Fetch All Days at Once
+The GHL Free Slots API **already supports date ranges**! We just need to:
+1. Add a `free-slots-batch` action to the edge function that fetches a week's worth of slots
+2. Call this once on widget mount instead of fetching day-by-day
+3. Cache all 4 days immediately so clicking any day shows slots instantly
 
-## Part 1: Fix Booking Widget Auto-Selection Bug
-
-### Problem
-When users complete the funnel:
-1. The widget auto-selects the first day (via `autoSelectFirst={true}`)
-2. Widget immediately jumps to Step 2 (time selection) — user never sees Step 1 (day selection)
-3. Clicking "Pick a different day" attempts to go back but the auto-select triggers again
-
-### Root Cause
-In `AppointmentBookingWidget.tsx`, lines 329-351: When `autoSelectFirst={true}` is passed (from the parent page), the widget detects preloaded slots and immediately sets `bookingStep(2)` + `selectedDate`. The back button resets to step 1, but the `useEffect` fires again and re-triggers the auto-select.
-
-### Solution
-1. **Set `autoSelectFirst={false}`** in `MedicareSupplementAppointment.tsx` — users will always start on day selection
-2. **Remove the auto-select `useEffect`** from the widget entirely to prevent any future issues
+### Verified by Testing
+Single-day fetch works: `POST {"action": "free-slots", "date": "2026-01-29"}` returns slots for that day.
+The API uses `startDate` and `endDate` in epoch milliseconds — we just need to widen the range.
 
 ---
 
-### Files to Modify (Part 1)
+## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/pages/MedicareSupplementAppointment.tsx` | Change `autoSelectFirst={true}` to `autoSelectFirst={false}` |
-| `src/components/AppointmentBookingWidget.tsx` | Remove the auto-select `useEffect` (lines 328-351) |
+| `supabase/functions/ghl-calendar/index.ts` | Add `free-slots-batch` action that fetches multiple days at once |
+| `src/components/AppointmentBookingWidget.tsx` | Replace single-day preload with batch preload for all 4 days |
 
 ---
 
-### Code Changes (Part 1)
+## Technical Changes
 
-#### MedicareSupplementAppointment.tsx (line ~1327)
+### 1. Edge Function: Add Batch Slots Action
 
-```tsx
-// BEFORE
-autoSelectFirst={true}
+Add a new interface and action handler:
 
-// AFTER  
-autoSelectFirst={false}
+```typescript
+interface FreeSlotsRequest {
+  action: 'free-slots';
+  date: string; // YYYY-MM-DD format (kept for backwards compatibility)
+}
+
+interface FreeSlotsRangeRequest {
+  action: 'free-slots-batch';
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+}
 ```
 
-#### AppointmentBookingWidget.tsx
+```typescript
+// ========== FREE SLOTS BATCH (multiple days) ==========
+if (body.action === 'free-slots-batch') {
+  const { startDate, endDate } = body as FreeSlotsRangeRequest;
+  console.log('Fetching slots for range:', startDate, 'to', endDate);
 
-Delete the entire `useEffect` block (lines 328-351):
+  const startDateMs = getEasternDayStartMs(startDate);
+  const endDateMs = getEasternDayEndMs(endDate);
 
-```tsx
-// DELETE THIS ENTIRE BLOCK
-useEffect(() => {
-  if (!autoSelectFirst || isStandalone) return;
-  
-  const firstDay = availableWeekdays[0];
-  if (!firstDay) return;
-  
-  const dateStr = formatDateString(firstDay);
-  const cached = preloadedSlots.get(dateStr);
-  
-  if (cached && cached.length > 0 && !selectedDate) {
-    const { primary } = formatDateLabel(firstDay, 0);
-    setSelectedDate(firstDay);
-    setAvailableSlots(cached);
-    setBookingStep(2);
-    
-    onTrackEvent?.({ ... });
-  }
-}, [preloadedSlots, availableWeekdays, autoSelectFirst, isStandalone, selectedDate, onTrackEvent]);
-```
+  const url = `${GHL_BASE_URL}/calendars/${CALENDAR_ID}/free-slots?startDate=${startDateMs}&endDate=${endDateMs}&timezone=America/New_York`;
 
----
-
-## Part 2: Facebook In-App Browser Performance Optimizations
-
-### Current Issues Identified
-
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| No route-based code splitting | All 19 pages load at once (~large bundle) | Implement React.lazy() |
-| Tracking pixels load synchronously | Delays first paint by 200-500ms | Defer with setTimeout |
-| Missing resource hints | Browser doesn't pre-connect to APIs | Add preconnect links |
-
-### Performance Optimizations
-
-#### 1. Route-Based Code Splitting (App.tsx)
-
-Use `React.lazy()` with `Suspense` to load pages on-demand instead of all at once:
-
-```tsx
-import { lazy, Suspense } from 'react';
-
-// Replace static imports with lazy imports
-const Index = lazy(() => import('./pages/Index'));
-const MedicareSupplementAppointment = lazy(() => import('./pages/MedicareSupplementAppointment'));
-// ... etc for all pages
-
-// Wrap Routes in Suspense
-<Suspense fallback={<div className="min-h-screen flex items-center justify-center">
-  <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-</div>}>
-  <Routes>
-    ...
-  </Routes>
-</Suspense>
-```
-
-**Benefit**: Users coming from Facebook ads to `/suppappt` only download that page's code, not the entire app.
-
-#### 2. Add Resource Hints (index.html)
-
-Add preconnect hints for external domains:
-
-```html
-<head>
-  <!-- Add these at the top of <head> -->
-  <link rel="preconnect" href="https://rxoykogmyitwmdqxytvd.supabase.co" crossorigin />
-  <link rel="dns-prefetch" href="https://rxoykogmyitwmdqxytvd.supabase.co" />
-  <link rel="preconnect" href="https://connect.facebook.net" crossorigin />
-  <link rel="dns-prefetch" href="https://connect.facebook.net" />
-  ...
-</head>
-```
-
-**Benefit**: Browser starts connecting to Supabase and Facebook before the JavaScript even loads.
-
-#### 3. Defer Third-Party Tracking Scripts (index.html)
-
-Move Taboola and Meta pixels to load after initial paint:
-
-```html
-<!-- Move tracking pixels to end of body, wrap in DOMContentLoaded -->
-<script>
-  // Defer third-party tracking to not block initial render
-  window.addEventListener('load', function() {
-    // Taboola Pixel
-    window._tfa = window._tfa || [];
-    window._tfa.push({notify: 'event', name: 'page_view', id: 1977536});
-    var t = document.createElement('script');
-    t.async = 1;
-    t.src = '//cdn.taboola.com/libtrc/unip/1977536/tfa.js';
-    t.id = 'tb_tfa_script';
-    document.body.appendChild(t);
-    
-    // Meta Pixel
-    !function(f,b,e,v,n,t,s){...}
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${GHL_API_TOKEN}`,
+      'Version': CALENDAR_API_VERSION,
+    },
   });
-</script>
+
+  const data = await response.json();
+
+  // Parse response - GHL returns { "2026-01-29": { slots: [...] }, "2026-01-30": { slots: [...] }, ... }
+  const slotsByDate: Record<string, string[]> = {};
+
+  for (const dateKey of Object.keys(data)) {
+    if (dateKey === 'traceId') continue;
+    if (data[dateKey]?.slots && Array.isArray(data[dateKey].slots)) {
+      slotsByDate[dateKey] = data[dateKey].slots.map((slot: string) => {
+        return slot.startsWith('T') ? `${dateKey}${slot}` : slot;
+      });
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ slotsByDate }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
 ```
 
-**Benefit**: Page renders immediately, tracking loads in background after paint.
+### 2. Widget: Batch Preload All 4 Days on Mount
+
+Replace the single-day preload with a batch request:
+
+```tsx
+// Preload ALL days' slots on mount (single API call)
+useEffect(() => {
+  if (preloadedSlots.size > 0) return; // Already loaded
+
+  const preloadAllSlots = async () => {
+    setIsPreloading(true);
+    setPreloadError(null);
+
+    try {
+      const firstDay = availableWeekdays[0];
+      const lastDay = availableWeekdays[availableWeekdays.length - 1];
+
+      const startDate = formatDateString(firstDay);
+      const endDate = formatDateString(lastDay);
+
+      console.log('[Batch Preload] Fetching slots for', startDate, 'to', endDate);
+      const startTime = Date.now();
+
+      const { data, error: fetchError } = await supabase.functions.invoke('ghl-calendar', {
+        body: { action: 'free-slots-batch', startDate, endDate }
+      });
+
+      const duration = Date.now() - startTime;
+      console.log(`[Batch Preload] All slots loaded in ${duration}ms`);
+
+      if (fetchError) throw fetchError;
+
+      if (data.slotsByDate) {
+        const newCache = new Map<string, SlotData[]>();
+
+        for (const [dateStr, slots] of Object.entries(data.slotsByDate)) {
+          const slotsWithDisplay = (slots as string[]).map((slot: string) => ({
+            original: slot,
+            display: convertToUserTimezone(slot, userTimezone)
+          }));
+          newCache.set(dateStr, slotsWithDisplay);
+        }
+
+        setPreloadedSlots(newCache);
+        console.log('[Batch Preload] Cached slots for', newCache.size, 'days');
+      }
+    } catch (err) {
+      console.error('[Batch Preload] Error:', err);
+      setPreloadError('Unable to load availability');
+    } finally {
+      setIsPreloading(false);
+    }
+  };
+
+  preloadAllSlots();
+}, [availableWeekdays, userTimezone]);
+```
+
+### 3. Update Warmup to Include Batch Action
+
+The warmup hook can optionally trigger the batch fetch early when the funnel loads (even before user qualifies):
+
+```tsx
+// In useCalendarWarmup.ts - optionally fetch slots eagerly
+const { data } = await supabase.functions.invoke('ghl-calendar', {
+  body: { action: 'warmup' }
+});
+```
 
 ---
 
-### Files to Modify (Part 2)
+## Performance Improvement Estimates
 
-| File | Changes |
-|------|---------|
-| `src/App.tsx` | Add React.lazy() imports and Suspense wrapper |
-| `index.html` | Add preconnect hints, defer tracking pixels |
-
----
-
-## Expected Results
-
-### Booking Widget Fix
-- Users see all 4 day options on qualification (Step 1)
-- "Pick a different day" correctly returns to day selection
-- No auto-jumping to time selection
-
-### Performance Improvements (Estimated)
-| Metric | Before | After |
-|--------|--------|-------|
-| Initial JS bundle | ~400KB | ~150KB (suppappt only) |
-| Time to First Paint | ~1.5s | ~0.8s |
-| Time to Interactive | ~2.5s | ~1.5s |
+| Metric | Before (4 separate calls) | After (1 batch call) |
+|--------|---------------------------|----------------------|
+| Edge function invocations | 4 | 1 |
+| Cold start risk | 4× (worst case ~20-30s total) | 1× (worst case ~5-7s) |
+| Time to show all slots | 20-30 seconds | 2-5 seconds |
+| API calls to GHL | 4 | 1 |
 
 ---
 
-## User Flow After Changes
+## User Experience After Changes
 
-1. User clicks Facebook ad → lands on `/suppappt`
-2. Only that page's code loads (lazy loading)
-3. User completes funnel → sees quote
-4. After 6 seconds, page scrolls to booking widget
-5. User sees all 4 days and picks one
-6. Times load → user picks a time → inline "Book" button appears
-7. User taps "Book" → appointment confirmed
+1. User lands on `/suppappt` funnel page
+2. Warmup ping fires (keeps function warm)
+3. User completes quote form → qualifies
+4. Booking widget mounts → **single batch request fetches all 4 days**
+5. User sees all 4 day buttons → clicks any one → slots appear **instantly** (already cached)
+6. Total wait: 2-5 seconds (vs. current 20-30 seconds)
+
+---
+
+## Backwards Compatibility
+
+The original `free-slots` action (single day) remains unchanged for any other code that might use it. The new `free-slots-batch` action is additive.
 
