@@ -276,12 +276,6 @@ export function AppointmentBookingWidget({
   // CTA pulsing animation state
   const [ctaAnimationActive, setCtaAnimationActive] = useState(false);
   
-  // Track if auto-selection has been done
-  const [autoSelectDone, setAutoSelectDone] = useState(false);
-  
-  // Track if current slot was auto-selected (to skip immediate scroll)
-  const [wasAutoSelected, setWasAutoSelected] = useState(false);
-  
   // Get day label for selected date
   const getSelectedDayLabel = (): string => {
     if (!selectedDate) return '';
@@ -330,9 +324,9 @@ export function AppointmentBookingWidget({
     return () => clearTimeout(pulseTimer);
   }, [onTrackEvent]);
   
-  // Auto-select first available slot when autoSelectFirst is enabled
+  // Auto-select first day when autoSelectFirst is enabled (but NOT the time slot)
   useEffect(() => {
-    if (!autoSelectFirst || isStandalone || autoSelectDone) return;
+    if (!autoSelectFirst || isStandalone) return;
     
     const firstDay = availableWeekdays[0];
     if (!firstDay) return;
@@ -341,29 +335,19 @@ export function AppointmentBookingWidget({
     const cached = preloadedSlots.get(dateStr);
     
     if (cached && cached.length > 0 && !selectedDate) {
-      // Auto-trigger day selection
+      // Auto-trigger day selection only
       const { primary } = formatDateLabel(firstDay, 0);
       setSelectedDate(firstDay);
       setAvailableSlots(cached);
       setBookingStep(2);
-      setAutoSelectDone(true);
       
       onTrackEvent?.({ 
         eventType: 'booking_day_selected', 
         metadata: { day: dateStr, dayLabel: primary, slotCount: cached.length, cached: true, autoSelected: true }
       });
-      
-      // Auto-select first slot after short delay
-      setTimeout(() => {
-        setSelectedSlot(cached[0]);
-        setWasAutoSelected(true); // Mark as auto-selected to skip immediate scroll
-        onTrackEvent?.({ 
-          eventType: 'booking_time_selected', 
-          metadata: { time: cached[0].display, slotOriginal: cached[0].original, autoSelected: true }
-        });
-      }, 300);
+      // No longer auto-selecting a time slot - user must tap to select
     }
-  }, [preloadedSlots, availableWeekdays, autoSelectFirst, isStandalone, selectedDate, autoSelectDone, onTrackEvent]);
+  }, [preloadedSlots, availableWeekdays, autoSelectFirst, isStandalone, selectedDate, onTrackEvent]);
 
   // Check if morning/afternoon have slots
   const hasMorningSlots = useMemo(() => 
@@ -518,24 +502,6 @@ export function AppointmentBookingWidget({
       setSelectedSlot(null);
     }
   };
-
-  // Ref for auto-scrolling to inline confirmation
-  const confirmationRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll when a slot is selected (skip if auto-selected on mount)
-  useEffect(() => {
-    // Only scroll if user manually selected (not auto-selected on mount)
-    if (selectedSlot && confirmationRef.current && !wasAutoSelected) {
-      confirmationRef.current.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'nearest' 
-      });
-    }
-    // Reset flag after first render so future manual selections scroll
-    if (wasAutoSelected && selectedSlot) {
-      setWasAutoSelected(false);
-    }
-  }, [selectedSlot, wasAutoSelected]);
 
   // Book the appointment
   const handleConfirmBooking = async () => {
@@ -844,88 +810,55 @@ export function AppointmentBookingWidget({
             {getSelectedDateDisplay()}
           </p>
 
-          {/* All time slots (no morning/afternoon filter) */}
+          {/* All time slots with inline Book button */}
           {availableSlots.map((slot) => {
             const isSelected = selectedSlot?.original === slot.original;
             return (
-              <button
+              <div
                 key={slot.original}
-                onClick={() => handleSlotSelect(slot)}
-                disabled={isLoading}
-                className={`w-full min-h-[70px] p-4 border-2 rounded-xl transition-all
-                           flex items-center justify-center relative
-                           ${isSelected 
-                             ? 'bg-green-50 border-green-600' 
-                             : 'bg-white border-gray-200 hover:border-green-600 hover:bg-green-50'}
-                           ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`w-full min-h-[70px] border-2 rounded-xl transition-all overflow-hidden
+                            ${isSelected 
+                              ? 'bg-green-50 border-green-600' 
+                              : 'bg-white border-gray-200 hover:border-green-400'}
+                            ${isLoading ? 'opacity-50' : ''}`}
               >
-                {isSelected && (
-                  <Check className="w-5 h-5 text-green-600 absolute left-4" />
-                )}
-                <span className={`text-2xl font-semibold ${isSelected ? 'text-green-700' : 'text-gray-900'}`}>
-                  {slot.display}
-                </span>
-              </button>
+                <div className="flex items-center h-full min-h-[70px]">
+                  {/* Time display - clickable to select */}
+                  <button
+                    onClick={() => handleSlotSelect(slot)}
+                    disabled={isLoading}
+                    className="flex-1 h-full min-h-[70px] flex items-center justify-center gap-2 p-4"
+                  >
+                    {isSelected && <span className="text-lg">⏰</span>}
+                    <span className={`text-2xl font-semibold ${isSelected ? 'text-green-700' : 'text-gray-900'}`}>
+                      {slot.display}
+                    </span>
+                  </button>
+                  
+                  {/* Inline Book button - only shows when selected */}
+                  {isSelected && (
+                    <button
+                      onClick={handleConfirmBooking}
+                      disabled={isLoading}
+                      className={`h-full min-h-[70px] px-6 bg-green-600 hover:bg-green-700 text-white 
+                                 font-bold flex items-center gap-2 animate-slide-in-right
+                                 min-w-[100px] justify-center transition-colors
+                                 ${ctaAnimationActive && !isLoading ? 'animate-cta-glow' : ''}`}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>
+                          <Check className="w-5 h-5" />
+                          Book
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
             );
           })}
-
-          {availableSlots.length === 0 && (
-            <p className="text-center text-gray-600 py-4">
-              No times available on this day. Please pick a different day.
-            </p>
-          )}
-
-          {/* Inline Confirmation Panel - only shows when a time is selected */}
-          {selectedSlot && (
-            <div 
-              ref={confirmationRef}
-              className="mt-6 p-5 bg-gray-50 rounded-xl border-2 border-gray-200 animate-fade-in"
-            >
-              {/* Confirmation Summary */}
-              <div className="text-center mb-4">
-                <p className="text-sm text-gray-500 mb-2">You selected:</p>
-                <p className="text-lg font-semibold text-gray-900 flex items-center justify-center gap-2">
-                  <Calendar className="w-5 h-5 text-gray-600" />
-                  {getSelectedDateDisplay()}
-                </p>
-                <p className="text-2xl font-bold text-green-700 flex items-center justify-center gap-2 mt-1">
-                  <span>⏰</span>
-                  {selectedSlot.display}
-                </p>
-              </div>
-
-              {/* Book Button */}
-              <Button
-                onClick={handleConfirmBooking}
-                disabled={isLoading}
-                className={`w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-lg font-semibold rounded-xl transition-all ${
-                  ctaAnimationActive && !isLoading ? 'animate-cta-glow' : ''
-                }`}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Booking...
-                  </>
-                ) : (
-                <div className="flex flex-col items-center">
-                    <span className="flex items-center gap-2">
-                      <Check className="w-5 h-5 flex-shrink-0" />
-                      Book My Call
-                    </span>
-                    <span className="text-sm font-normal opacity-90">
-                      {getSelectedDayLabel()} at {selectedSlot.display}
-                    </span>
-                  </div>
-                )}
-              </Button>
-
-              {/* Change hint */}
-              <p className="text-center text-sm text-gray-500 mt-3">
-                Tap a different time above to change
-              </p>
-            </div>
-          )}
         </div>
       )}
 
