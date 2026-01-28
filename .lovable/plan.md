@@ -1,130 +1,84 @@
 
 
-## Plan: Add Appointment Funnel Analytics Tabs + Clean Test Data
-
-### Overview
-This plan adds two new analytics tabs for the `/suppappt` and `/suppappt1` funnels to track drop-off rates and booking conversions. It also updates the internal team member filter to exclude Justin Falck's test data.
-
----
-
-### Part 1: Add Justin Falck to Internal Team Filter
-
-**File:** `src/lib/analyticsFilters.ts`
-
-Add Justin Falck to the existing `INTERNAL_TEAM_MEMBERS` array so his test submissions are automatically filtered out from all analytics views.
-
-```typescript
-export const INTERNAL_TEAM_MEMBERS = [
-  { firstName: 'tyler', lastName: 'calvert' },
-  { firstName: 'josh', lastName: 'foret' },
-  { firstName: 'justin', lastName: 'falck' },  // NEW
-];
-```
-
-This will automatically filter out their data from:
-- Submissions table (quotes)
-- Live Activity Feed
-
----
-
-### Part 2: Add Two New Tabs to Analytics Dashboard
-
-**File:** `src/pages/Analytics.tsx`
-
-Add two new tabs: "Appt Funnel" and "Appt1 Funnel" that show:
-- Overview KPI cards (visitors, qualified, booked appointments, disqualified)
-- 12-step funnel drop-off chart (same format as suppquote)
-- Booking widget conversion metrics (booking_widget_view → booking_completed)
-
-**New Tab Structure:**
-
-```text
-[Overview] [Funnels] [Quote Funnel] [Appt Funnel] [Appt1 Funnel] [Traffic Sources] [Live Activity]
-                                     ^^^^^^^       ^^^^^^^^^^^^
-                                       NEW             NEW
-```
-
----
-
-### Part 3: Technical Implementation Details
-
-#### Data Fetching Changes
-Modify `fetchData()` to also fetch submissions for `suppappt` and `suppappt1` pages:
-
-```typescript
-// Current: only fetches suppquote
-.eq('page', 'suppquote')
-
-// New: fetch all funnel pages
-.in('page', ['suppquote', 'suppappt', 'suppappt1'])
-```
-
-#### Funnel Steps for Appointment Funnels
-Based on the database, both `/suppappt` and `/suppappt1` track these steps:
-- start → plan → payment → care → treatment → medications → gender → tobacco → spouse → age → zip → contact → loading → qualified/disqualified
-
-Plus booking-specific events:
-- booking_widget_view
-- booking_day_selected
-- booking_time_selected
-- booking_confirm_clicked
-- booking_completed
-
-#### New Metrics to Display
-
-| Metric | Description |
-|--------|-------------|
-| Total Visitors | Sessions with page = suppappt/suppappt1 |
-| Qualified | Sessions with completed = true |
-| Appointments Booked | Count of booking_completed events |
-| Booking Conversion | booking_completed / qualified (%) |
-| Disqualified | Sessions with last_step = disqualified |
-| Avg Savings | Average monthly_savings from successful quotes |
-
-#### Booking Funnel Mini-Chart
-Show the booking widget conversion funnel:
-```text
-Widget View → Day Selected → Time Selected → Confirm Clicked → Booked
-```
-
-This uses the tracked events:
-- booking_widget_view
-- booking_day_selected  
-- booking_time_selected
-- booking_confirm_clicked
-- booking_completed
-
----
-
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/lib/analyticsFilters.ts` | Add Justin Falck to INTERNAL_TEAM_MEMBERS |
-| `src/pages/Analytics.tsx` | Add suppappt and suppappt1 tabs with KPI cards, funnel dropoff charts, and booking conversion metrics |
-
----
-
-### New Component: AppointmentFunnelOverview (inline)
-
-Similar to `QuoteFunnelOverview` but tailored for appointment funnels:
-- Total Visitors
-- Qualified (got a quote)
-- Appointments Booked
-- Booking Rate (% of qualified who booked)
-- Disqualified
-- Avg Monthly Savings
-
----
+## Plan: Simplify Success Header & Highlight Rate on Results Page
 
 ### Summary
+Remove the redundant "LESS than what you're paying now" line and make the rate more prominent, especially on mobile. The amber CTA box stays unchanged.
 
-After implementation:
-1. Justin Falck's test data will be automatically filtered from analytics
-2. Tyler Calvert and Josh Foret data continues to be filtered (already in place)
-3. New "Appt Funnel" tab shows `/suppappt` drop-off at each step
-4. New "Appt1 Funnel" tab shows `/suppappt1` drop-off at each step
-5. Both tabs include booking widget conversion metrics (widget view → completed)
+---
 
-This will help identify where users are dropping off in the appointment funnels and measure booking widget effectiveness.
+### Changes
+
+**Success Header Box - Before:**
+```text
+┌─────────────────────────────────────────────┐
+│         ✓ Great News, John!                 │
+│   You Qualify for Plan G at $89.50/month    │  ← Rate shown here
+│   That's $151.63 LESS than what you're      │  ← REMOVE this line
+│   paying now!                               │
+└─────────────────────────────────────────────┘
+```
+
+**Success Header Box - After:**
+```text
+┌─────────────────────────────────────────────┐
+│         ✓ Great News, John!                 │
+│       You Qualify for Plan G at             │
+│            $89.50/month                     │  ← Larger, bolder rate
+└─────────────────────────────────────────────┘
+```
+
+---
+
+### Technical Details
+
+**Files to Modify:**
+| File | Changes |
+|------|---------|
+| `src/pages/MedicareSupplementAppointment.tsx` | Update success header (lines 1234-1242) |
+| `src/pages/MedicareSupplementAppointment1.tsx` | Same changes to success header |
+
+**Code Changes:**
+
+```jsx
+// BEFORE (lines 1234-1242)
+<h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+  Great News, {formData.firstName}!
+</h1>
+<p className="text-xl md:text-2xl font-semibold text-green-600 mb-2">
+  You Qualify for {formData.plan} at ${quoteResult.rate.toFixed(2)}/month
+</p>
+<p className="text-lg text-foreground font-medium">
+  That's <span className="text-green-600 font-bold">${quoteResult.monthlySavings.toFixed(2)} LESS</span> than what you're paying now!
+</p>
+
+// AFTER
+<h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+  Great News, {formData.firstName}!
+</h1>
+<p className="text-lg md:text-xl text-foreground mb-1">
+  You Qualify for {formData.plan} at
+</p>
+<p className="text-3xl md:text-4xl font-bold text-green-600">
+  ${quoteResult.rate.toFixed(2)}/month
+</p>
+```
+
+---
+
+### Why This Works
+
+1. **Removes redundancy** - The savings amount is still mentioned in the amber CTA box below
+2. **Rate is hero element** - The rate now stands alone on its own line with larger text (3xl on mobile, 4xl on desktop)
+3. **Mobile-first** - The rate is now impossible to miss even on small screens
+4. **Cleaner visual hierarchy** - Greeting → Plan qualification → Bold rate → CTA box
+
+---
+
+### What Stays the Same
+
+The amber CTA box remains completely unchanged:
+- "Your rate is reserved for the next 15 minutes"
+- "To lock in your $X/month savings, pick a time below..."
+- Bouncing down arrow
 
