@@ -1,22 +1,21 @@
 
 
-## Plan: Improve Urgency Box Formatting & Readability
+## Plan: Differentiate Savings Display from Rate Display
 
 ### Problem
-The amber "Lock In Rate CTA" box on the results page has formatting issues that make it hard to read:
-1. Awkward line breaks (`<br />`) create weird text flow on different screen sizes
-2. Too much information crammed into one paragraph
-3. Green text embedded mid-sentence disrupts reading flow
-4. Not optimized for quick mobile scanning
+The savings amount in the amber urgency box uses the same styling (`text-3xl font-bold text-green-600`) as the rate displayed above it, making them look identical and causing confusion for users.
+
+**Current styling comparison:**
+- Rate: `text-3xl md:text-4xl font-bold text-green-600` → "$142.78/month"
+- Savings: `text-3xl font-bold text-green-600` → "$142.78/month"
+
+Users can't quickly distinguish which number is their rate vs. their savings.
 
 ### Solution
-Restructure the content into a cleaner, more scannable layout:
-1. **Bold headline** with clock icon (urgency)
-2. **Large savings amount** on its own line (the key value)
-3. **Simple action text** below (what to do)
-4. **Bouncing arrow** (visual cue)
-
-This creates clear visual hierarchy that seniors can quickly scan.
+Make the savings visually distinct by:
+1. **Smaller size** - Use `text-2xl` instead of `text-3xl` (rate stays larger)
+2. **Different color** - Use `text-amber-700` to match the amber theme of the urgency box
+3. **Keep bold** - Maintains emphasis while being clearly different
 
 ---
 
@@ -24,89 +23,79 @@ This creates clear visual hierarchy that seniors can quickly scan.
 
 | File | Changes |
 |------|---------|
-| `src/pages/MedicareSupplementAppointment.tsx` | Restructure urgency box layout (lines 1295-1308) |
-| `src/pages/MedicareSupplementAppointment1.tsx` | Same restructure for consistency (lines 903-916) |
+| `src/pages/MedicareSupplementAppointment.tsx` | Update savings text styling (line 1302) |
+| `src/pages/MedicareSupplementAppointment1.tsx` | Same update for consistency |
 
 ---
 
 ### Visual Comparison
 
-**Before (cramped, hard to read):**
+**Before (confusing - both look the same):**
 ```text
-┌─────────────────────────────────────┐
-│  ⏰ Your rate is reserved for...   │
-│ To lock in your $142.78/month      │
-│ savings, pick a time below for a   │
-│ quick 2-minute call with your...   │
-│              ↓                      │
-└─────────────────────────────────────┘
+┌─ White Card ─────────────────────────┐
+│  You Qualify for Plan G at          │
+│  $98.50/month  ← GREEN, 3xl, bold   │
+└──────────────────────────────────────┘
+
+┌─ Amber Box ──────────────────────────┐
+│  ⏰ Rate Reserved — 15 Minutes      │
+│  $142.78/month  ← GREEN, 3xl, bold  │  ← Looks the same!
+│  in savings                          │
+└──────────────────────────────────────┘
 ```
 
-**After (clean, scannable):**
+**After (clear differentiation):**
 ```text
-┌─────────────────────────────────────┐
-│    ⏰ Rate Reserved - 15 Minutes   │
-│                                     │
-│         $142.78/month               │
-│           in savings                │
-│                                     │
-│    Pick a time below to lock in    │
-│              ↓                      │
-└─────────────────────────────────────┘
+┌─ White Card ─────────────────────────┐
+│  You Qualify for Plan G at          │
+│  $98.50/month  ← GREEN, 3xl, bold   │
+└──────────────────────────────────────┘
+
+┌─ Amber Box ──────────────────────────┐
+│  ⏰ Rate Reserved — 15 Minutes      │
+│  $142.78/month  ← AMBER, 2xl, bold  │  ← Clearly different!
+│  in savings                          │
+└──────────────────────────────────────┘
 ```
 
 ---
 
 ### Code Changes
 
-**MedicareSupplementAppointment.tsx (lines 1295-1308):**
+**MedicareSupplementAppointment.tsx (line 1302):**
 
 ```tsx
 // BEFORE
-<div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center">
-  <div className="flex items-center justify-center gap-2 text-amber-800 mb-2">
-    <Clock className="h-5 w-5" />
-    <span className="font-semibold">Your rate is reserved for the next 15 minutes</span>
-  </div>
-  <p className="text-lg text-foreground">
-    To lock in your <span className="font-bold text-green-600">${quoteResult.monthlySavings.toFixed(2)}/month savings</span>,
-    <br />pick a time below for a quick 2-minute call with your licensed agent.
-  </p>
-  <div className="mt-4 flex justify-center">
-    <ChevronDown className="h-8 w-8 text-amber-600 animate-bounce" />
-  </div>
-</div>
+<p className="text-3xl font-bold text-green-600">
+  ${quoteResult.monthlySavings.toFixed(2)}/month
+</p>
 
 // AFTER
-<div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center">
-  <div className="flex items-center justify-center gap-2 text-amber-800 mb-3">
-    <Clock className="h-5 w-5" />
-    <span className="font-semibold">Rate Reserved — 15 Minutes</span>
-  </div>
-  <div className="mb-3">
-    <p className="text-3xl font-bold text-green-600">
-      ${quoteResult.monthlySavings.toFixed(2)}/month
-    </p>
-    <p className="text-sm text-muted-foreground">in savings</p>
-  </div>
-  <p className="text-base text-foreground">
-    Pick a time below to lock it in — quick 2-min call, no obligation.
-  </p>
-  <div className="mt-3 flex justify-center">
-    <ChevronDown className="h-6 w-6 text-amber-600 animate-bounce" />
-  </div>
-</div>
+<p className="text-2xl font-bold text-amber-700">
+  ${quoteResult.monthlySavings.toFixed(2)}/month
+</p>
+```
+
+**MedicareSupplementAppointment1.tsx (same change):**
+
+```tsx
+// BEFORE
+<p className="text-3xl font-bold text-green-600">
+  ${quoteResult.monthlySavings.toFixed(2)}/month
+</p>
+
+// AFTER
+<p className="text-2xl font-bold text-amber-700">
+  ${quoteResult.monthlySavings.toFixed(2)}/month
+</p>
 ```
 
 ---
 
-### Key Improvements
+### Why This Works
 
-1. **Shorter headline** - "Rate Reserved — 15 Minutes" is punchier than the full sentence
-2. **Savings as hero** - Large, bold green number stands out as the key value
-3. **"in savings" subtitle** - Adds context in subtle muted text
-4. **Simplified action text** - One clear line telling them what to do
-5. **Removed awkward `<br />`** - No more forced line breaks
-6. **Better spacing** - `mb-3` creates breathing room between sections
-7. **Smaller arrow** - `h-6 w-6` instead of `h-8 w-8` for subtler visual cue
+1. **Size hierarchy** - Rate (`text-3xl/4xl`) is larger than savings (`text-2xl`), establishing clear visual priority
+2. **Color context** - Amber savings color (`text-amber-700`) matches the amber box theme and looks distinct from the green rate
+3. **Semantic meaning** - Green = your rate (positive outcome), Amber = urgency/action needed
+4. **No confusion** - Users can instantly tell which number is which
 
