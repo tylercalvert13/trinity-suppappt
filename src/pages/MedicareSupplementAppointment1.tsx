@@ -902,16 +902,21 @@ const MedicareSupplementAppointment1 = () => {
 
               {/* Lock In Rate CTA */}
               <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center">
-                <div className="flex items-center justify-center gap-2 text-amber-800 mb-2">
+                <div className="flex items-center justify-center gap-2 text-amber-800 mb-3">
                   <Clock className="h-5 w-5" />
-                  <span className="font-semibold">This rate won't last forever</span>
+                  <span className="font-semibold">Rate Reserved — 15 Minutes</span>
                 </div>
-                <p className="text-lg text-foreground">
-                  To lock in your <span className="font-bold text-green-600">${quoteResult.monthlySavings.toFixed(2)}/month savings</span>,
-                  <br />pick a time below for a quick 2-minute call — no obligation.
+                <div className="mb-3">
+                  <p className="text-3xl font-bold text-green-600">
+                    ${quoteResult.monthlySavings.toFixed(2)}/month
+                  </p>
+                  <p className="text-sm text-muted-foreground">in savings</p>
+                </div>
+                <p className="text-base text-foreground">
+                  Pick a time below to lock it in — quick 2-min call, no obligation.
                 </p>
-                <div className="mt-4 flex justify-center">
-                  <ChevronDown className="h-8 w-8 text-amber-600 animate-bounce" />
+                <div className="mt-3 flex justify-center">
+                  <ChevronDown className="h-6 w-6 text-amber-600 animate-bounce" />
                 </div>
               </div>
 
