@@ -333,54 +333,61 @@ export function AppointmentBookingWidget({
   const hasAfternoonSlots = useMemo(() => 
     availableSlots.some(slot => isAfternoonSlot(slot.original)), [availableSlots]);
 
-  // Preload first day's slots on mount
+  // Batch preload ALL days' slots on mount (single API call)
   useEffect(() => {
-    const firstDay = availableWeekdays[0];
-    if (!firstDay) return;
-    
-    const dateStr = formatDateString(firstDay);
-    
     // Skip if already preloaded
-    if (preloadedSlots.has(dateStr)) return;
+    if (preloadedSlots.size > 0) return;
     
-    const preloadSlots = async () => {
+    const firstDay = availableWeekdays[0];
+    const lastDay = availableWeekdays[availableWeekdays.length - 1];
+    if (!firstDay || !lastDay) return;
+    
+    const startDate = formatDateString(firstDay);
+    const endDate = formatDateString(lastDay);
+    
+    const preloadAllSlots = async () => {
       setIsPreloading(true);
       setPreloadError(null);
       
       try {
-        console.log('[Preload] Fetching slots for first day:', dateStr);
+        console.log('[Batch Preload] Fetching slots for', startDate, 'to', endDate);
         const startTime = Date.now();
         
         const { data, error: fetchError } = await supabase.functions.invoke('ghl-calendar', {
-          body: { action: 'free-slots', date: dateStr }
+          body: { action: 'free-slots-batch', startDate, endDate }
         });
 
         const duration = Date.now() - startTime;
-        console.log(`[Preload] Slots loaded in ${duration}ms`);
+        console.log(`[Batch Preload] All slots loaded in ${duration}ms`);
 
         if (fetchError) throw fetchError;
 
-        if (data.slots && data.slots.length > 0) {
-          const slotsWithDisplay: SlotData[] = data.slots.map((slot: string) => ({
-            original: slot,
-            display: convertToUserTimezone(slot, userTimezone)
-          }));
+        if (data.slotsByDate && Object.keys(data.slotsByDate).length > 0) {
+          const newCache = new Map<string, SlotData[]>();
           
-          setPreloadedSlots(prev => new Map(prev).set(dateStr, slotsWithDisplay));
-          console.log('[Preload] Cached', slotsWithDisplay.length, 'slots for', dateStr);
+          for (const [dateStr, slots] of Object.entries(data.slotsByDate)) {
+            const slotsWithDisplay: SlotData[] = (slots as string[]).map((slot: string) => ({
+              original: slot,
+              display: convertToUserTimezone(slot, userTimezone)
+            }));
+            newCache.set(dateStr, slotsWithDisplay);
+          }
+          
+          setPreloadedSlots(newCache);
+          console.log('[Batch Preload] Cached slots for', newCache.size, 'days');
         } else {
           setPreloadError('No availability');
         }
       } catch (err) {
-        console.error('[Preload] Error:', err);
+        console.error('[Batch Preload] Error:', err);
         setPreloadError('Unable to load');
       } finally {
         setIsPreloading(false);
       }
     };
 
-    preloadSlots();
-  }, [availableWeekdays, userTimezone, preloadedSlots]);
+    preloadAllSlots();
+  }, [availableWeekdays, userTimezone]);
 
   // Fetch available slots for a date (uses cache if available)
   const fetchSlots = async (date: Date, dayLabel: string) => {
