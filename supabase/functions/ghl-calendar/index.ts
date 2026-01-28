@@ -19,6 +19,12 @@ interface FreeSlotsRequest {
   date: string; // YYYY-MM-DD format
 }
 
+interface FreeSlotsRangeRequest {
+  action: 'free-slots-batch';
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+}
+
 interface SearchContactRequest {
   action: 'search-contact';
   phone: string; // E.164 format
@@ -47,7 +53,7 @@ interface WarmupRequest {
   action: 'warmup';
 }
 
-type RequestBody = FreeSlotsRequest | SearchContactRequest | CreateContactRequest | BookAppointmentRequest | WarmupRequest;
+type RequestBody = FreeSlotsRequest | FreeSlotsRangeRequest | SearchContactRequest | CreateContactRequest | BookAppointmentRequest | WarmupRequest;
 
 // Convert date string to epoch milliseconds for start of day in Eastern timezone
 function getEasternDayStartMs(dateStr: string): number {
@@ -129,6 +135,63 @@ serve(async (req) => {
       console.log('Warmup ping received');
       return new Response(
         JSON.stringify({ status: 'warm', timestamp: Date.now() }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ========== FREE SLOTS BATCH (multiple days at once) ==========
+    if (body.action === 'free-slots-batch') {
+      const { startDate, endDate } = body as FreeSlotsRangeRequest;
+      console.log('Fetching slots for range:', startDate, 'to', endDate);
+
+      const startDateMs = getEasternDayStartMs(startDate);
+      const endDateMs = getEasternDayEndMs(endDate);
+
+      const url = `${GHL_BASE_URL}/calendars/${CALENDAR_ID}/free-slots?startDate=${startDateMs}&endDate=${endDateMs}&timezone=America/New_York`;
+      
+      console.log('Calling GHL free-slots-batch:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${GHL_API_TOKEN}`,
+          'Version': CALENDAR_API_VERSION,
+        },
+      });
+
+      const responseText = await response.text();
+      console.log('GHL free-slots-batch response status:', response.status);
+
+      if (!response.ok) {
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch slots', details: responseText }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const data = JSON.parse(responseText);
+      
+      // Parse response - GHL returns { "2026-01-29": { slots: [...] }, "2026-01-30": { slots: [...] }, ... }
+      const slotsByDate: Record<string, string[]> = {};
+
+      for (const dateKey of Object.keys(data)) {
+        if (dateKey === 'traceId') continue; // Skip metadata
+        if (data[dateKey]?.slots && Array.isArray(data[dateKey].slots)) {
+          slotsByDate[dateKey] = data[dateKey].slots.map((slot: string) => {
+            // Check if slot already contains the full date or is time-only
+            if (slot.startsWith('T')) {
+              return `${dateKey}${slot}`;
+            } else {
+              return slot;
+            }
+          });
+        }
+      }
+
+      console.log('Processed batch slots for', Object.keys(slotsByDate).length, 'days');
+
+      return new Response(
+        JSON.stringify({ slotsByDate, startDate, endDate }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
