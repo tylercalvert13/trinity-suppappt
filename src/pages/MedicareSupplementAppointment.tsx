@@ -1324,7 +1324,7 @@ const MedicareSupplementAppointment = () => {
                 userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
                 userState={getStateFromZip(formData.zipCode)}
                 onTrackEvent={trackEvent}
-                autoSelectFirst={true}
+                autoSelectFirst={false}
                 onSlotChange={handleSlotChange}
                 widgetRef={bookingWidgetRef}
               />

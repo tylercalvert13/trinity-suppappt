@@ -325,30 +325,7 @@ export function AppointmentBookingWidget({
     return () => clearTimeout(pulseTimer);
   }, [onTrackEvent]);
   
-  // Auto-select first day when autoSelectFirst is enabled (but NOT the time slot)
-  useEffect(() => {
-    if (!autoSelectFirst || isStandalone) return;
-    
-    const firstDay = availableWeekdays[0];
-    if (!firstDay) return;
-    
-    const dateStr = formatDateString(firstDay);
-    const cached = preloadedSlots.get(dateStr);
-    
-    if (cached && cached.length > 0 && !selectedDate) {
-      // Auto-trigger day selection only
-      const { primary } = formatDateLabel(firstDay, 0);
-      setSelectedDate(firstDay);
-      setAvailableSlots(cached);
-      setBookingStep(2);
-      
-      onTrackEvent?.({ 
-        eventType: 'booking_day_selected', 
-        metadata: { day: dateStr, dayLabel: primary, slotCount: cached.length, cached: true, autoSelected: true }
-      });
-      // No longer auto-selecting a time slot - user must tap to select
-    }
-  }, [preloadedSlots, availableWeekdays, autoSelectFirst, isStandalone, selectedDate, onTrackEvent]);
+  // Auto-select functionality removed to let users choose their preferred day
 
   // Check if morning/afternoon have slots
   const hasMorningSlots = useMemo(() => 

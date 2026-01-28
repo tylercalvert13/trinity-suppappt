@@ -2,6 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Resource hints for faster connections -->
+    <link rel="preconnect" href="https://rxoykogmyitwmdqxytvd.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://rxoykogmyitwmdqxytvd.supabase.co" />
+    <link rel="preconnect" href="https://connect.facebook.net" crossorigin />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+    <link rel="preconnect" href="https://cdn.taboola.com" crossorigin />
+    <link rel="dns-prefetch" href="https://cdn.taboola.com" />
+    
     <link rel="icon" href="/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Medicare Self-Enrollment Online | Health Helpers - Enroll Yourself Without Calls</title>
@@ -25,44 +33,44 @@
     
     <!-- Facebook Domain Verification -->
     <meta name="facebook-domain-verification" content="3gwwaffdbg8mkml3ew1wq3q6t4uobh" />
-    
-    <!-- Taboola Pixel Code -->
-    <script type='text/javascript'>
-      window._tfa = window._tfa || [];
-      window._tfa.push({notify: 'event', name: 'page_view', id: 1977536});
-      !function (t, f, a, x) {
-             if (!document.getElementById(x)) {
-                t.async = 1;t.src = a;t.id=x;f.parentNode.insertBefore(t, f);
-             }
-      }(document.createElement('script'),
-      document.getElementsByTagName('script')[0],
-      '//cdn.taboola.com/libtrc/unip/1977536/tfa.js',
-      'tb_tfa_script');
-    </script>
-    <!-- End of Taboola Pixel Code -->
-    
-    <!-- Meta Pixel Code -->
-    <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '731657259428655');
-      fbq('track', 'PageView');
-    </script>
-    <!-- End Meta Pixel Code -->
   </head>
 
   <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Deferred Third-Party Tracking (loads after page render) -->
+    <script>
+      window.addEventListener('load', function() {
+        // Taboola Pixel - deferred
+        window._tfa = window._tfa || [];
+        window._tfa.push({notify: 'event', name: 'page_view', id: 1977536});
+        (function() {
+          if (document.getElementById('tb_tfa_script')) return;
+          var t = document.createElement('script');
+          t.async = 1;
+          t.src = '//cdn.taboola.com/libtrc/unip/1977536/tfa.js';
+          t.id = 'tb_tfa_script';
+          document.body.appendChild(t);
+        })();
+        
+        // Meta Pixel - deferred
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '731657259428655');
+        fbq('track', 'PageView');
+      });
+    </script>
+    
     <!-- Meta Pixel noscript fallback -->
     <noscript><img height="1" width="1" style="display:none"
       src="https://www.facebook.com/tr?id=731657259428655&ev=PageView&noscript=1"
     /></noscript>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
