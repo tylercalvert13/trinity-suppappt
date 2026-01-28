@@ -1234,11 +1234,11 @@ const MedicareSupplementAppointment = () => {
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
                   Great News, {formData.firstName}!
                 </h1>
-                <p className="text-xl md:text-2xl font-semibold text-green-600 mb-2">
-                  You Qualify for {formData.plan} at ${quoteResult.rate.toFixed(2)}/month
+                <p className="text-lg md:text-xl text-foreground mb-1">
+                  You Qualify for {formData.plan} at
                 </p>
-                <p className="text-lg text-foreground font-medium">
-                  That's <span className="text-green-600 font-bold">${quoteResult.monthlySavings.toFixed(2)} LESS</span> than what you're paying now!
+                <p className="text-3xl md:text-4xl font-bold text-green-600">
+                  ${quoteResult.rate.toFixed(2)}/month
                 </p>
               </div>
 
