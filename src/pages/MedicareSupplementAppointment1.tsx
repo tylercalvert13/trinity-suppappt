@@ -907,7 +907,7 @@ const MedicareSupplementAppointment1 = () => {
                   <span className="font-semibold">Rate Reserved — 15 Minutes</span>
                 </div>
                 <div className="mb-3">
-                  <p className="text-3xl font-bold text-green-600">
+                  <p className="text-2xl font-bold text-amber-700">
                     ${quoteResult.monthlySavings.toFixed(2)}/month
                   </p>
                   <p className="text-sm text-muted-foreground">in savings</p>
