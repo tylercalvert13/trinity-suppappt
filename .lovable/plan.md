@@ -1,54 +1,29 @@
 
+## Plan: Fix Greyed Out Appointment Booking Widget
 
-## Plan: Replace Time Auto-Selection with Inline "Book" Button on Each Slot
+### Problem Identified
+Based on the screenshot and code analysis, when a user clicks a day (e.g., Friday), the widget:
+1. Sets `isLoading = true` 
+2. Calls `fetchSlots()` to get available times
+3. While loading, ALL day buttons get `disabled={isLoading}` and `opacity-50 cursor-not-allowed`
+4. If the API call hangs or is slow, the entire widget appears frozen/greyed out
 
-### Overview
-Remove the auto-selection of time slots and replace the separate confirmation panel with an inline "Book" button that appears directly on the selected time slot. When a user taps a time, the slot expands/slides and reveals a green "Book" button — all in one tap target.
+The user sees the selected day (green border on Friday) but can't interact with anything because `isLoading` is still true.
 
----
+### Root Cause
+The `isLoading` state is used for multiple purposes:
+1. Disabling day buttons during slot fetching
+2. Disabling time slots during booking confirmation
+3. Showing loading spinners
 
-### Current Behavior (What We're Removing)
-1. Time slots auto-select the first available option (within 300ms)
-2. A separate confirmation panel appears below all times with "Book My Call" button
-3. User has to scroll down to see and tap the Book button
+This causes the day buttons to stay disabled during the fetch, even though the user is just waiting to see time slots.
 
-### New Behavior
-1. **No auto-selection** — user must tap a time to select it
-2. When a time is tapped:
-   - The slot expands horizontally with a smooth animation
-   - A green "Book" button slides in from the right
-   - The time display shifts left to make room
-3. Tapping "Book" confirms the appointment
-4. Tapping a different time moves the Book button to that row
-5. **Mobile-optimized**: Large touch targets, clear visual feedback
+### Solution
+Separate the loading states to allow the UI to remain interactive:
 
----
-
-### Visual Design
-
-```text
-BEFORE (separate panel):
-┌─────────────────────────────┐
-│        10:00 AM             │  ← Selected (green border)
-└─────────────────────────────┘
-┌─────────────────────────────┐
-│        11:00 AM             │
-└─────────────────────────────┘
-┌─ Confirmation Panel ────────┐
-│  You selected: 10:00 AM     │
-│  ┌─────────────────────┐    │
-│  │   Book My Call      │    │  ← Separate button below
-│  └─────────────────────┘    │
-└─────────────────────────────┘
-
-AFTER (inline book button):
-┌─────────────────────────────────────┐
-│  ⏰ 10:00 AM    │  ✓ Book  │  ← Button slides in!
-└─────────────────────────────────────┘
-┌─────────────────────────────────────┐
-│           11:00 AM                  │
-└─────────────────────────────────────┘
-```
+1. **Keep day buttons clickable** while fetching slots (remove `disabled={isLoading}` from day buttons)
+2. **Only disable during booking confirmation** when user actually clicks "Book"
+3. **Add visual loading indicator** on the clicked day instead of disabling all buttons
 
 ---
 
@@ -56,120 +31,87 @@ AFTER (inline book button):
 
 | File | Changes |
 |------|---------|
-| `src/components/AppointmentBookingWidget.tsx` | Remove auto-select logic, redesign time slot buttons with inline Book action |
-| `tailwind.config.ts` | Add slide-in animation for the Book button |
+| `src/components/AppointmentBookingWidget.tsx` | Fix loading state to not disable all day buttons |
 
 ---
 
 ### Technical Changes
 
-#### 1. Remove Auto-Selection Logic
-Delete the auto-selection code that fires 300ms after slots load:
+#### 1. Add a separate loading state for booking vs fetching
 
 ```tsx
-// DELETE this block (lines 356-364)
-setTimeout(() => {
-  setSelectedSlot(cached[0]);
-  setWasAutoSelected(true);
-  onTrackEvent?.({ ... });
-}, 300);
+// Current: one isLoading for everything
+const [isLoading, setIsLoading] = useState(false);
+
+// Better: separate concerns
+const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+const [isBooking, setIsBooking] = useState(false);
 ```
 
-Also remove the `wasAutoSelected` state since it's no longer needed.
-
-#### 2. Add Slide-In Animation (tailwind.config.ts)
-```tsx
-keyframes: {
-  'slide-in-left': {
-    '0%': { transform: 'translateX(20px)', opacity: '0' },
-    '100%': { transform: 'translateX(0)', opacity: '1' }
-  }
-},
-animation: {
-  'slide-in-left': 'slide-in-left 0.2s ease-out'
-}
-```
-
-#### 3. Redesign Time Slot Buttons (lines 848-870)
-Transform each time slot into a row with conditional inline Book button:
+#### 2. Update day button disabled logic (line 729)
 
 ```tsx
-{availableSlots.map((slot) => {
-  const isSelected = selectedSlot?.original === slot.original;
-  return (
-    <div
-      key={slot.original}
-      className={`w-full min-h-[70px] border-2 rounded-xl transition-all overflow-hidden
-                  ${isSelected 
-                    ? 'bg-green-50 border-green-600' 
-                    : 'bg-white border-gray-200 hover:border-green-400'}
-                  ${isLoading ? 'opacity-50' : ''}`}
-    >
-      <div className="flex items-center h-full">
-        {/* Time display - clickable to select */}
-        <button
-          onClick={() => handleSlotSelect(slot)}
-          disabled={isLoading}
-          className="flex-1 h-full flex items-center justify-center gap-2 p-4"
-        >
-          {isSelected && <span className="text-lg">⏰</span>}
-          <span className={`text-2xl font-semibold ${isSelected ? 'text-green-700' : 'text-gray-900'}`}>
-            {slot.display}
-          </span>
-        </button>
-        
-        {/* Inline Book button - only shows when selected */}
-        {isSelected && (
-          <button
-            onClick={handleConfirmBooking}
-            disabled={isLoading}
-            className="h-full px-6 bg-green-600 hover:bg-green-700 text-white 
-                       font-bold flex items-center gap-2 animate-slide-in-left
-                       min-w-[100px] justify-center"
-          >
-            {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                <Check className="w-5 h-5" />
-                Book
-              </>
-            )}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-})}
+// BEFORE - disables all buttons during any loading
+disabled={isLoading}
+
+// AFTER - only disable during booking process
+disabled={isBooking}
 ```
 
-#### 4. Remove the Confirmation Panel (lines 878-928)
-Delete the entire `{selectedSlot && (...)}` confirmation panel block since the Book button is now inline.
+#### 3. Update the slot fetching function to use `isFetchingSlots`
 
-#### 5. Remove Unused Code
-- Delete `confirmationRef` since we no longer have a separate confirmation panel
-- Delete the scroll effect that used it
-- Delete `wasAutoSelected` state
+```tsx
+// In fetchSlots function
+setIsFetchingSlots(true);
+// ... fetch logic ...
+setIsFetchingSlots(false);
+```
+
+#### 4. Update the confirmation booking to use `isBooking`
+
+```tsx
+// In handleConfirmBooking function
+setIsBooking(true);
+// ... booking logic ...
+setIsBooking(false);
+```
+
+#### 5. Update time slot buttons to disable during booking
+
+```tsx
+// Time slots should only be disabled during booking
+disabled={isBooking}
+```
+
+#### 6. Update the "Checking availability..." spinner condition
+
+```tsx
+// BEFORE
+{isLoading && !selectedSlot && bookingStep !== 1 && (...)}
+
+// AFTER
+{isFetchingSlots && bookingStep === 2 && availableSlots.length === 0 && (...)}
+```
 
 ---
 
-### Mobile Considerations
+### Visual Behavior After Fix
 
-| Aspect | Solution |
-|--------|----------|
-| Touch targets | 70px min-height maintained, Book button is 100px wide |
-| Visibility | No scrolling needed — Book button appears in same row |
-| Feedback | Green highlight + slide animation provides clear feedback |
-| Booking state | "Booking..." spinner shows in the Book button itself |
+| State | Day Buttons | Time Slots | Book Button |
+|-------|-------------|------------|-------------|
+| Initial | Clickable | N/A | N/A |
+| Fetching slots | Clickable (clicked shows spinner) | Loading indicator | N/A |
+| Slots loaded | Clickable | Clickable | Hidden until selected |
+| Time selected | Clickable | Clickable | Visible |
+| Booking in progress | Disabled | Disabled | Shows spinner |
 
 ---
 
-### Expected User Flow
+### Expected User Experience
 
-1. User sees list of available times (no pre-selection)
-2. User taps a time → row expands, green "Book" button slides in
-3. User can:
-   - Tap "Book" to confirm → booking processes, shows success
-   - Tap a different time → Book button moves to new row
-4. While booking: "Book" shows spinner, slot is disabled
-
+1. User clicks "Friday" → can still click other days if they change their mind
+2. Friday shows a brief loading indicator while fetching times
+3. Times load and display
+4. User taps a time → "Book" button slides in
+5. User taps "Book" → **now** everything disables while booking processes
+6. Success screen appears
