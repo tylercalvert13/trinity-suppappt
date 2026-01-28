@@ -279,6 +279,9 @@ export function AppointmentBookingWidget({
   // Track if auto-selection has been done
   const [autoSelectDone, setAutoSelectDone] = useState(false);
   
+  // Track if current slot was auto-selected (to skip immediate scroll)
+  const [wasAutoSelected, setWasAutoSelected] = useState(false);
+  
   // Get day label for selected date
   const getSelectedDayLabel = (): string => {
     if (!selectedDate) return '';
@@ -353,6 +356,7 @@ export function AppointmentBookingWidget({
       // Auto-select first slot after short delay
       setTimeout(() => {
         setSelectedSlot(cached[0]);
+        setWasAutoSelected(true); // Mark as auto-selected to skip immediate scroll
         onTrackEvent?.({ 
           eventType: 'booking_time_selected', 
           metadata: { time: cached[0].display, slotOriginal: cached[0].original, autoSelected: true }
@@ -518,15 +522,20 @@ export function AppointmentBookingWidget({
   // Ref for auto-scrolling to inline confirmation
   const confirmationRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll when a slot is selected
+  // Auto-scroll when a slot is selected (skip if auto-selected on mount)
   useEffect(() => {
-    if (selectedSlot && confirmationRef.current) {
+    // Only scroll if user manually selected (not auto-selected on mount)
+    if (selectedSlot && confirmationRef.current && !wasAutoSelected) {
       confirmationRef.current.scrollIntoView({ 
         behavior: 'smooth', 
         block: 'nearest' 
       });
     }
-  }, [selectedSlot]);
+    // Reset flag after first render so future manual selections scroll
+    if (wasAutoSelected && selectedSlot) {
+      setWasAutoSelected(false);
+    }
+  }, [selectedSlot, wasAutoSelected]);
 
   // Book the appointment
   const handleConfirmBooking = async () => {
