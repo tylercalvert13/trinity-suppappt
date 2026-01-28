@@ -1,21 +1,20 @@
 
 
-## Plan: Differentiate Savings Display from Rate Display
+## Plan: Fix Immediate Auto-Scroll in Booking Widget
 
 ### Problem
-The savings amount in the amber urgency box uses the same styling (`text-3xl font-bold text-green-600`) as the rate displayed above it, making them look identical and causing confusion for users.
+After getting a quote, the page scrolls to the appointment booking section almost immediately (within ~1 second) instead of waiting 6 seconds as intended.
 
-**Current styling comparison:**
-- Rate: `text-3xl md:text-4xl font-bold text-green-600` → "$142.78/month"
-- Savings: `text-3xl font-bold text-green-600` → "$142.78/month"
+**Root Cause:**
+There are two competing scroll mechanisms:
 
-Users can't quickly distinguish which number is their rate vs. their savings.
+1. **Parent page** (`MedicareSupplementAppointment.tsx` line 241-253): Scrolls to booking widget after **6 seconds**
+2. **Widget internal** (`AppointmentBookingWidget.tsx` line 522-529): Scrolls to confirmation panel **immediately** when a slot is selected
+
+Since `autoSelectFirst={true}` is enabled, the widget auto-selects the first time slot within 300ms of loading. This triggers the widget's internal scroll effect that immediately scrolls down to the confirmation panel — bypassing the intended 6-second delay.
 
 ### Solution
-Make the savings visually distinct by:
-1. **Smaller size** - Use `text-2xl` instead of `text-3xl` (rate stays larger)
-2. **Different color** - Use `text-amber-700` to match the amber theme of the urgency box
-3. **Keep bold** - Maintains emphasis while being clearly different
+Modify the widget's internal scroll effect to **skip scrolling when the slot was auto-selected**. Only scroll when the user manually picks a different slot.
 
 ---
 
@@ -23,79 +22,74 @@ Make the savings visually distinct by:
 
 | File | Changes |
 |------|---------|
-| `src/pages/MedicareSupplementAppointment.tsx` | Update savings text styling (line 1302) |
-| `src/pages/MedicareSupplementAppointment1.tsx` | Same update for consistency |
-
----
-
-### Visual Comparison
-
-**Before (confusing - both look the same):**
-```text
-┌─ White Card ─────────────────────────┐
-│  You Qualify for Plan G at          │
-│  $98.50/month  ← GREEN, 3xl, bold   │
-└──────────────────────────────────────┘
-
-┌─ Amber Box ──────────────────────────┐
-│  ⏰ Rate Reserved — 15 Minutes      │
-│  $142.78/month  ← GREEN, 3xl, bold  │  ← Looks the same!
-│  in savings                          │
-└──────────────────────────────────────┘
-```
-
-**After (clear differentiation):**
-```text
-┌─ White Card ─────────────────────────┐
-│  You Qualify for Plan G at          │
-│  $98.50/month  ← GREEN, 3xl, bold   │
-└──────────────────────────────────────┘
-
-┌─ Amber Box ──────────────────────────┐
-│  ⏰ Rate Reserved — 15 Minutes      │
-│  $142.78/month  ← AMBER, 2xl, bold  │  ← Clearly different!
-│  in savings                          │
-└──────────────────────────────────────┘
-```
+| `src/components/AppointmentBookingWidget.tsx` | Add state to track auto-selection, skip scroll if auto-selected |
 
 ---
 
 ### Code Changes
 
-**MedicareSupplementAppointment.tsx (line 1302):**
+**AppointmentBookingWidget.tsx:**
+
+1. **Add tracking state** to know if the current slot was auto-selected:
 
 ```tsx
-// BEFORE
-<p className="text-3xl font-bold text-green-600">
-  ${quoteResult.monthlySavings.toFixed(2)}/month
-</p>
-
-// AFTER
-<p className="text-2xl font-bold text-amber-700">
-  ${quoteResult.monthlySavings.toFixed(2)}/month
-</p>
+// Around line 155, add new state
+const [wasAutoSelected, setWasAutoSelected] = useState(false);
 ```
 
-**MedicareSupplementAppointment1.tsx (same change):**
+2. **Set flag when auto-selecting** (around line 354):
 
 ```tsx
 // BEFORE
-<p className="text-3xl font-bold text-green-600">
-  ${quoteResult.monthlySavings.toFixed(2)}/month
-</p>
+setTimeout(() => {
+  setSelectedSlot(cached[0]);
+  onTrackEvent?.({ ... });
+}, 300);
 
 // AFTER
-<p className="text-2xl font-bold text-amber-700">
-  ${quoteResult.monthlySavings.toFixed(2)}/month
-</p>
+setTimeout(() => {
+  setSelectedSlot(cached[0]);
+  setWasAutoSelected(true);  // Mark as auto-selected
+  onTrackEvent?.({ ... });
+}, 300);
+```
+
+3. **Skip scroll for auto-selected slots** (around line 522):
+
+```tsx
+// BEFORE
+useEffect(() => {
+  if (selectedSlot && confirmationRef.current) {
+    confirmationRef.current.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'nearest' 
+    });
+  }
+}, [selectedSlot]);
+
+// AFTER
+useEffect(() => {
+  // Only scroll if user manually selected (not auto-selected on mount)
+  if (selectedSlot && confirmationRef.current && !wasAutoSelected) {
+    confirmationRef.current.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'nearest' 
+    });
+  }
+  // Reset flag after first manual selection
+  if (wasAutoSelected && selectedSlot) {
+    setWasAutoSelected(false);
+  }
+}, [selectedSlot, wasAutoSelected]);
 ```
 
 ---
 
-### Why This Works
+### Expected Behavior After Fix
 
-1. **Size hierarchy** - Rate (`text-3xl/4xl`) is larger than savings (`text-2xl`), establishing clear visual priority
-2. **Color context** - Amber savings color (`text-amber-700`) matches the amber box theme and looks distinct from the green rate
-3. **Semantic meaning** - Green = your rate (positive outcome), Amber = urgency/action needed
-4. **No confusion** - Users can instantly tell which number is which
+1. User completes the funnel and sees the "Great News" results screen
+2. Widget auto-selects the first available time slot in the background (no scroll)
+3. User can read their rate and the urgency box comfortably
+4. After 6 seconds, page smoothly scrolls to the booking widget (parent's intended behavior)
+5. If user manually selects a different time slot, the confirmation panel scrolls into view
 
