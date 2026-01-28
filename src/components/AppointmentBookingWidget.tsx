@@ -260,7 +260,8 @@ export function AppointmentBookingWidget({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<SlotData | null>(null);
   const [availableSlots, setAvailableSlots] = useState<SlotData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmedTime, setConfirmedTime] = useState<string | null>(null);
   const [agentName, setAgentName] = useState<string | null>(null);
@@ -422,7 +423,7 @@ export function AppointmentBookingWidget({
       return;
     }
     
-    setIsLoading(true);
+    setIsFetchingSlots(true);
     setError(null);
     
     try {
@@ -471,7 +472,7 @@ export function AppointmentBookingWidget({
         metadata: { error: 'fetch_failed', step: 'day_select', day: dateStr }
       });
     } finally {
-      setIsLoading(false);
+      setIsFetchingSlots(false);
     }
   };
 
@@ -510,7 +511,7 @@ export function AppointmentBookingWidget({
     // Capture slot early to prevent race conditions if state changes during async operations
     const slotToBook = selectedSlot.original;
 
-    setIsLoading(true);
+    setIsBooking(true);
     setError(null);
     
     onTrackEvent?.({ 
@@ -531,7 +532,7 @@ export function AppointmentBookingWidget({
         if (contactError || contactData?.error) {
           const errorMsg = contactData?.message || "We're still setting up your account. Please try again in a moment or call us at (201) 298-8393.";
           setError(errorMsg);
-          setIsLoading(false);
+          setIsBooking(false);
           onTrackEvent?.({ 
             eventType: 'booking_error', 
             metadata: { error: 'contact_lookup_failed', step: 'confirm' }
@@ -569,7 +570,7 @@ export function AppointmentBookingWidget({
           const dayLabel = formatDateLabel(selectedDate, 0).primary;
           await fetchSlots(selectedDate, dayLabel);
         }
-        setIsLoading(false);
+        setIsBooking(false);
         onTrackEvent?.({ 
           eventType: 'booking_error', 
           metadata: { error: 'slot_taken', step: 'confirm' }
@@ -579,7 +580,7 @@ export function AppointmentBookingWidget({
 
       if (bookingData?.error) {
         setError(bookingData.message || 'Something went wrong. Please try again or call us at (201) 298-8393.');
-        setIsLoading(false);
+        setIsBooking(false);
         onTrackEvent?.({ 
           eventType: 'booking_error', 
           metadata: { error: 'booking_failed', step: 'confirm', message: bookingData.message }
@@ -610,7 +611,7 @@ export function AppointmentBookingWidget({
         metadata: { error: 'exception', step: 'confirm' }
       });
     } finally {
-      setIsLoading(false);
+      setIsBooking(false);
     }
   };
 
@@ -674,8 +675,8 @@ export function AppointmentBookingWidget({
         </div>
       )}
 
-      {/* Loading State - only show full-screen loader when fetching slots after clicking (not preloading) */}
-      {isLoading && !selectedSlot && bookingStep !== 1 && (
+      {/* Loading State - only show full-screen loader when fetching slots (not during booking) */}
+      {isFetchingSlots && bookingStep === 2 && availableSlots.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="w-10 h-10 text-green-600 animate-spin mb-4" />
           <p className="text-gray-600 text-lg">Checking availability...</p>
@@ -726,11 +727,11 @@ export function AppointmentBookingWidget({
               <button
                 key={date.toISOString()}
                 onClick={() => handleDaySelect(date, primary)}
-                disabled={isLoading}
+                disabled={isBooking}
                 className={`w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
                          hover:border-green-600 hover:bg-green-50 transition-all
                          flex flex-col items-center justify-center
-                         ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                         ${isBooking ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <span className="text-xl font-semibold text-gray-900">{primary}</span>
                 <span className="text-gray-500">{secondary}</span>
@@ -820,13 +821,13 @@ export function AppointmentBookingWidget({
                             ${isSelected 
                               ? 'bg-green-50 border-green-600' 
                               : 'bg-white border-gray-200 hover:border-green-400'}
-                            ${isLoading ? 'opacity-50' : ''}`}
+                            ${isBooking ? 'opacity-50' : ''}`}
               >
                 <div className="flex items-center h-full min-h-[70px]">
                   {/* Time display - clickable to select */}
                   <button
                     onClick={() => handleSlotSelect(slot)}
-                    disabled={isLoading}
+                    disabled={isBooking}
                     className="flex-1 h-full min-h-[70px] flex items-center justify-center gap-2 p-4"
                   >
                     {isSelected && <span className="text-lg">⏰</span>}
@@ -839,13 +840,13 @@ export function AppointmentBookingWidget({
                   {isSelected && (
                     <button
                       onClick={handleConfirmBooking}
-                      disabled={isLoading}
+                      disabled={isBooking}
                       className={`h-full min-h-[70px] px-6 bg-green-600 hover:bg-green-700 text-white 
                                  font-bold flex items-center gap-2 animate-slide-in-right
                                  min-w-[100px] justify-center transition-colors
-                                 ${ctaAnimationActive && !isLoading ? 'animate-cta-glow' : ''}`}
+                                 ${ctaAnimationActive && !isBooking ? 'animate-cta-glow' : ''}`}
                     >
-                      {isLoading ? (
+                      {isBooking ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
                         <>
