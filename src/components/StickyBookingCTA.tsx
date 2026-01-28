@@ -80,8 +80,22 @@ export function StickyBookingCTA({ targetRef, selectedTime, dayLabel }: StickyBo
         onClick={handleClick}
         className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-lg font-semibold rounded-xl shadow-lg"
       >
-        <Calendar className="w-5 h-5 mr-2" />
-        {buttonText}
+        {selectedTime && dayLabel ? (
+          <div className="flex flex-col items-center">
+            <span className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 flex-shrink-0" />
+              Book My Call
+            </span>
+            <span className="text-sm font-normal opacity-90">
+              {dayLabel} at {selectedTime}
+            </span>
+          </div>
+        ) : (
+          <>
+            <Calendar className="w-5 h-5 mr-2" />
+            Book My Call
+          </>
+        )}
       </Button>
     </div>
   );
