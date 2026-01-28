@@ -25,6 +25,9 @@ interface AppointmentWidgetProps {
   isStandalone?: boolean;
   contactId?: string; // Pre-created contact ID for standalone mode
   onTrackEvent?: (params: TrackEventParams) => void; // Analytics callback
+  autoSelectFirst?: boolean; // Auto-select first available slot (for funnel mode)
+  onSlotChange?: (dayLabel: string | null, timeDisplay: string | null) => void; // Callback when slot changes
+  widgetRef?: React.RefObject<HTMLDivElement>; // Ref for scrolling to widget
 }
 
 interface SlotData {
@@ -247,7 +250,10 @@ export function AppointmentBookingWidget({
   onComplete,
   isStandalone = false,
   contactId: preCreatedContactId,
-  onTrackEvent
+  onTrackEvent,
+  autoSelectFirst = false,
+  onSlotChange,
+  widgetRef
 }: AppointmentWidgetProps) {
   // Step 1 = Pick Day, Step 2 = Pick Time + Confirm, Step 3 = Success
   const [bookingStep, setBookingStep] = useState(1);
@@ -266,6 +272,36 @@ export function AppointmentBookingWidget({
   const [preloadedSlots, setPreloadedSlots] = useState<Map<string, SlotData[]>>(new Map());
   const [isPreloading, setIsPreloading] = useState(false);
   const [preloadError, setPreloadError] = useState<string | null>(null);
+  
+  // CTA pulsing animation state
+  const [ctaAnimationActive, setCtaAnimationActive] = useState(false);
+  
+  // Track if auto-selection has been done
+  const [autoSelectDone, setAutoSelectDone] = useState(false);
+  
+  // Get day label for selected date
+  const getSelectedDayLabel = (): string => {
+    if (!selectedDate) return '';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateOnly = new Date(selectedDate);
+    dateOnly.setHours(0, 0, 0, 0);
+    
+    if (dateOnly.getTime() === today.getTime()) return 'Today';
+    if (dateOnly.getTime() === tomorrow.getTime()) return 'Tomorrow';
+    return selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
+  };
+  
+  // Notify parent when slot changes
+  useEffect(() => {
+    if (onSlotChange) {
+      const dayLabel = selectedDate ? getSelectedDayLabel() : null;
+      const timeDisplay = selectedSlot?.display || null;
+      onSlotChange(dayLabel, timeDisplay);
+    }
+  }, [selectedDate, selectedSlot, onSlotChange]);
 
   // Auto-scroll to success when booking completes
   useEffect(() => {
@@ -282,7 +318,48 @@ export function AppointmentBookingWidget({
   // Track widget view on mount
   useEffect(() => {
     onTrackEvent?.({ eventType: 'booking_widget_view' });
+    
+    // Start CTA pulse animation after 5 seconds
+    const pulseTimer = setTimeout(() => {
+      setCtaAnimationActive(true);
+    }, 5000);
+    
+    return () => clearTimeout(pulseTimer);
   }, [onTrackEvent]);
+  
+  // Auto-select first available slot when autoSelectFirst is enabled
+  useEffect(() => {
+    if (!autoSelectFirst || isStandalone || autoSelectDone) return;
+    
+    const firstDay = availableWeekdays[0];
+    if (!firstDay) return;
+    
+    const dateStr = formatDateString(firstDay);
+    const cached = preloadedSlots.get(dateStr);
+    
+    if (cached && cached.length > 0 && !selectedDate) {
+      // Auto-trigger day selection
+      const { primary } = formatDateLabel(firstDay, 0);
+      setSelectedDate(firstDay);
+      setAvailableSlots(cached);
+      setBookingStep(2);
+      setAutoSelectDone(true);
+      
+      onTrackEvent?.({ 
+        eventType: 'booking_day_selected', 
+        metadata: { day: dateStr, dayLabel: primary, slotCount: cached.length, cached: true, autoSelected: true }
+      });
+      
+      // Auto-select first slot after short delay
+      setTimeout(() => {
+        setSelectedSlot(cached[0]);
+        onTrackEvent?.({ 
+          eventType: 'booking_time_selected', 
+          metadata: { time: cached[0].display, slotOriginal: cached[0].original, autoSelected: true }
+        });
+      }, 300);
+    }
+  }, [preloadedSlots, availableWeekdays, autoSelectFirst, isStandalone, selectedDate, autoSelectDone, onTrackEvent]);
 
   // Check if morning/afternoon have slots
   const hasMorningSlots = useMemo(() => 
@@ -573,7 +650,7 @@ export function AppointmentBookingWidget({
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6">
+    <div ref={widgetRef} className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6">
 
       {/* Rate Expiration Notice - only show for funnel mode with quote data */}
       {bookingStep < 3 && !confirmedTime && !isStandalone && monthlySavings > 0 && (
@@ -812,7 +889,9 @@ export function AppointmentBookingWidget({
               <Button
                 onClick={handleConfirmBooking}
                 disabled={isLoading}
-                className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-xl font-semibold rounded-xl"
+                className={`w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-lg font-semibold rounded-xl transition-all ${
+                  ctaAnimationActive && !isLoading ? 'animate-cta-glow' : ''
+                }`}
               >
                 {isLoading ? (
                   <>
@@ -821,8 +900,10 @@ export function AppointmentBookingWidget({
                   </>
                 ) : (
                   <>
-                    <Check className="w-5 h-5 mr-2" />
-                    Book My Call
+                    <Check className="w-5 h-5 mr-2 flex-shrink-0" />
+                    <span className="truncate">
+                      Book My Call — {getSelectedDayLabel()} at {selectedSlot.display}
+                    </span>
                   </>
                 )}
               </Button>

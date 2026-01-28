@@ -12,6 +12,10 @@ import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
 import { z } from 'zod';
 import { AppointmentBookingWidget } from '@/components/AppointmentBookingWidget';
 import { getStateFromZip } from '@/lib/zipToState';
+import { toast } from 'sonner';
+import { ExitIntentModal } from '@/components/ExitIntentModal';
+import { SocialProofPopup } from '@/components/SocialProofPopup';
+import { StickyBookingCTA } from '@/components/StickyBookingCTA';
 
 // Question steps that should trigger auto-scroll
 const QUESTION_STEPS = ['plan', 'payment', 'care', 'treatment', 'medications', 'gender', 'tobacco', 'spouse', 'age', 'zip', 'contact'];
@@ -191,8 +195,13 @@ const MedicareSupplementAppointment = () => {
   const [error, setError] = useState<string | null>(null);
   const funnelRef = useRef<HTMLDivElement>(null);
   const questionContainerRef = useRef<HTMLDivElement>(null);
+  const bookingWidgetRef = useRef<HTMLDivElement>(null);
   const [detectedState, setDetectedState] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const [autoScrollDone, setAutoScrollDone] = useState(false);
+  const [toastShown, setToastShown] = useState(false);
+  const [selectedDayLabel, setSelectedDayLabel] = useState<string | null>(null);
+  const [selectedTimeDisplay, setSelectedTimeDisplay] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     plan: '',
@@ -228,6 +237,47 @@ const MedicareSupplementAppointment = () => {
       }, 100);
     }
   }, [step]);
+
+  // Auto-scroll to booking widget 6 seconds after qualification
+  useEffect(() => {
+    if (step === "qualified" && quoteResult && !autoScrollDone) {
+      const timer = setTimeout(() => {
+        bookingWidgetRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+        setAutoScrollDone(true);
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [step, quoteResult, autoScrollDone]);
+
+  // Urgency toast 10 seconds after qualification
+  useEffect(() => {
+    if (step === "qualified" && quoteResult && !toastShown) {
+      const timer = setTimeout(() => {
+        toast("⏰ Your rate is reserved — pick a time to lock it in", {
+          duration: 5000,
+        });
+        setToastShown(true);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [step, quoteResult, toastShown]);
+
+  // Callback to scroll to booking widget (for exit intent modal)
+  const scrollToBookingWidget = useCallback(() => {
+    bookingWidgetRef.current?.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
+  }, []);
+
+  // Handle slot change from booking widget
+  const handleSlotChange = useCallback((dayLabel: string | null, timeDisplay: string | null) => {
+    setSelectedDayLabel(dayLabel);
+    setSelectedTimeDisplay(timeDisplay);
+  }, []);
 
   // Detect user's state via IP geolocation on mount
   useEffect(() => {
@@ -1269,6 +1319,9 @@ const MedicareSupplementAppointment = () => {
                 userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
                 userState={getStateFromZip(formData.zipCode)}
                 onTrackEvent={trackEvent}
+                autoSelectFirst={true}
+                onSlotChange={handleSlotChange}
+                widgetRef={bookingWidgetRef}
               />
 
               {/* Trust Elements */}
@@ -1329,6 +1382,28 @@ const MedicareSupplementAppointment = () => {
           </div>
         </div>
       </footer>
+
+      {/* Exit Intent Modal - only show when qualified */}
+      {step === "qualified" && quoteResult && (
+        <ExitIntentModal
+          monthlySavings={quoteResult.monthlySavings}
+          onBookClick={scrollToBookingWidget}
+        />
+      )}
+
+      {/* Social Proof Popup - only show when qualified */}
+      {step === "qualified" && quoteResult && (
+        <SocialProofPopup delayMs={8000} visibleMs={4000} />
+      )}
+
+      {/* Sticky Floating CTA - mobile only, when qualified */}
+      {step === "qualified" && quoteResult && (
+        <StickyBookingCTA
+          targetRef={bookingWidgetRef}
+          selectedTime={selectedTimeDisplay || undefined}
+          dayLabel={selectedDayLabel || undefined}
+        />
+      )}
 
     </div>
   );
