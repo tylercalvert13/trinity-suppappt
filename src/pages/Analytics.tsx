@@ -130,8 +130,20 @@ const Analytics = () => {
           .order('created_at', { ascending: false }),
       ]);
 
-      if (sessionsRes.data) setSessions(sessionsRes.data);
-      if (eventsRes.data) setEvents(eventsRes.data);
+      // Filter out "an" source (Facebook Audience Network) - low quality traffic
+      const filteredSessions = sessionsRes.data 
+        ? sessionsRes.data.filter(s => s.utm_source !== 'an')
+        : [];
+      
+      // Get session IDs to filter related events
+      const validSessionIds = new Set(filteredSessions.map(s => s.session_id));
+      
+      const filteredEvents = eventsRes.data
+        ? eventsRes.data.filter(e => validSessionIds.has(e.session_id))
+        : [];
+
+      setSessions(filteredSessions);
+      setEvents(filteredEvents);
       if (submissionsRes.data) setSubmissions(filterInternalSubmissions(submissionsRes.data));
     } catch (error) {
       console.error('Error fetching data:', error);
