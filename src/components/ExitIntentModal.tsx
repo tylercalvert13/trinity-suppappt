@@ -95,7 +95,7 @@ export function ExitIntentModal({ monthlySavings, onBookClick }: ExitIntentModal
 
   return (
     <Dialog open={showModal} onOpenChange={setShowModal}>
-      <DialogContent className="sm:max-w-md mx-4 rounded-2xl">
+      <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] mx-auto rounded-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader className="text-center space-y-4 pt-4">
           <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto">
             <Clock className="h-8 w-8 text-amber-600" />
