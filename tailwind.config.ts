@@ -113,6 +113,10 @@ export default {
 			'cta-glow': {
 				'0%, 100%': { boxShadow: '0 0 8px 2px rgba(22, 163, 74, 0.4)' },
 				'50%': { boxShadow: '0 0 20px 6px rgba(22, 163, 74, 0.6)' }
+			},
+			'slide-in-right': {
+				'0%': { transform: 'translateX(20px)', opacity: '0' },
+				'100%': { transform: 'translateX(0)', opacity: '1' }
 			}
 		},
 		animation: {
@@ -120,7 +124,8 @@ export default {
 			'accordion-up': 'accordion-up 0.2s ease-out',
 			'ring-phone': 'ring-phone 1.5s ease-in-out infinite',
 			'gentle-pulse': 'gentle-pulse 2s ease-in-out infinite',
-			'cta-glow': 'cta-glow 2s ease-in-out infinite'
+			'cta-glow': 'cta-glow 2s ease-in-out infinite',
+			'slide-in-right': 'slide-in-right 0.2s ease-out'
 		}
 		}
 	},
