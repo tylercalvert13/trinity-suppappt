@@ -1,71 +1,112 @@
 
 
-## Plan: Fix Exit-Intent Modal Mobile Positioning
+## Plan: Improve Urgency Box Formatting & Readability
 
 ### Problem
-The exit-intent modal is being cut off at the top on mobile screens (as shown in the screenshot). The modal uses `top-[50%] translate-y-[-50%]` centering which can push content outside the viewport when the modal height is significant on smaller screens.
+The amber "Lock In Rate CTA" box on the results page has formatting issues that make it hard to read:
+1. Awkward line breaks (`<br />`) create weird text flow on different screen sizes
+2. Too much information crammed into one paragraph
+3. Green text embedded mid-sentence disrupts reading flow
+4. Not optimized for quick mobile scanning
 
 ### Solution
-Add mobile-specific positioning constraints to ensure the modal stays within the viewport:
-1. Add `max-h-[90vh]` to limit modal height to 90% of viewport
-2. Add `overflow-y-auto` for scrolling if content exceeds available space
-3. Ensure proper margin from top/bottom edges on mobile
+Restructure the content into a cleaner, more scannable layout:
+1. **Bold headline** with clock icon (urgency)
+2. **Large savings amount** on its own line (the key value)
+3. **Simple action text** below (what to do)
+4. **Bouncing arrow** (visual cue)
+
+This creates clear visual hierarchy that seniors can quickly scan.
 
 ---
 
-### File to Modify
+### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/ExitIntentModal.tsx` | Add mobile-safe positioning classes |
+| `src/pages/MedicareSupplementAppointment.tsx` | Restructure urgency box layout (lines 1295-1308) |
+| `src/pages/MedicareSupplementAppointment1.tsx` | Same restructure for consistency (lines 903-916) |
+
+---
+
+### Visual Comparison
+
+**Before (cramped, hard to read):**
+```text
+┌─────────────────────────────────────┐
+│  ⏰ Your rate is reserved for...   │
+│ To lock in your $142.78/month      │
+│ savings, pick a time below for a   │
+│ quick 2-minute call with your...   │
+│              ↓                      │
+└─────────────────────────────────────┘
+```
+
+**After (clean, scannable):**
+```text
+┌─────────────────────────────────────┐
+│    ⏰ Rate Reserved - 15 Minutes   │
+│                                     │
+│         $142.78/month               │
+│           in savings                │
+│                                     │
+│    Pick a time below to lock in    │
+│              ↓                      │
+└─────────────────────────────────────┘
+```
 
 ---
 
 ### Code Changes
 
-**ExitIntentModal.tsx (line 98):**
+**MedicareSupplementAppointment.tsx (lines 1295-1308):**
 
 ```tsx
 // BEFORE
-<DialogContent className="sm:max-w-md mx-4 rounded-2xl">
+<div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center">
+  <div className="flex items-center justify-center gap-2 text-amber-800 mb-2">
+    <Clock className="h-5 w-5" />
+    <span className="font-semibold">Your rate is reserved for the next 15 minutes</span>
+  </div>
+  <p className="text-lg text-foreground">
+    To lock in your <span className="font-bold text-green-600">${quoteResult.monthlySavings.toFixed(2)}/month savings</span>,
+    <br />pick a time below for a quick 2-minute call with your licensed agent.
+  </p>
+  <div className="mt-4 flex justify-center">
+    <ChevronDown className="h-8 w-8 text-amber-600 animate-bounce" />
+  </div>
+</div>
 
 // AFTER
-<DialogContent className="sm:max-w-md mx-4 rounded-2xl max-h-[85vh] overflow-y-auto top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] fixed">
-```
-
-However, since the Dialog component already handles positioning, we need a different approach. The real fix is to ensure the modal content itself is constrained and uses proper mobile viewport handling:
-
-```tsx
-// AFTER
-<DialogContent className="sm:max-w-md w-[calc(100%-2rem)] mx-auto rounded-2xl max-h-[85vh] overflow-y-auto">
+<div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center">
+  <div className="flex items-center justify-center gap-2 text-amber-800 mb-3">
+    <Clock className="h-5 w-5" />
+    <span className="font-semibold">Rate Reserved — 15 Minutes</span>
+  </div>
+  <div className="mb-3">
+    <p className="text-3xl font-bold text-green-600">
+      ${quoteResult.monthlySavings.toFixed(2)}/month
+    </p>
+    <p className="text-sm text-muted-foreground">in savings</p>
+  </div>
+  <p className="text-base text-foreground">
+    Pick a time below to lock it in — quick 2-min call, no obligation.
+  </p>
+  <div className="mt-3 flex justify-center">
+    <ChevronDown className="h-6 w-6 text-amber-600 animate-bounce" />
+  </div>
+</div>
 ```
 
 ---
 
-### Why This Works
+### Key Improvements
 
-1. **`max-h-[85vh]`** - Limits the modal to 85% of viewport height, leaving room for safe area insets
-2. **`overflow-y-auto`** - Allows scrolling if content still exceeds the constrained height
-3. **`w-[calc(100%-2rem)]`** - Consistent horizontal margins on mobile instead of just `mx-4`
-
----
-
-### Visual Result
-
-**Before (clipped at top):**
-```text
- [Modal clipped]
-┌────────────────┐
-│    Content...  │
-└────────────────┘
-```
-
-**After (fully visible):**
-```text
-┌────────────────┐
-│   ⏰ Clock     │
-│ Wait! Your... │
-│  [Book Call]  │
-└────────────────┘
-```
+1. **Shorter headline** - "Rate Reserved — 15 Minutes" is punchier than the full sentence
+2. **Savings as hero** - Large, bold green number stands out as the key value
+3. **"in savings" subtitle** - Adds context in subtle muted text
+4. **Simplified action text** - One clear line telling them what to do
+5. **Removed awkward `<br />`** - No more forced line breaks
+6. **Better spacing** - `mb-3` creates breathing room between sections
+7. **Smaller arrow** - `h-6 w-6` instead of `h-8 w-8` for subtler visual cue
 
