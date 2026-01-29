@@ -13,6 +13,8 @@
     <link rel="dns-prefetch" href="https://bat.bing.com" />
     <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
     <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+    <link rel="preconnect" href="https://s.vibe.co" crossorigin />
+    <link rel="dns-prefetch" href="https://s.vibe.co" />
     
     <link rel="icon" href="/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -104,6 +106,11 @@
           gtag('js', new Date());
           gtag('config', 'AW-17916268698');
         })();
+        
+        // Vibe.co TV Pixel - deferred
+        !function(v,i,b,e,c,o){if(!v[c]){var s=v[c]=function(){s.process?s.process.apply(s,arguments):s.queue.push(arguments)};s.queue=[],s.b=1*new Date;var t=i.createElement(b);t.async=!0,t.src=e;var n=i.getElementsByTagName(b)[0];n.parentNode.insertBefore(t,n)}}(window,document,"script","https://s.vibe.co/vbpx.js","vbpx");
+        vbpx('init','FW7mXo');
+        vbpx('event', 'page_view');
       });
     </script>
     

@@ -24,6 +24,7 @@ declare global {
   interface Window {
     uetq?: any[];
     gtag?: (...args: any[]) => void;
+    vbpx?: (...args: any[]) => void;
   }
 }
 
@@ -255,6 +256,22 @@ const trackGoogleAdsConversion = () => {
     console.log('Google Ads submit_lead_form conversion tracked (suppappt)');
   } catch (error) {
     console.error('Error tracking Google Ads conversion:', error);
+  }
+};
+
+// Track lead submission via Vibe.co TV Ads
+const trackVibeCoLeadEvent = () => {
+  try {
+    if (typeof window === 'undefined' || !window.vbpx) {
+      console.log('Vibe.co pixel not loaded yet, skipping lead event');
+      return;
+    }
+    
+    window.vbpx('event', 'lead');
+    
+    console.log('Vibe.co lead event tracked (suppappt)');
+  } catch (error) {
+    console.error('Error tracking Vibe.co lead event:', error);
   }
 };
 
@@ -648,6 +665,7 @@ const MedicareSupplementAppointment = () => {
       await trackFacebookSubmissionEvent(formData, data);
       trackBingSubmissionEvent(formData);
       trackGoogleAdsConversion();
+      trackVibeCoLeadEvent();
       
       setStep("qualified");
 
