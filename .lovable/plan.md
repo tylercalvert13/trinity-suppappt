@@ -1,106 +1,129 @@
 
+## Plan: Fix Slow Quote API by Filtering Server-Side
 
-## Plan: Replace External Phone Validation with Fast Internal Validation
-
-The data confirms your suspicion - the Abstract Phone Intelligence API isn't catching any fake leads (100% pass rate in logs) while adding 3-10 seconds of latency per user. This is costing you conversions.
-
----
-
-## What We'll Do
-
-### Remove the External API Call
-- Delete the Abstract Phone Intelligence API integration entirely
-- Eliminate the 3-5 second latency AND the cold start delays
-- Save money on API calls that aren't providing value
-
-### Add Fast Internal Validation
-Replace with instant client-side + edge-function validation that checks:
-
-| Check | Purpose | Time |
-|-------|---------|------|
-| 10 digits exactly | Basic format | Instant |
-| Starts with valid area code | Not 000, 111, 555, etc. | Instant |
-| Not obviously fake patterns | 1234567890, 0000000000, etc. | Instant |
-| Valid exchange code | Middle 3 digits not 555 (reserved for fiction) | Instant |
-
-This will validate in **<1ms** instead of 3-10 seconds.
+I found the root cause of the 15+ second delays! The CSG API is doing 10-50x more work than necessary because we're fetching quotes from ALL carriers and filtering afterward.
 
 ---
 
-## Files to Modify
+## Root Cause
 
-| File | Change |
-|------|--------|
-| `supabase/functions/validate-contact/index.ts` | Replace external API with internal regex validation |
-| `src/pages/MedicareSupplementAppointment.tsx` | Keep existing call (now instant) |
-| `src/pages/MedicareSupplementQuote.tsx` | Keep existing call (now instant) |
-| `src/components/AppointmentBookingWidgetWithOptIn.tsx` | Keep existing call (now instant) |
+Looking at the API documentation you provided:
+
+| What We Do Now | What We Should Do |
+|----------------|-------------------|
+| Fetch ALL 50+ carriers | Use `naic` parameter to filter at source |
+| Return full quote objects | Use `field` parameter to return only needed fields |
+| Filter 50+ quotes to 4 client-side | Get only 4 quotes from the start |
+
+**Line 283 in the docs**: `naic (optional, string) ... (repeatable)` - This means we can pass multiple NAIC codes to filter directly in the API!
 
 ---
 
-## Technical Details
+## Current vs Optimized Query
 
-### New Internal Phone Validation Logic
+**Current (slow):**
+```
+/v1/med_supp/quotes.json?zip5=66062&age=65&gender=M&tobacco=0&plan=G&apply_discounts=0
+```
+Result: API searches entire carrier database, returns 50+ quotes, we filter to 4
 
+**Optimized (fast):**
+```
+/v1/med_supp/quotes.json?zip5=66062&age=65&gender=M&tobacco=0&plan=G&apply_discounts=0
+  &naic=60380&naic=65641&naic=79987&naic=31119
+  &field=company_base.name&field=company_base.naic&field=company_base.ambest_rating
+  &field=rate.month&field=view_type
+```
+Result: API only searches 4 specific carriers, returns only the data we need
+
+---
+
+## Technical Changes
+
+### File: `supabase/functions/get-medicare-quote/index.ts`
+
+**1. Add NAIC codes to query parameters:**
 ```typescript
-function validatePhoneInternal(phone: string): PhoneValidationResult {
-  const cleanPhone = phone.replace(/\D/g, '');
+// Build query parameters
+const queryParams = new URLSearchParams();
+queryParams.append('zip5', data.zipCode);
+queryParams.append('age', data.age.toString());
+queryParams.append('gender', data.gender === 'male' ? 'M' : 'F');
+queryParams.append('tobacco', data.tobacco === 'yes' ? '1' : '0');
+queryParams.append('plan', mapPlanToApi(data.plan));
+queryParams.append('apply_discounts', data.spouse === 'yes' ? '1' : '0');
+
+// NEW: Filter by preferred carriers at the API level (repeatable parameter)
+for (const naic of PREFERRED_NAIC_CODES) {
+  queryParams.append('naic', naic);
+}
+
+// NEW: Request only the fields we need
+const neededFields = [
+  'company_base.name',
+  'company_base.naic', 
+  'company_base.ambest_rating',
+  'rate.month',
+  'view_type'
+];
+for (const field of neededFields) {
+  queryParams.append('field', field);
+}
+```
+
+**2. Simplify the filter function:**
+
+Since the API now only returns our preferred carriers, we only need to filter by household discount status:
+```typescript
+function filterQuotes(quotes: any[], hasSpouse: boolean): any[] {
+  console.log(`Filtering ${quotes.length} quotes, hasSpouse: ${hasSpouse}`);
   
-  // Must be exactly 10 digits
-  if (cleanPhone.length !== 10) {
-    return { valid: false, type: null, carrier: null, error: "Must be 10 digits" };
-  }
-  
-  const areaCode = cleanPhone.substring(0, 3);
-  const exchange = cleanPhone.substring(3, 6);
-  
-  // Invalid area codes (can't start with 0 or 1, or be fake patterns)
-  const invalidAreaCodes = ['000', '111', '211', '311', '411', '511', '611', '711', '811', '911'];
-  if (areaCode.startsWith('0') || areaCode.startsWith('1') || invalidAreaCodes.includes(areaCode)) {
-    return { valid: false, type: null, carrier: null, error: "Invalid area code" };
-  }
-  
-  // 555-0100 through 555-0199 are reserved for fiction
-  if (exchange === '555') {
-    const lastFour = cleanPhone.substring(6);
-    if (lastFour >= '0100' && lastFour <= '0199') {
-      return { valid: false, type: null, carrier: null, error: "Invalid phone number" };
+  return quotes.filter(quote => {
+    // Household discount filtering based on view_type
+    const viewType = quote.view_type || [];
+    
+    if (!hasSpouse && viewType.includes("with_hhd")) {
+      return false;
     }
-  }
-  
-  // Reject obvious fake patterns
-  const fakePatterns = [
-    '1234567890', '0987654321', '1111111111', '2222222222',
-    '3333333333', '4444444444', '5555555555', '6666666666',
-    '7777777777', '8888888888', '9999999999', '0000000000'
-  ];
-  if (fakePatterns.includes(cleanPhone)) {
-    return { valid: false, type: null, carrier: null, error: "Invalid phone number" };
-  }
-  
-  return { valid: true, type: 'unknown', carrier: null };
+    
+    if (hasSpouse && viewType.includes("sans_hhd")) {
+      return false;
+    }
+
+    return true;
+  });
 }
 ```
 
 ---
 
-## Expected Impact
+## Expected Performance Impact
 
 | Metric | Before | After |
 |--------|--------|-------|
-| Validation latency | 3-10 seconds | <1ms |
-| Cold start delay | 1-2 seconds | Eliminated |
-| "Verifying" screen time | 5-10 seconds | Instant |
-| Fake leads blocked | 0% | Same (patterns blocked) |
-| API costs | ~$0.01/call | $0 |
+| Carriers queried | 50+ | 4 |
+| Quotes returned | 50+ | 4-8 |
+| Response payload | ~100KB | ~5KB |
+| API response time | 5-15s | 0.5-2s |
+| Total quote flow | 8-20s | 2-4s |
 
 ---
 
-## Bonus: Consider Removing the "Verifying" Step Entirely
+## Additional Safety: Add Timeout + Slow Loading UI
 
-Since validation will be instant, you could move it to:
-1. **Client-side only** - Validate as user types (red border if invalid)
-2. **No blocking step** - User never sees "verifying your information"
+Even with optimizations, external APIs can still be slow occasionally. We should also add:
 
-This would make the form submission feel **instant** instead of having any waiting state.
+1. **30-second timeout** with `Promise.race()` - prevents infinite hangs
+2. **"Taking longer than usual" message** after 15 seconds - keeps users informed
+3. **Retry capability** if timeout occurs - doesn't lose the user
 
+---
+
+## Implementation Order
+
+1. **Update query parameters** - Add `naic` and `field` filters to the CSG API call
+2. **Simplify filter function** - Remove redundant carrier filtering  
+3. **Add timeout wrapper** - Prevent infinite hangs
+4. **Update loading UI** - Add slow loading feedback
+
+This fix addresses the root cause (inefficient API query) rather than just treating symptoms (timeout handling).
