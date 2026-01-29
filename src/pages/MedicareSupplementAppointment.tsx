@@ -19,6 +19,13 @@ import { SocialProofPopup } from '@/components/SocialProofPopup';
 import { StickyBookingCTA } from '@/components/StickyBookingCTA';
 import { QuoteLoadingProgress } from '@/components/QuoteLoadingProgress';
 
+// TypeScript declaration for Bing UET
+declare global {
+  interface Window {
+    uetq?: any[];
+  }
+}
+
 // Question steps that should trigger auto-scroll
 const QUESTION_STEPS = ['plan', 'payment', 'care', 'treatment', 'medications', 'gender', 'tobacco', 'spouse', 'age', 'zip', 'contact'];
 
@@ -186,6 +193,49 @@ const trackFacebookSubmissionEvent = async (
   }
 };
 
+// Normalize email for Bing UET enhanced conversions per Microsoft spec
+const normalizeEmailForBing = (email: string): string => {
+  let normalized = email.trim().toLowerCase();
+  // Remove +alias (name+alias@domain.com → name@domain.com)
+  normalized = normalized.replace(/\+[^@]*@/, '@');
+  const [localPart, domain] = normalized.split('@');
+  if (!domain) return normalized;
+  // Remove periods from local part only
+  const cleanLocal = localPart.replace(/\./g, '');
+  return `${cleanLocal}@${domain}`;
+};
+
+// Track lead submission via Bing UET Enhanced Conversions
+const trackBingSubmissionEvent = (formData: FormData) => {
+  try {
+    if (typeof window === 'undefined' || !window.uetq) {
+      console.log('Bing UET not loaded yet, skipping conversion');
+      return;
+    }
+    
+    // Normalize email per Microsoft spec
+    const normalizedEmail = normalizeEmailForBing(formData.email);
+    
+    // Format phone to E.164 (add +1 for US)
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    const e164Phone = `+1${phoneDigits}`;
+    
+    // Step 1: Push enhanced conversion PII data
+    window.uetq.push('set', { 
+      'pid': { 
+        'em': normalizedEmail,
+        'ph': e164Phone,
+      } 
+    });
+    
+    // Step 2: Fire the conversion event
+    window.uetq.push('event', 'submit_lead_form', {});
+    
+    console.log('Bing UET submit_lead_form conversion tracked (suppappt)');
+  } catch (error) {
+    console.error('Error tracking Bing conversion:', error);
+  }
+};
 
 const MedicareSupplementAppointment = () => {
   const navigate = useNavigate();
@@ -572,9 +622,10 @@ const MedicareSupplementAppointment = () => {
         }
       });
 
-      // Track qualification and Facebook conversion
+      // Track qualification and conversions
       trackQualification("qualified");
       await trackFacebookSubmissionEvent(formData, data);
+      trackBingSubmissionEvent(formData);
       
       setStep("qualified");
 
