@@ -38,6 +38,7 @@ function mapPlanToApi(plan: string): string {
 }
 
 // Get or refresh session token from CSG API
+// Optimized: Uses full 8-hour token life and single upsert instead of delete+insert
 async function getSessionToken(): Promise<string> {
   console.log("Checking for existing token in database...");
   
@@ -51,7 +52,7 @@ async function getSessionToken(): Promise<string> {
     console.error("Error fetching token:", fetchError);
   }
 
-  // If token exists and hasn't expired, use it
+  // Use full 8-hour window (no 5-min buffer) - trust 403 retry mechanism for edge cases
   if (existingToken && new Date(existingToken.expires_at) > new Date()) {
     console.log("Using cached token from database, expires:", existingToken.expires_at);
     return existingToken.token;
@@ -75,35 +76,23 @@ async function getSessionToken(): Promise<string> {
   const authData = await authResponse.json();
   console.log("Received new token from CSG, expires:", authData.expires_date);
 
-  // Calculate expiration with 5-minute safety buffer
-  const expiresAt = new Date(authData.expires_date);
-  expiresAt.setMinutes(expiresAt.getMinutes() - 5);
-
-  // Delete old tokens
-  const { error: deleteError } = await supabase
+  // Single upsert instead of delete + insert (1 DB call vs 2)
+  // Use 'singleton' as fixed ID for onConflict to work
+  const { error: upsertError } = await supabase
     .from('csg_api_tokens')
-    .delete()
-    .neq('id', '00000000-0000-0000-0000-000000000000');
-
-  if (deleteError) {
-    console.error("Error deleting old tokens:", deleteError);
-  }
-
-  // Store new token
-  const { error: insertError } = await supabase
-    .from('csg_api_tokens')
-    .insert({
+    .upsert({
+      id: 'singleton',
       token: authData.token,
-      expires_at: expiresAt.toISOString(),
+      expires_at: authData.expires_date,
       updated_at: new Date().toISOString()
-    });
+    }, { onConflict: 'id' });
 
-  if (insertError) {
-    console.error("Error storing new token:", insertError);
-    throw new Error("Failed to store session token");
+  if (upsertError) {
+    console.error("Error upserting token:", upsertError);
+    // Don't throw - we have the token, just log the error
   }
 
-  console.log("New token stored successfully, expires:", expiresAt.toISOString());
+  console.log("Token stored successfully, expires:", authData.expires_date);
   return authData.token;
 }
 
@@ -195,7 +184,21 @@ serve(async (req) => {
   }
 
   try {
-    const data = await req.json();
+    const body = await req.json();
+    
+    // Handle warmup requests - pre-cache session token to eliminate cold start delays
+    if (body.action === 'warmup') {
+      console.log('Warmup request - pre-caching session token');
+      const start = Date.now();
+      await getSessionToken();
+      console.log(`Warmup complete in ${Date.now() - start}ms`);
+      return new Response(
+        JSON.stringify({ warmed: true, duration: Date.now() - start }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const data = body;
     console.log("Received quote request:", JSON.stringify(data));
 
     // Validate required fields
