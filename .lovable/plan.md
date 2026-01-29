@@ -1,42 +1,66 @@
 
-## Add Google Ads Tag (gtag.js) to All Pages
+## Add Google Ads Lead Form Conversion to /suppappt Funnel
 
-Adding the Google Ads conversion tracking tag site-wide, following the same deferred loading pattern used for other tracking pixels to optimize page performance.
+Adding Google Ads conversion tracking that fires when users successfully receive their Medicare Supplement quote.
 
 ---
 
 ## Implementation
 
-### File: `index.html`
+### File: `src/pages/MedicareSupplementAppointment.tsx`
 
-**1. Add resource hints for faster connection** (in `<head>` section):
-```html
-<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
-<link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+**1. Add TypeScript declaration for gtag** (near line 23-27, alongside existing Bing UET declaration):
+```typescript
+declare global {
+  interface Window {
+    uetq?: any[];
+    gtag?: (...args: any[]) => void;
+  }
+}
 ```
 
-**2. Add Google tag to the deferred tracking section** (inside the existing `window.addEventListener('load', ...)` block):
-```javascript
-// Google Ads (gtag.js) - deferred
-(function() {
-  var s = document.createElement('script');
-  s.async = true;
-  s.src = 'https://www.googletagmanager.com/gtag/js?id=AW-17916268698';
-  document.head.appendChild(s);
-  
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  window.gtag = gtag;
-  gtag('js', new Date());
-  gtag('config', 'AW-17916268698');
-})();
+**2. Create tracking function** (after the `trackBingSubmissionEvent` function, around line 238):
+```typescript
+// Track lead submission via Google Ads conversion
+const trackGoogleAdsConversion = () => {
+  try {
+    if (typeof window === 'undefined' || !window.gtag) {
+      console.log('Google Ads gtag not loaded yet, skipping conversion');
+      return;
+    }
+    
+    window.gtag('event', 'conversion', {
+      'send_to': 'AW-17916268698/760DCPf-lO8bEJqhkt9C',
+      'value': 1.0,
+      'currency': 'USD'
+    });
+    
+    console.log('Google Ads submit_lead_form conversion tracked (suppappt)');
+  } catch (error) {
+    console.error('Error tracking Google Ads conversion:', error);
+  }
+};
+```
+
+**3. Call the function when quote is received** (line 628, after Bing tracking):
+```typescript
+// Track qualification and conversions
+trackQualification("qualified");
+await trackFacebookSubmissionEvent(formData, data);
+trackBingSubmissionEvent(formData);
+trackGoogleAdsConversion();  // <-- Add this line
+
+setStep("qualified");
 ```
 
 ---
 
-## Why Deferred Loading?
+## Technical Notes
 
-The existing tracking pixels (Facebook, Taboola, Bing) are all loaded after the page's `load` event to prioritize initial render performance - especially important for mobile and Facebook in-app browsers. The Google tag will follow the same pattern for consistency.
+- The conversion uses the send_to ID you provided: `AW-17916268698/760DCPf-lO8bEJqhkt9C`
+- No callback/redirect needed since we're staying on the same page
+- Follows the same pattern as existing Bing UET tracking
+- The `window.gtag` is already set globally by the tag we added to `index.html`
 
 ---
 
@@ -44,7 +68,8 @@ The existing tracking pixels (Facebook, Taboola, Bing) are all loaded after the 
 
 | Change | Location |
 |--------|----------|
-| Add preconnect/dns-prefetch for googletagmanager.com | `<head>` lines 12-13 |
-| Add deferred gtag.js loader | Inside existing `window.addEventListener('load', ...)` block |
+| Add `gtag` to Window interface | Lines 23-27 |
+| Create `trackGoogleAdsConversion` function | After line 238 |
+| Call conversion on quote success | Line 628 |
 
-The tag will fire on every page load and track conversions with ID `AW-17916268698`.
+The conversion will fire with a $1.00 value each time a user successfully receives their quote.
