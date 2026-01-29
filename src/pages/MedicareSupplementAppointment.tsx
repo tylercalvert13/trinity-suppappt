@@ -510,8 +510,8 @@ const MedicareSupplementAppointment = () => {
     trackStepChange("loading");
 
     try {
-      // Get quote from CSG API
-      const { data, error: quoteError } = await supabase.functions.invoke('get-medicare-quote', {
+      // Get quote from CSG API with 30-second timeout to prevent infinite hangs
+      const quotePromise = supabase.functions.invoke('get-medicare-quote', {
         body: {
           plan: formData.plan,
           currentPayment: parseFloat(formData.currentPayment),
@@ -522,6 +522,12 @@ const MedicareSupplementAppointment = () => {
           zipCode: formData.zipCode,
         }
       });
+      
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Quote request timed out after 30 seconds')), 30000)
+      );
+
+      const { data, error: quoteError } = await Promise.race([quotePromise, timeoutPromise]);
 
       if (quoteError) {
         console.error("Quote error:", quoteError);

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Loader2, Circle } from 'lucide-react';
+import { CheckCircle, Loader2, Circle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STEPS = [
   { label: 'Connecting to carriers...', duration: 1500 },
-  { label: 'Scanning 15+ insurance companies...', duration: 2000 },
+  { label: 'Scanning insurance companies...', duration: 2000 },
   { label: 'Comparing Plan G rates...', duration: 2000 },
   { label: 'Calculating your savings...', duration: 2000 },
   { label: 'Finalizing your quote...', duration: 3000 },
@@ -17,6 +17,7 @@ interface QuoteLoadingProgressProps {
 
 export function QuoteLoadingProgress({ className }: QuoteLoadingProgressProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [isSlowLoading, setIsSlowLoading] = useState(false);
   
   useEffect(() => {
     // Create timers for each step transition
@@ -26,8 +27,12 @@ export function QuoteLoadingProgress({ className }: QuoteLoadingProgressProps) {
       return setTimeout(() => setCurrentStep(i), delay);
     });
     
+    // Show slow loading message after 15 seconds
+    const slowTimer = setTimeout(() => setIsSlowLoading(true), 15000);
+    
     return () => {
       timers.forEach(timer => timer && clearTimeout(timer));
+      clearTimeout(slowTimer);
     };
   }, []);
 
@@ -76,6 +81,18 @@ export function QuoteLoadingProgress({ className }: QuoteLoadingProgressProps) {
           </div>
         ))}
       </div>
+      
+      {/* Slow loading message - shows after 15 seconds */}
+      {isSlowLoading && (
+        <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-center gap-2 text-amber-700">
+            <Clock className="h-4 w-4 flex-shrink-0" />
+            <p className="text-sm font-medium">
+              Taking longer than usual... please wait a moment.
+            </p>
+          </div>
+        </div>
+      )}
       
       {/* Reassurance text */}
       <p className="text-xs text-muted-foreground text-center mt-8">
