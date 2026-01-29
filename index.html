@@ -11,6 +11,8 @@
     <link rel="dns-prefetch" href="https://cdn.taboola.com" />
     <link rel="preconnect" href="https://bat.bing.com" crossorigin />
     <link rel="dns-prefetch" href="https://bat.bing.com" />
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
     
     <link rel="icon" href="/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -88,6 +90,20 @@
           i=d.getElementsByTagName(t)[0];
           i.parentNode.insertBefore(n,i);
         })(window,document,"script","//bat.bing.com/bat.js","uetq");
+        
+        // Google Ads (gtag.js) - deferred
+        (function() {
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=AW-17916268698';
+          document.head.appendChild(s);
+          
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          window.gtag = gtag;
+          gtag('js', new Date());
+          gtag('config', 'AW-17916268698');
+        })();
       });
     </script>
     
