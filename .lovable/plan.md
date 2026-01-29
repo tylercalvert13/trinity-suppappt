@@ -1,102 +1,103 @@
 
-## Hide Days With No Available Slots in Booking Widget
 
-Based on my analysis of today's logs and the current implementation, I can implement a change to hide days that have no available slots while ensuring the widget remains functional.
+## Add Vibe.co TV Ads Pixel and Lead Conversion
 
----
-
-## Current Situation
-
-**Today's Analytics (last 24 hours):**
-- 2 `no_slots` errors occurred - both for "Today" (Jan 29) after slots ran out
-- Both users recovered by selecting another day (Tomorrow) and completed booking
-- Batch preloading is working perfectly - all day selections show `cached:true`
-
-**The Problem:** Users can click on days that have 0 slots, leading to an error message and requiring them to pick another day.
-
-**The Opportunity:** Since we already batch-preload ALL 4 days' slots on mount, we know exactly which days have 0 slots before the user clicks.
+Adding Vibe.co tracking for TV ad attribution. This follows the same pattern as existing tracking pixels (Facebook, Google, Bing, Taboola).
 
 ---
 
 ## Implementation
 
-### File: `src/components/AppointmentBookingWidget.tsx`
+### Part 1: Base Pixel (Site-wide)
 
-**Change the day rendering logic (lines 679-728):**
+**File: `index.html`**
 
-1. Filter out days with 0 preloaded slots (only after preloading completes)
-2. During preloading (first ~2 seconds), show all days normally to prevent layout shift
-3. After preloading, hide days where `slotCount === 0`
+Add the Vibe.co pixel to the deferred loading section alongside other tracking pixels:
 
-```text
-Current behavior:
-┌─────────────────────────────────────┐
-│ Today (no slots)     → Shows error  │
-│ Tomorrow (6 slots)   → Works        │
-│ Monday (4 slots)     → Works        │
-│ Tuesday (5 slots)    → Works        │
-└─────────────────────────────────────┘
-
-New behavior:
-┌─────────────────────────────────────┐
-│ Today (no slots)     → HIDDEN       │
-│ Tomorrow (6 slots)   → Works        │
-│ Monday (4 slots)     → Works        │
-│ Tuesday (5 slots)    → Works        │
-└─────────────────────────────────────┘
+```javascript
+// Vibe.co TV Pixel - deferred
+!function(v,i,b,e,c,o){if(!v[c]){var s=v[c]=function(){s.process?s.process.apply(s,arguments):s.queue.push(arguments)};s.queue=[],s.b=1*new Date;var t=i.createElement(b);t.async=!0,t.src=e;var n=i.getElementsByTagName(b)[0];n.parentNode.insertBefore(t,n)}}(window,document,"script","https://s.vibe.co/vbpx.js","vbpx");
+vbpx('init','FW7mXo');
+vbpx('event', 'page_view');
 ```
 
-**Specific code change:**
+Also add resource hints for faster connection:
+```html
+<link rel="preconnect" href="https://s.vibe.co" crossorigin />
+<link rel="dns-prefetch" href="https://s.vibe.co" />
+```
 
-Add a filter before the `.map()` to skip days with 0 slots:
+---
 
+### Part 2: Lead Conversion Event
+
+**File: `src/pages/MedicareSupplementAppointment.tsx`**
+
+**1. Add TypeScript declaration** (line 23-28):
 ```typescript
-{availableWeekdays
-  .filter((date) => {
-    // Always show during preloading (prevents layout shift)
-    if (isPreloading) return true;
+declare global {
+  interface Window {
+    uetq?: any[];
+    gtag?: (...args: any[]) => void;
+    vbpx?: (...args: any[]) => void;  // Add Vibe.co
+  }
+}
+```
+
+**2. Create tracking function** (after Google Ads function, around line 259):
+```typescript
+// Track lead submission via Vibe.co TV Ads
+const trackVibeCoLeadEvent = () => {
+  try {
+    if (typeof window === 'undefined' || !window.vbpx) {
+      console.log('Vibe.co pixel not loaded yet, skipping lead event');
+      return;
+    }
     
-    const dateStr = formatDateString(date);
-    const hasPreloadedData = preloadedSlots.has(dateStr);
-    const slotCount = preloadedSlots.get(dateStr)?.length || 0;
+    window.vbpx('event', 'lead');
     
-    // Hide days we know have 0 slots
-    if (hasPreloadedData && slotCount === 0) return false;
-    
-    // Show days we don't have data for (edge case / fallback)
-    return true;
-  })
-  .map((date, index) => {
-    // ... existing rendering logic
-  })}
+    console.log('Vibe.co lead event tracked (suppappt)');
+  } catch (error) {
+    console.error('Error tracking Vibe.co lead event:', error);
+  }
+};
+```
+
+**3. Call on quote success** (line 650, after Google Ads):
+```typescript
+// Track qualification and conversions
+trackQualification("qualified");
+await trackFacebookSubmissionEvent(formData, data);
+trackBingSubmissionEvent(formData);
+trackGoogleAdsConversion();
+trackVibeCoLeadEvent();  // Add this line
+
+setStep("qualified");
 ```
 
 ---
 
-## Edge Cases Handled
+## How Attribution Works
 
-| Scenario | Behavior |
-|----------|----------|
-| Preloading in progress | Show all 4 days (prevents layout shift) |
-| Day has 0 slots | Hide after preload completes |
-| All days have 0 slots | Shows empty state (rare edge case) |
-| Preload fails | Falls back to showing all days (existing behavior) |
+Just like the other pixels, Vibe.co will automatically attribute the lead only when the user came from a Vibe TV ad:
 
----
+| User Source | Vibe.co Behavior |
+|-------------|------------------|
+| Vibe TV ad → /suppappt | Lead attributed to Vibe |
+| Facebook ad → /suppappt | Lead event fires but NOT attributed |
+| Google ad → /suppappt | Lead event fires but NOT attributed |
 
-## Risk Assessment
-
-**Low Risk:** 
-- This only affects visual filtering, not the actual slot-fetching logic
-- The cache-miss fallback (direct API fetch) still exists
-- Users can't click on hidden days, eliminating the `no_slots` error entirely
+The Vibe pixel tracks its own click/view data, so it knows when to claim attribution.
 
 ---
 
 ## Summary
 
-| Change | Location |
-|--------|----------|
-| Add filter to hide 0-slot days | Lines 679-728 in day rendering loop |
+| Change | File |
+|--------|------|
+| Add resource hints for s.vibe.co | index.html (lines 5-16) |
+| Add Vibe.co pixel initialization | index.html (lines 47-107) |
+| Add `vbpx` to Window interface | MedicareSupplementAppointment.tsx |
+| Create `trackVibeCoLeadEvent` function | MedicareSupplementAppointment.tsx |
+| Call on quote success | MedicareSupplementAppointment.tsx (line 650) |
 
-This change will eliminate the `no_slots` errors users experienced today while keeping the widget fully functional.
