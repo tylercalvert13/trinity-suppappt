@@ -30,8 +30,8 @@ interface ValidationResponse {
   phone: PhoneValidationResult;
 }
 
-// Skip email validation - always pass (only using phone validation)
-async function validateEmail(): Promise<EmailValidationResult> {
+// Skip email validation - always pass
+function validateEmail(): EmailValidationResult {
   return {
     valid: true,
     deliverable: true,
@@ -39,45 +39,48 @@ async function validateEmail(): Promise<EmailValidationResult> {
   };
 }
 
-// Validate phone using Abstract Phone Intelligence API
-async function validatePhone(phone: string, apiKey: string): Promise<PhoneValidationResult> {
-  try {
-    // Clean phone number - remove formatting
-    const cleanPhone = phone.replace(/\D/g, '');
-    
-    // Add US country code if not present
-    const phoneWithCode = cleanPhone.length === 10 ? `1${cleanPhone}` : cleanPhone;
-    
-    const url = `https://phoneintelligence.abstractapi.com/v1/?api_key=${apiKey}&phone=${phoneWithCode}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      console.error("Phone validation API error:", response.status);
-      return { valid: true, type: null, carrier: null, error: "API unavailable" };
-    }
-    
-    const data = await response.json();
-    console.log("Phone validation response:", JSON.stringify(data));
-    
-    // Parse Phone Intelligence API response structure
-    const isValid = data.phone_validation?.is_valid === true;
-    const lineType = data.phone_carrier?.line_type || null;
-    const carrier = data.phone_carrier?.name || null;
-    const country = data.phone_location?.country_code || null;
-    
-    // Phone is valid if: API says valid AND it's a US number
-    const valid = isValid && country === "US";
-    
-    return {
-      valid,
-      type: lineType,
-      carrier,
-    };
-  } catch (error) {
-    console.error("Phone validation error:", error);
-    // Fail open - don't block legitimate users if API is down
-    return { valid: true, type: null, carrier: null, error: "Validation failed" };
+// Fast internal phone validation - no external API call
+function validatePhoneInternal(phone: string): PhoneValidationResult {
+  const cleanPhone = phone.replace(/\D/g, '');
+  
+  // Must be exactly 10 digits
+  if (cleanPhone.length !== 10) {
+    console.log(`Phone validation failed: ${cleanPhone.length} digits (need 10)`);
+    return { valid: false, type: null, carrier: null, error: "Must be 10 digits" };
   }
+  
+  const areaCode = cleanPhone.substring(0, 3);
+  const exchange = cleanPhone.substring(3, 6);
+  
+  // Invalid area codes (can't start with 0 or 1, or be service/fake codes)
+  const invalidAreaCodes = ['000', '111', '211', '311', '411', '511', '611', '711', '811', '911'];
+  if (areaCode.startsWith('0') || areaCode.startsWith('1') || invalidAreaCodes.includes(areaCode)) {
+    console.log(`Phone validation failed: invalid area code ${areaCode}`);
+    return { valid: false, type: null, carrier: null, error: "Invalid area code" };
+  }
+  
+  // 555-0100 through 555-0199 are reserved for fiction
+  if (exchange === '555') {
+    const lastFour = cleanPhone.substring(6);
+    if (lastFour >= '0100' && lastFour <= '0199') {
+      console.log(`Phone validation failed: fictional number (555-01xx)`);
+      return { valid: false, type: null, carrier: null, error: "Invalid phone number" };
+    }
+  }
+  
+  // Reject obvious fake patterns
+  const fakePatterns = [
+    '1234567890', '0987654321', '1111111111', '2222222222',
+    '3333333333', '4444444444', '5555555555', '6666666666',
+    '7777777777', '8888888888', '9999999999', '0000000000'
+  ];
+  if (fakePatterns.includes(cleanPhone)) {
+    console.log(`Phone validation failed: fake pattern detected`);
+    return { valid: false, type: null, carrier: null, error: "Invalid phone number" };
+  }
+  
+  console.log(`Phone validation passed: ${cleanPhone.substring(0, 3)}-XXX-XXXX`);
+  return { valid: true, type: 'unknown', carrier: null };
 }
 
 serve(async (req) => {
@@ -96,26 +99,9 @@ serve(async (req) => {
       );
     }
 
-    const phoneApiKey = Deno.env.get("ABSTRACT_PHONE_API_KEY");
-
-    if (!phoneApiKey) {
-      console.error("Missing phone API key");
-      // Fail open if API key not configured
-      return new Response(
-        JSON.stringify({
-          valid: true,
-          email: { valid: true, deliverable: true, disposable: false },
-          phone: { valid: true, type: null, carrier: null },
-        } as ValidationResponse),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Validate phone only (email always passes)
-    const [emailResult, phoneResult] = await Promise.all([
-      validateEmail(),
-      validatePhone(phone, phoneApiKey),
-    ]);
+    // Instant validation - no external API calls
+    const emailResult = validateEmail();
+    const phoneResult = validatePhoneInternal(phone);
 
     const response: ValidationResponse = {
       valid: emailResult.valid && phoneResult.valid,
