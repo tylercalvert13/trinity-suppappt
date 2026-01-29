@@ -676,7 +676,22 @@ export function AppointmentBookingWidget({
             <span className="text-sm">Our agents have limited openings this week</span>
           </div>
 
-          {availableWeekdays.map((date, index) => {
+          {availableWeekdays
+            .filter((date) => {
+              // Always show during preloading (prevents layout shift)
+              if (isPreloading) return true;
+              
+              const dateStr = formatDateString(date);
+              const hasPreloadedData = preloadedSlots.has(dateStr);
+              const slotCount = preloadedSlots.get(dateStr)?.length || 0;
+              
+              // Hide days we know have 0 slots
+              if (hasPreloadedData && slotCount === 0) return false;
+              
+              // Show days we don't have data for (edge case / fallback)
+              return true;
+            })
+            .map((date, index) => {
             const { primary, secondary } = formatDateLabel(date, index);
             const dateStr = formatDateString(date);
             const isFirstDay = index === 0;
