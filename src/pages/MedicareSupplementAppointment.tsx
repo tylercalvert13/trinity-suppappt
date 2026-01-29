@@ -9,6 +9,7 @@ import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Clock, Che
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
+import { useQuoteWarmup } from '@/hooks/useQuoteWarmup';
 import { z } from 'zod';
 import { AppointmentBookingWidget } from '@/components/AppointmentBookingWidget';
 import { getStateFromZip } from '@/lib/zipToState';
@@ -16,6 +17,7 @@ import { toast } from 'sonner';
 import { ExitIntentModal } from '@/components/ExitIntentModal';
 import { SocialProofPopup } from '@/components/SocialProofPopup';
 import { StickyBookingCTA } from '@/components/StickyBookingCTA';
+import { QuoteLoadingProgress } from '@/components/QuoteLoadingProgress';
 
 // Question steps that should trigger auto-scroll
 const QUESTION_STEPS = ['plan', 'payment', 'care', 'treatment', 'medications', 'gender', 'tobacco', 'spouse', 'age', 'zip', 'contact'];
@@ -228,6 +230,9 @@ const MedicareSupplementAppointment = () => {
   
   // Warmup the calendar edge function early to prevent cold starts
   useCalendarWarmup();
+  
+  // Warmup the quote API to pre-cache CSG token
+  useQuoteWarmup();
 
   // Auto-scroll to question container when step changes
   useEffect(() => {
@@ -1260,17 +1265,9 @@ const MedicareSupplementAppointment = () => {
             </div>
           )}
 
-          {/* Loading Screen */}
+          {/* Loading Screen - Animated Progress Indicator */}
           {step === "loading" && (
-            <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border text-center">
-              <div className="mb-6">
-                <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              </div>
-              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
-                Finding your best rate...
-              </h2>
-              <p className="text-muted-foreground">Comparing quotes from top carriers</p>
-            </div>
+            <QuoteLoadingProgress />
           )}
 
           {/* Qualified/Results Screen - Appointment Booking Widget */}
