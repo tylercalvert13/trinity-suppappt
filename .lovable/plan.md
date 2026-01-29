@@ -1,66 +1,95 @@
 
-## Add Google Ads Lead Form Conversion to /suppappt Funnel
+## Hide Days With No Available Slots in Booking Widget
 
-Adding Google Ads conversion tracking that fires when users successfully receive their Medicare Supplement quote.
+Based on my analysis of today's logs and the current implementation, I can implement a change to hide days that have no available slots while ensuring the widget remains functional.
+
+---
+
+## Current Situation
+
+**Today's Analytics (last 24 hours):**
+- 2 `no_slots` errors occurred - both for "Today" (Jan 29) after slots ran out
+- Both users recovered by selecting another day (Tomorrow) and completed booking
+- Batch preloading is working perfectly - all day selections show `cached:true`
+
+**The Problem:** Users can click on days that have 0 slots, leading to an error message and requiring them to pick another day.
+
+**The Opportunity:** Since we already batch-preload ALL 4 days' slots on mount, we know exactly which days have 0 slots before the user clicks.
 
 ---
 
 ## Implementation
 
-### File: `src/pages/MedicareSupplementAppointment.tsx`
+### File: `src/components/AppointmentBookingWidget.tsx`
 
-**1. Add TypeScript declaration for gtag** (near line 23-27, alongside existing Bing UET declaration):
-```typescript
-declare global {
-  interface Window {
-    uetq?: any[];
-    gtag?: (...args: any[]) => void;
-  }
-}
+**Change the day rendering logic (lines 679-728):**
+
+1. Filter out days with 0 preloaded slots (only after preloading completes)
+2. During preloading (first ~2 seconds), show all days normally to prevent layout shift
+3. After preloading, hide days where `slotCount === 0`
+
+```text
+Current behavior:
+┌─────────────────────────────────────┐
+│ Today (no slots)     → Shows error  │
+│ Tomorrow (6 slots)   → Works        │
+│ Monday (4 slots)     → Works        │
+│ Tuesday (5 slots)    → Works        │
+└─────────────────────────────────────┘
+
+New behavior:
+┌─────────────────────────────────────┐
+│ Today (no slots)     → HIDDEN       │
+│ Tomorrow (6 slots)   → Works        │
+│ Monday (4 slots)     → Works        │
+│ Tuesday (5 slots)    → Works        │
+└─────────────────────────────────────┘
 ```
 
-**2. Create tracking function** (after the `trackBingSubmissionEvent` function, around line 238):
-```typescript
-// Track lead submission via Google Ads conversion
-const trackGoogleAdsConversion = () => {
-  try {
-    if (typeof window === 'undefined' || !window.gtag) {
-      console.log('Google Ads gtag not loaded yet, skipping conversion');
-      return;
-    }
-    
-    window.gtag('event', 'conversion', {
-      'send_to': 'AW-17916268698/760DCPf-lO8bEJqhkt9C',
-      'value': 1.0,
-      'currency': 'USD'
-    });
-    
-    console.log('Google Ads submit_lead_form conversion tracked (suppappt)');
-  } catch (error) {
-    console.error('Error tracking Google Ads conversion:', error);
-  }
-};
-```
+**Specific code change:**
 
-**3. Call the function when quote is received** (line 628, after Bing tracking):
-```typescript
-// Track qualification and conversions
-trackQualification("qualified");
-await trackFacebookSubmissionEvent(formData, data);
-trackBingSubmissionEvent(formData);
-trackGoogleAdsConversion();  // <-- Add this line
+Add a filter before the `.map()` to skip days with 0 slots:
 
-setStep("qualified");
+```typescript
+{availableWeekdays
+  .filter((date) => {
+    // Always show during preloading (prevents layout shift)
+    if (isPreloading) return true;
+    
+    const dateStr = formatDateString(date);
+    const hasPreloadedData = preloadedSlots.has(dateStr);
+    const slotCount = preloadedSlots.get(dateStr)?.length || 0;
+    
+    // Hide days we know have 0 slots
+    if (hasPreloadedData && slotCount === 0) return false;
+    
+    // Show days we don't have data for (edge case / fallback)
+    return true;
+  })
+  .map((date, index) => {
+    // ... existing rendering logic
+  })}
 ```
 
 ---
 
-## Technical Notes
+## Edge Cases Handled
 
-- The conversion uses the send_to ID you provided: `AW-17916268698/760DCPf-lO8bEJqhkt9C`
-- No callback/redirect needed since we're staying on the same page
-- Follows the same pattern as existing Bing UET tracking
-- The `window.gtag` is already set globally by the tag we added to `index.html`
+| Scenario | Behavior |
+|----------|----------|
+| Preloading in progress | Show all 4 days (prevents layout shift) |
+| Day has 0 slots | Hide after preload completes |
+| All days have 0 slots | Shows empty state (rare edge case) |
+| Preload fails | Falls back to showing all days (existing behavior) |
+
+---
+
+## Risk Assessment
+
+**Low Risk:** 
+- This only affects visual filtering, not the actual slot-fetching logic
+- The cache-miss fallback (direct API fetch) still exists
+- Users can't click on hidden days, eliminating the `no_slots` error entirely
 
 ---
 
@@ -68,8 +97,6 @@ setStep("qualified");
 
 | Change | Location |
 |--------|----------|
-| Add `gtag` to Window interface | Lines 23-27 |
-| Create `trackGoogleAdsConversion` function | After line 238 |
-| Call conversion on quote success | Line 628 |
+| Add filter to hide 0-slot days | Lines 679-728 in day rendering loop |
 
-The conversion will fire with a $1.00 value each time a user successfully receives their quote.
+This change will eliminate the `no_slots` errors users experienced today while keeping the widget fully functional.
