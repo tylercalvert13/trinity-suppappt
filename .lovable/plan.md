@@ -1,170 +1,50 @@
 
-## Plan: Fix CSG API Token Management
+## Add Google Ads Tag (gtag.js) to All Pages
 
-Fixing critical bugs causing excessive session creation and hitting the CSG 5-session limit.
-
----
-
-## Root Cause Analysis
-
-| Bug | Issue | Impact |
-|-----|-------|--------|
-| UUID Mismatch | Code uses `id: 'singleton'` but column is UUID type | Upsert always fails |
-| Token Never Saved | Upsert error logged but not visible, token lost | Every request creates new session |
-| Race Condition | Multiple requests hit CSG simultaneously | Session pile-up |
-
-**Evidence from logs:**
-- `Error upserting token: invalid input syntax for type uuid: "singleton"`
-- Token obtained successfully but never saved
-- 8+ requests in 2 minutes all saying "No valid token found"
+Adding the Google Ads conversion tracking tag site-wide, following the same deferred loading pattern used for other tracking pixels to optimize page performance.
 
 ---
 
-## Solution
+## Implementation
 
-### 1. Database Schema Change
-Alter the `id` column to be TEXT type or use a fixed UUID for singleton pattern:
+### File: `index.html`
 
-```sql
--- Option A: Use a fixed UUID as the singleton ID
--- (Simpler - just update the code to use a valid UUID)
+**1. Add resource hints for faster connection** (in `<head>` section):
+```html
+<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+<link rel="dns-prefetch" href="https://www.googletagmanager.com" />
 ```
 
-### 2. Edge Function Updates
-
-**Fix the upsert to use a valid UUID singleton:**
-```typescript
-// Use a fixed UUID instead of 'singleton' string
-const SINGLETON_TOKEN_ID = '00000000-0000-0000-0000-000000000001';
-
-const { error: upsertError } = await supabase
-  .from('csg_api_tokens')
-  .upsert({
-    id: SINGLETON_TOKEN_ID,
-    token: authData.token,
-    expires_at: authData.expires_date,
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'id' });
-```
-
-**Add early expiration buffer to prevent race conditions:**
-```typescript
-// Add 5 minute buffer to prevent race condition
-// where token expires between check and API call
-const bufferMs = 5 * 60 * 1000; // 5 minutes
-const expiresAt = new Date(existingToken.expires_at);
-const isExpired = expiresAt.getTime() - bufferMs < Date.now();
-
-if (existingToken && !isExpired) {
-  return existingToken.token;
-}
-```
-
-**Update the select query to filter by singleton ID:**
-```typescript
-const { data: existingToken } = await supabase
-  .from('csg_api_tokens')
-  .select('token, expires_at')
-  .eq('id', SINGLETON_TOKEN_ID)
-  .maybeSingle();
-```
-
-**Update delete query in retry logic:**
-```typescript
-// Delete the singleton token specifically
-await supabase
-  .from('csg_api_tokens')
-  .delete()
-  .eq('id', SINGLETON_TOKEN_ID);
-```
-
----
-
-## Complete Updated `getSessionToken` Function
-
-```typescript
-const SINGLETON_TOKEN_ID = '00000000-0000-0000-0000-000000000001';
-
-async function getSessionToken(): Promise<string> {
-  console.log("Checking for existing token in database...");
+**2. Add Google tag to the deferred tracking section** (inside the existing `window.addEventListener('load', ...)` block):
+```javascript
+// Google Ads (gtag.js) - deferred
+(function() {
+  var s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://www.googletagmanager.com/gtag/js?id=AW-17916268698';
+  document.head.appendChild(s);
   
-  const { data: existingToken, error: fetchError } = await supabase
-    .from('csg_api_tokens')
-    .select('token, expires_at')
-    .eq('id', SINGLETON_TOKEN_ID)
-    .maybeSingle();
-
-  if (fetchError) {
-    console.error("Error fetching token:", fetchError);
-  }
-
-  // Add 5-minute buffer to prevent race conditions
-  if (existingToken) {
-    const expiresAt = new Date(existingToken.expires_at);
-    const bufferMs = 5 * 60 * 1000;
-    if (expiresAt.getTime() - bufferMs > Date.now()) {
-      console.log("Using cached token, expires:", existingToken.expires_at);
-      return existingToken.token;
-    }
-    console.log("Token expired or expiring soon, refreshing...");
-  }
-
-  console.log("Requesting new token from CSG API...");
-  
-  const authResponse = await fetch('https://api.csgactuarial.com/v1/auth.json', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ api_key: CSG_API_KEY })
-  });
-
-  if (!authResponse.ok) {
-    const errorText = await authResponse.text();
-    console.error("CSG Auth failed:", authResponse.status, errorText);
-    throw new Error(`CSG authentication failed: ${authResponse.status}`);
-  }
-
-  const authData = await authResponse.json();
-  console.log("Received new token, expires:", authData.expires_date);
-
-  const { error: upsertError } = await supabase
-    .from('csg_api_tokens')
-    .upsert({
-      id: SINGLETON_TOKEN_ID,
-      token: authData.token,
-      expires_at: authData.expires_date,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'id' });
-
-  if (upsertError) {
-    // CRITICAL: Log the full error - this was silently failing before!
-    console.error("CRITICAL: Token upsert failed:", JSON.stringify(upsertError));
-  } else {
-    console.log("Token cached successfully");
-  }
-
-  return authData.token;
-}
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  window.gtag = gtag;
+  gtag('js', new Date());
+  gtag('config', 'AW-17916268698');
+})();
 ```
 
 ---
 
-## Immediate Action Required
+## Why Deferred Loading?
 
-Before deploying the fix, you need to clear existing CSG sessions:
-1. Visit https://tools.csgactuarial.com/auth/manage-account/sessions
-2. Delete all 5 existing sessions
-3. Then the fixed code will create exactly 1 session and reuse it
+The existing tracking pixels (Facebook, Taboola, Bing) are all loaded after the page's `load` event to prioritize initial render performance - especially important for mobile and Facebook in-app browsers. The Google tag will follow the same pattern for consistency.
 
 ---
 
-## Summary of Changes
+## Summary
 
-| File | Change |
-|------|--------|
-| `supabase/functions/get-medicare-quote/index.ts` | Fix UUID format, add expiration buffer, improve error logging |
+| Change | Location |
+|--------|----------|
+| Add preconnect/dns-prefetch for googletagmanager.com | `<head>` lines 12-13 |
+| Add deferred gtag.js loader | Inside existing `window.addEventListener('load', ...)` block |
 
-The fix ensures:
-- Only ONE session token is ever stored (singleton pattern with valid UUID)
-- Token is properly cached and reused for 8 hours
-- 5-minute buffer prevents race conditions at expiration edge
-- Critical errors are properly logged for debugging
+The tag will fire on every page load and track conversions with ID `AW-17916268698`.
