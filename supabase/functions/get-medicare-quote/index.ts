@@ -22,6 +22,9 @@ const PREFERRED_NAIC_CODES = new Set(Object.values(PREFERRED_CARRIERS).flat());
 // Create Supabase client with service role for token management
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// Fixed UUID for singleton token pattern (column is UUID type, can't use 'singleton' string)
+const SINGLETON_TOKEN_ID = '00000000-0000-0000-0000-000000000001';
+
 // Map plan names to API codes (case-insensitive)
 function mapPlanToApi(plan: string): string {
   const normalized = plan.toLowerCase().trim();
@@ -38,29 +41,35 @@ function mapPlanToApi(plan: string): string {
 }
 
 // Get or refresh session token from CSG API
-// Optimized: Uses full 8-hour token life and single upsert instead of delete+insert
+// Fixed: Uses valid UUID for singleton pattern + 5-min buffer to prevent race conditions
 async function getSessionToken(): Promise<string> {
   console.log("Checking for existing token in database...");
   
-  // Use maybeSingle() for safe handling when no token exists
   const { data: existingToken, error: fetchError } = await supabase
     .from('csg_api_tokens')
     .select('token, expires_at')
+    .eq('id', SINGLETON_TOKEN_ID)
     .maybeSingle();
 
   if (fetchError) {
     console.error("Error fetching token:", fetchError);
   }
 
-  // Use full 8-hour window (no 5-min buffer) - trust 403 retry mechanism for edge cases
-  if (existingToken && new Date(existingToken.expires_at) > new Date()) {
-    console.log("Using cached token from database, expires:", existingToken.expires_at);
-    return existingToken.token;
+  // Add 5-minute buffer to prevent race conditions at expiration edge
+  if (existingToken) {
+    const expiresAt = new Date(existingToken.expires_at);
+    const bufferMs = 5 * 60 * 1000; // 5 minutes
+    if (expiresAt.getTime() - bufferMs > Date.now()) {
+      console.log("Using cached token, expires:", existingToken.expires_at);
+      return existingToken.token;
+    }
+    console.log("Token expired or expiring soon, refreshing...");
+  } else {
+    console.log("No token found in database, requesting new one...");
   }
 
-  console.log("No valid token found, requesting new one from CSG API...");
+  console.log("Requesting new token from CSG API...");
   
-  // Request new session from CSG API
   const authResponse = await fetch('https://api.csgactuarial.com/v1/auth.json', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -74,25 +83,24 @@ async function getSessionToken(): Promise<string> {
   }
 
   const authData = await authResponse.json();
-  console.log("Received new token from CSG, expires:", authData.expires_date);
+  console.log("Received new token, expires:", authData.expires_date);
 
-  // Single upsert instead of delete + insert (1 DB call vs 2)
-  // Use 'singleton' as fixed ID for onConflict to work
   const { error: upsertError } = await supabase
     .from('csg_api_tokens')
     .upsert({
-      id: 'singleton',
+      id: SINGLETON_TOKEN_ID,
       token: authData.token,
       expires_at: authData.expires_date,
       updated_at: new Date().toISOString()
     }, { onConflict: 'id' });
 
   if (upsertError) {
-    console.error("Error upserting token:", upsertError);
-    // Don't throw - we have the token, just log the error
+    // CRITICAL: Log the full error - this was silently failing before!
+    console.error("CRITICAL: Token upsert failed:", JSON.stringify(upsertError));
+  } else {
+    console.log("Token cached successfully");
   }
 
-  console.log("Token stored successfully, expires:", authData.expires_date);
   return authData.token;
 }
 
@@ -115,13 +123,13 @@ async function fetchQuotesWithRetry(
     console.log("Got 403 response:", errorText);
     
     if (errorText.includes("Session Expired") || errorText.includes("Session does not exist")) {
-      console.log("Token expired, deleting and refreshing...");
+      console.log("Token expired/invalid, deleting and refreshing...");
       
-      // Delete bad token
+      // Delete the singleton token specifically
       await supabase
         .from('csg_api_tokens')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+        .eq('id', SINGLETON_TOKEN_ID);
 
       // Get fresh token and retry once
       const freshToken = await getSessionToken();
