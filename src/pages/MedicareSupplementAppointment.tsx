@@ -19,10 +19,11 @@ import { SocialProofPopup } from '@/components/SocialProofPopup';
 import { StickyBookingCTA } from '@/components/StickyBookingCTA';
 import { QuoteLoadingProgress } from '@/components/QuoteLoadingProgress';
 
-// TypeScript declaration for Bing UET
+// TypeScript declarations for tracking pixels
 declare global {
   interface Window {
     uetq?: any[];
+    gtag?: (...args: any[]) => void;
   }
 }
 
@@ -234,6 +235,26 @@ const trackBingSubmissionEvent = (formData: FormData) => {
     console.log('Bing UET submit_lead_form conversion tracked (suppappt)');
   } catch (error) {
     console.error('Error tracking Bing conversion:', error);
+  }
+};
+
+// Track lead submission via Google Ads conversion
+const trackGoogleAdsConversion = () => {
+  try {
+    if (typeof window === 'undefined' || !window.gtag) {
+      console.log('Google Ads gtag not loaded yet, skipping conversion');
+      return;
+    }
+    
+    window.gtag('event', 'conversion', {
+      'send_to': 'AW-17916268698/760DCPf-lO8bEJqhkt9C',
+      'value': 1.0,
+      'currency': 'USD'
+    });
+    
+    console.log('Google Ads submit_lead_form conversion tracked (suppappt)');
+  } catch (error) {
+    console.error('Error tracking Google Ads conversion:', error);
   }
 };
 
@@ -626,6 +647,7 @@ const MedicareSupplementAppointment = () => {
       trackQualification("qualified");
       await trackFacebookSubmissionEvent(formData, data);
       trackBingSubmissionEvent(formData);
+      trackGoogleAdsConversion();
       
       setStep("qualified");
 
