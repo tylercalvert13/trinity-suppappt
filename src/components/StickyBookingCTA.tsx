@@ -7,6 +7,7 @@ interface StickyBookingCTAProps {
   targetRef: React.RefObject<HTMLDivElement>;
   selectedTime?: string;
   dayLabel?: string;
+  onTrackEvent?: (params: { eventType: string; metadata?: Record<string, string> }) => void;
 }
 
 export function StickyBookingCTA({ targetRef, selectedTime, dayLabel }: StickyBookingCTAProps) {

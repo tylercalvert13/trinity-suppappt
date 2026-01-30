@@ -11,6 +11,7 @@ import { Clock } from 'lucide-react';
 interface ExitIntentModalProps {
   monthlySavings: number;
   onBookClick: () => void;
+  onTrackEvent?: (params: { eventType: string; metadata?: Record<string, string> }) => void;
 }
 
 export function ExitIntentModal({ monthlySavings, onBookClick }: ExitIntentModalProps) {
