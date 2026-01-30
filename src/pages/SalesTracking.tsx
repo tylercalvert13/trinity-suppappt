@@ -169,7 +169,7 @@ export default function SalesTracking() {
       // Process submissions
       const submissions: Submission[] = submissionsData.map((row) => ({
         date: row["Date"] || row["date"] || "",
-        clientName: row["Client Name"] || row["clientName"] || row["Name"] || "",
+        clientName: row["Client"] || row["Client Name"] || row["clientName"] || "",
         agent: row["Agent"] || row["agent"] || "",
         premium: parseNumber(row["Premium"] || row["premium"] || "0"),
         commission: parseNumber(row["Commission"] || row["commission"] || "0"),
@@ -252,7 +252,7 @@ export default function SalesTracking() {
         .slice(0, 5);
 
       setData({
-        totalSales: approved + pending,
+        totalSales: submissions.length,
         approved,
         pending,
         denied,
