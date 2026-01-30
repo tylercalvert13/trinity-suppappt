@@ -28,6 +28,7 @@ interface AppointmentWidgetProps {
   autoSelectFirst?: boolean; // Auto-select first available slot (for funnel mode)
   onSlotChange?: (dayLabel: string | null, timeDisplay: string | null) => void; // Callback when slot changes
   widgetRef?: React.RefObject<HTMLDivElement>; // Ref for scrolling to widget
+  isRefundAngle?: boolean; // Use "refund" copy instead of "savings" copy
 }
 
 interface SlotData {
@@ -253,7 +254,8 @@ export function AppointmentBookingWidget({
   onTrackEvent,
   autoSelectFirst = false,
   onSlotChange,
-  widgetRef
+  widgetRef,
+  isRefundAngle = false
 }: AppointmentWidgetProps) {
   // Step 1 = Pick Day, Step 2 = Pick Time + Confirm, Step 3 = Success
   const [bookingStep, setBookingStep] = useState(1);

@@ -20,6 +20,7 @@ const MedicareSupplementLP1 = lazy(() => import("./pages/MedicareSupplementLP1")
 const MedicareSupplementQuote = lazy(() => import("./pages/MedicareSupplementQuote"));
 const MedicareSupplementAppointment = lazy(() => import("./pages/MedicareSupplementAppointment"));
 const MedicareSupplementAppointment1 = lazy(() => import("./pages/MedicareSupplementAppointment1"));
+const MedicareSupplementAppointmentRefund = lazy(() => import("./pages/MedicareSupplementAppointmentRefund"));
 const Disqualified = lazy(() => import("./pages/Disqualified"));
 const GreatRate = lazy(() => import("./pages/GreatRate"));
 const Analytics = lazy(() => import("./pages/Analytics"));
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/suppquote" element={<MedicareSupplementQuote />} />
             <Route path="/suppappt" element={<MedicareSupplementAppointment />} />
             <Route path="/suppappt1" element={<MedicareSupplementAppointment1 />} />
+            <Route path="/suppappt-refund" element={<MedicareSupplementAppointmentRefund />} />
             <Route path="/disqualified" element={<Disqualified />} />
             <Route path="/great-rate" element={<GreatRate />} />
             <Route path="/analytics" element={<Analytics />} />
