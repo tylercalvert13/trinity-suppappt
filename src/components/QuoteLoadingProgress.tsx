@@ -3,19 +3,19 @@ import { Progress } from '@/components/ui/progress';
 import { CheckCircle, Loader2, Circle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const STEPS = [
-  { label: 'Connecting to carriers...', duration: 1500 },
-  { label: 'Scanning insurance companies...', duration: 2000 },
-  { label: 'Comparing Plan G rates...', duration: 2000 },
-  { label: 'Calculating your savings...', duration: 2000 },
-  { label: 'Finalizing your quote...', duration: 3000 },
-];
-
 interface QuoteLoadingProgressProps {
   className?: string;
+  planType?: string;
 }
 
-export function QuoteLoadingProgress({ className }: QuoteLoadingProgressProps) {
+export function QuoteLoadingProgress({ className, planType = "Plan G" }: QuoteLoadingProgressProps) {
+  const STEPS = [
+    { label: 'Connecting to carriers...', duration: 1500 },
+    { label: 'Scanning insurance companies...', duration: 2000 },
+    { label: `Comparing ${planType} rates...`, duration: 2000 },
+    { label: 'Calculating your savings...', duration: 2000 },
+    { label: 'Finalizing your quote...', duration: 3000 },
+  ];
   const [currentStep, setCurrentStep] = useState(0);
   const [isSlowLoading, setIsSlowLoading] = useState(false);
   
