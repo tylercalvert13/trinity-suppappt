@@ -349,7 +349,7 @@ const MedicareSupplementAppointmentRefund = () => {
   useEffect(() => {
     if (step === "qualified" && quoteResult && !toastShown) {
       const timer = setTimeout(() => {
-        toast("⏰ Your refund is reserved — pick a time to claim it", {
+        toast("⏰ Your money back is reserved — pick a time to claim it", {
           duration: 5000,
         });
         setToastShown(true);
@@ -402,11 +402,11 @@ const MedicareSupplementAppointmentRefund = () => {
 
   // SEO meta tags
   useEffect(() => {
-    document.title = "Medicare Supplement Refund | Health Helpers";
+    document.title = "Medicare Supplement Money Back | Health Helpers";
     
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
-      metaDescription.setAttribute('content', 'See how much you qualify to get back on your Medicare Supplement. Check your refund amount in under 2 minutes.');
+      metaDescription.setAttribute('content', 'See how much you qualify to get back on your Medicare Supplement. Check how much you can get back in under 2 minutes.');
     }
 
     let robotsMeta = document.querySelector('meta[name="robots"]');
@@ -1241,7 +1241,7 @@ const MedicareSupplementAppointmentRefund = () => {
               </div>
 
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
-                Final Step: See Your Refund Amount
+                Final Step: See How Much You Get Back
               </h2>
               <p className="text-muted-foreground mb-6 text-sm">
                 Your information is 100% secure and will never be sold.
@@ -1345,7 +1345,7 @@ const MedicareSupplementAppointmentRefund = () => {
                       Verifying your information...
                     </>
                   ) : isSubmitting ? (
-                    "Calculating Your Refund..."
+                    "Calculating Your Money Back..."
                   ) : (
                     "See What I Qualify For"
                   )}
@@ -1399,7 +1399,7 @@ const MedicareSupplementAppointmentRefund = () => {
               <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center">
                 <div className="flex items-center justify-center gap-2 text-amber-800 mb-3">
                   <Clock className="h-5 w-5" />
-                  <span className="font-semibold">Claim Your Refund — 15 Minutes</span>
+                  <span className="font-semibold">Claim Your Money Back — 15 Minutes</span>
                 </div>
                 <div className="mb-3">
                   <p className="text-2xl font-bold text-amber-700">
