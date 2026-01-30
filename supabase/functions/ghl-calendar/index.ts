@@ -142,6 +142,26 @@ serve(async (req) => {
     // ========== FREE SLOTS BATCH (multiple days at once) ==========
     if (body.action === 'free-slots-batch') {
       const { startDate, endDate } = body as FreeSlotsRangeRequest;
+      
+      // Input validation to prevent 500 errors
+      if (!startDate || !endDate) {
+        console.error('Missing startDate or endDate in free-slots-batch request');
+        return new Response(
+          JSON.stringify({ error: 'invalid_request', message: 'startDate and endDate are required (YYYY-MM-DD)' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Validate date format
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+        console.error('Invalid date format in free-slots-batch request:', { startDate, endDate });
+        return new Response(
+          JSON.stringify({ error: 'invalid_request', message: 'dates must be in YYYY-MM-DD format' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       console.log('Fetching slots for range:', startDate, 'to', endDate);
 
       const startDateMs = getEasternDayStartMs(startDate);
@@ -188,7 +208,23 @@ serve(async (req) => {
         }
       }
 
-      console.log('Processed batch slots for', Object.keys(slotsByDate).length, 'days');
+      // CRITICAL FIX: Fill in missing dates with empty arrays
+      // GHL omits dates with 0 slots, but frontend needs to distinguish
+      // "known empty" ([]) from "not loaded yet" (missing key)
+      const start = new Date(startDate + 'T00:00:00');
+      const end = new Date(endDate + 'T00:00:00');
+      const current = new Date(start);
+      
+      while (current <= end) {
+        const dateStr = current.toISOString().slice(0, 10); // YYYY-MM-DD
+        if (!(dateStr in slotsByDate)) {
+          slotsByDate[dateStr] = []; // Explicitly mark as empty
+          console.log('Filled missing date with empty slots:', dateStr);
+        }
+        current.setDate(current.getDate() + 1);
+      }
+
+      console.log('Processed batch slots for', Object.keys(slotsByDate).length, 'days (including empty)');
 
       return new Response(
         JSON.stringify({ slotsByDate, startDate, endDate }),
@@ -199,6 +235,26 @@ serve(async (req) => {
     // ========== FREE SLOTS ==========
     if (body.action === 'free-slots') {
       const { date } = body as FreeSlotsRequest;
+      
+      // Input validation to prevent 500 errors (TypeError: Cannot read properties of undefined (reading 'split'))
+      if (!date) {
+        console.error('Missing date in free-slots request');
+        return new Response(
+          JSON.stringify({ error: 'invalid_request', message: 'date is required (YYYY-MM-DD)' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Validate date format
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        console.error('Invalid date format in free-slots request:', date);
+        return new Response(
+          JSON.stringify({ error: 'invalid_request', message: 'date must be in YYYY-MM-DD format' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       console.log('Fetching free slots for date:', date);
 
       const startDateMs = getEasternDayStartMs(date);
