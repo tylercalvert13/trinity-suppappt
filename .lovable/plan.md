@@ -1,175 +1,52 @@
 
 
-## Create "Money Back" Angle Funnel Variant
+## Replace "Refund" Language with "Money Back" Alternatives
 
-Duplicate the `/suppappt` funnel with reframed copy that positions savings as "getting money back" rather than "saving money." The psychological reframe shifts from loss prevention to gain acquisition.
-
----
-
-## Copy Angle Transformation
-
-| Current Angle | New "Money Back" Angle |
-|---------------|------------------------|
-| "Overpaying by $100-200/Month" | "Qualify for $100-200/month back" |
-| "See your personalized rate" | "See how much you qualify to get back" |
-| "You Qualify for Plan G at $X/month" | "You Qualify for $X/month back on your Plan G" |
-| "$X/month in savings" | "$X/month going back to you" |
-| "Your savings expires soon" | "Your refund expires soon" |
-| "Lock in your savings" | "Claim your refund" |
+Update all user-facing "refund" copy across the `/suppappt-refund` funnel to use "money back" phrasing instead.
 
 ---
 
-## New Files to Create
+## Copy Changes
 
-### 1. New Page: `src/pages/MedicareSupplementAppointmentRefund.tsx`
+### File: `src/pages/MedicareSupplementAppointmentRefund.tsx`
 
-Full copy of `MedicareSupplementAppointment.tsx` with these changes:
-
-**Hero Section:**
-```text
-Badge: "EXPOSED: Medicare Supplement Overcharges"
-
-Headline: 
-"Seniors {in State} on Plan G, F, or N Qualify for $100-200/Month Back"
-
-Subheadline: 
-"Your benefits are federally standardized — if you're paying more than the lowest rate, you can get that money back."
-
-CTA Subtext:
-"See how much you qualify to get back in under 2 minutes."
-
-Button:
-"Check What You Qualify For"
-```
-
-**Payment Step:**
-```text
-"How much does your insurance company charge you each month?"
-(unchanged - we need their current payment to calculate)
-```
-
-**Contact Step:**
-```text
-Header: "Final Step: See Your Refund Amount"
-Button: "See What I Qualify For"
-```
-
-**Qualified/Results Screen:**
-```text
-Header: "Great News, {firstName}!"
-Subtext: "You Qualify For"
-Main Value: "${monthlySavings}/month back" (NOT the rate - the SAVINGS amount)
-Secondary: "on your {plan}"
-
-Urgency Box:
-"Claim Your Refund — 15 Minutes"
-"Your refund is reserved. Pick a time below to lock it in."
-
-Button: "Book My Refund Call"
-```
-
-**Tracking/Analytics:**
-- Page identifier: `suppappt-refund`
-- Uses same FB pixel, Bing UET, Google Ads, Vibe.co tracking
-- Uses same GHL webhook (no new webhook needed - same contact flow)
+| Location | Current | New |
+|----------|---------|-----|
+| Line 352 (toast) | "Your refund is reserved — pick a time to claim it" | "Your money back is reserved — pick a time to claim it" |
+| Line 405 (title) | "Medicare Supplement Refund \| Health Helpers" | "Medicare Supplement Money Back \| Health Helpers" |
+| Line 409 (meta) | "Check your refund amount in under 2 minutes" | "Check how much you can get back in under 2 minutes" |
+| Line 1244 (headline) | "Final Step: See Your Refund Amount" | "Final Step: See How Much You Get Back" |
+| Line 1348 (button) | "Calculating Your Refund..." | "Calculating Your Money Back..." |
+| Line 1402 (CTA box) | "Claim Your Refund — 15 Minutes" | "Claim Your Money Back — 15 Minutes" |
 
 ---
 
-### 2. New Edge Function: `supabase/functions/send-lead-webhook-suppappt-refund/index.ts`
+### File: `src/components/ExitIntentModalRefund.tsx`
 
-Clone of `send-lead-webhook-suppappt/index.ts` with:
-- Page source set to `suppappt-refund`
-- Uses same `GHL_WEBHOOK_URL_SUPPAPPT` environment variable (routes to same GHL automation)
-
----
-
-### 3. Update: `src/App.tsx`
-
-Add new route:
-```tsx
-const MedicareSupplementAppointmentRefund = lazy(() => import("./pages/MedicareSupplementAppointmentRefund"));
-
-<Route path="/suppappt-refund" element={<MedicareSupplementAppointmentRefund />} />
-```
+| Location | Current | New |
+|----------|---------|-----|
+| Line 104 (title) | "Your $X/month refund expires soon" | "Your $X/month back expires soon" |
+| Line 109 (body) | "Claim your refund now with a quick 2-minute call" | "Lock in your money back now with a quick 2-minute call" |
+| Line 115 (button) | "Book My Refund Call" | "Claim My Money Back" |
 
 ---
 
-### 4. New Component: `src/components/ExitIntentModalRefund.tsx`
+### File: `src/components/StickyBookingCTARefund.tsx`
 
-Clone with "refund" language:
-```text
-Title: "Wait! Your ${monthlySavings}/month refund expires soon."
-Body: "Rates change daily. Claim your refund now with a quick 2-minute call."
-Button: "Book My Refund Call"
-```
+| Location | Current | New |
+|----------|---------|-----|
+| Line 81 (button with time) | "Book My Refund Call" | "Claim My Money Back" |
+| Line 90 (button default) | "Book My Refund Call" | "Claim My Money Back" |
 
 ---
 
-### 5. New Component: `src/components/StickyBookingCTARefund.tsx`
+## Summary
 
-Clone with "refund" language:
-```text
-Button: "Book My Refund Call"
-With time: "Book My Refund Call — {Day} at {Time}"
-```
+All instances of "refund" in user-facing copy will be replaced with "money back" or similar phrasing. Internal code identifiers (component names, route paths, analytics page IDs) will remain unchanged to preserve infrastructure and A/B tracking differentiation.
 
----
-
-## Results Display Logic Change
-
-**Current suppappt behavior:**
-- Primary display: `${quoteResult.rate}/month` (the new lower rate)
-- Secondary display: `${quoteResult.monthlySavings}/month in savings`
-
-**New suppappt-refund behavior:**
-- Primary display: `${quoteResult.monthlySavings}/month back` (the refund amount)
-- Secondary display: `New rate: ${quoteResult.rate}/month on your {plan}`
-
-This flips the hierarchy - the savings IS the headline, not the rate.
-
----
-
-## What Stays The Same
-
-| Feature | Status |
-|---------|--------|
-| Health screening questions | Unchanged (same 3-step disqualification logic) |
-| Quote API call | Same Edge Function (`get-medicare-quote`) |
-| Facebook CAPI tracking | Same events, same values |
-| Bing/Google/Vibe tracking | Same conversion events |
-| GHL webhook | Same webhook URL - just different page identifier |
-| AppointmentBookingWidget | Same component - we'll pass `isRefundAngle` prop for copy tweaks |
-| Disqualification flow | Routes to same `/disqualified` page |
-| Great Rate page | Routes to same `/great-rate` page |
-
----
-
-## Files Summary
-
-| File | Action |
-|------|--------|
-| `src/pages/MedicareSupplementAppointmentRefund.tsx` | Create (copy + refund copy changes) |
-| `src/components/ExitIntentModalRefund.tsx` | Create (refund copy) |
-| `src/components/StickyBookingCTARefund.tsx` | Create (refund copy) |
-| `supabase/functions/send-lead-webhook-suppappt-refund/index.ts` | Create (page identifier change) |
-| `supabase/config.toml` | Add function config |
-| `src/App.tsx` | Add route |
-
----
-
-## Technical Details
-
-### Tracking Differentiation
-
-The new funnel will use `page: 'suppappt-refund'` in:
-- Database submissions table
-- GHL webhook payload
-- Facebook CAPI events
-- Funnel analytics
-
-This allows you to compare conversion rates between the "savings" angle and "refund" angle in the analytics dashboard.
-
-### Webhook Configuration
-
-No new GHL webhook needed. Both funnels route to the same `GHL_WEBHOOK_URL_SUPPAPPT` since the contact data structure is identical. The `page` field in the payload differentiates the source.
+| File | Changes |
+|------|---------|
+| `src/pages/MedicareSupplementAppointmentRefund.tsx` | 6 copy updates |
+| `src/components/ExitIntentModalRefund.tsx` | 3 copy updates |
+| `src/components/StickyBookingCTARefund.tsx` | 2 copy updates |
 
