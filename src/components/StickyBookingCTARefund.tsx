@@ -78,7 +78,7 @@ export function StickyBookingCTARefund({ targetRef, selectedTime, dayLabel }: St
           <div className="flex flex-col items-center">
             <span className="flex items-center gap-2">
               <Calendar className="w-5 h-5 flex-shrink-0" />
-              Book My Refund Call
+              Claim My Money Back
             </span>
             <span className="text-sm font-normal opacity-90">
               {dayLabel} at {selectedTime}
@@ -87,7 +87,7 @@ export function StickyBookingCTARefund({ targetRef, selectedTime, dayLabel }: St
         ) : (
           <>
             <Calendar className="w-5 h-5 mr-2" />
-            Book My Refund Call
+            Claim My Money Back
           </>
         )}
       </Button>

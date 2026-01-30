@@ -101,18 +101,18 @@ export function ExitIntentModalRefund({ monthlySavings, onBookClick }: ExitInten
             <Clock className="h-8 w-8 text-amber-600" />
           </div>
           <DialogTitle className="text-2xl font-bold text-foreground">
-            Wait! Your ${Math.round(monthlySavings)}/month refund expires soon.
+            Wait! Your ${Math.round(monthlySavings)}/month back expires soon.
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <p className="text-center text-muted-foreground">
-            Rates change daily. Claim your refund now with a quick 2-minute call.
+            Rates change daily. Lock in your money back now with a quick 2-minute call.
           </p>
           <Button
             onClick={handleBookClick}
             className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-xl font-semibold rounded-xl"
           >
-            Book My Refund Call
+            Claim My Money Back
           </Button>
         </div>
       </DialogContent>
