@@ -1387,11 +1387,11 @@ const MedicareSupplementAppointmentRefund = () => {
                 </p>
                 {/* PRIMARY: Monthly savings (the "refund" amount) */}
                 <p className="text-3xl md:text-4xl font-bold text-green-600">
-                  ${quoteResult.monthlySavings.toFixed(2)}/month back
+                  ${Math.round(quoteResult.monthlySavings)}/month back
                 </p>
                 {/* SECONDARY: New rate */}
                 <p className="text-base text-muted-foreground mt-2">
-                  New rate: ${quoteResult.rate.toFixed(2)}/month on your {formData.plan}
+                  New rate: ${Math.round(quoteResult.rate)}/month on your {formData.plan}
                 </p>
               </div>
 
@@ -1403,7 +1403,7 @@ const MedicareSupplementAppointmentRefund = () => {
                 </div>
                 <div className="mb-3">
                   <p className="text-2xl font-bold text-amber-700">
-                    ${(quoteResult.monthlySavings * 12).toFixed(2)}/year
+                    ${Math.round(quoteResult.monthlySavings * 12)}/year
                   </p>
                   <p className="text-sm text-muted-foreground">going back to you</p>
                 </div>
