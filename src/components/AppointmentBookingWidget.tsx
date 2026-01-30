@@ -265,6 +265,7 @@ export function AppointmentBookingWidget({
   const [availableSlots, setAvailableSlots] = useState<SlotData[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
+  const [bookingSlotId, setBookingSlotId] = useState<string | null>(null); // Track which slot is being booked
   const [error, setError] = useState<string | null>(null);
   const [confirmedTime, setConfirmedTime] = useState<string | null>(null);
   const [agentName, setAgentName] = useState<string | null>(null);
@@ -406,11 +407,11 @@ export function AppointmentBookingWidget({
     preloadAllSlots();
   }, [candidateWeekdays, userTimezone, onTrackEvent]);
   
-  // Filter to only show days with actual availability (max 4)
+  // Filter to only show days with actual availability (max 3 for decision simplicity)
   const availableWeekdays = useMemo(() => {
     if (isPreloading) {
-      // While loading, show first 4 candidates as placeholders
-      return candidateWeekdays.slice(0, 4);
+      // While loading, show first 3 candidates as placeholders
+      return candidateWeekdays.slice(0, 3);
     }
     
     // Filter to days that have slots
@@ -421,8 +422,8 @@ export function AppointmentBookingWidget({
       return slots && slots.length > 0;
     });
     
-    // Return first 4 days with availability
-    return daysWithSlots.slice(0, 4);
+    // Return first 3 days with availability (reduced from 4 to minimize decision paralysis)
+    return daysWithSlots.slice(0, 3);
   }, [candidateWeekdays, preloadedSlots, isPreloading]);
 
   // Fetch available slots for a date (uses cache if available)
@@ -503,14 +504,17 @@ export function AppointmentBookingWidget({
     fetchSlots(date, dayLabel);
   };
 
-  // Handle slot selection - no longer navigates, just selects
-  const handleSlotSelect = (slot: SlotData) => {
+  // Handle slot selection - ONE-CLICK BOOKING: immediately books
+  const handleSlotSelect = async (slot: SlotData) => {
     setSelectedSlot(slot);
+    setBookingSlotId(slot.original);
     onTrackEvent?.({ 
       eventType: 'booking_time_selected', 
       metadata: { time: slot.display, slotOriginal: slot.original }
     });
-    // No navigation - inline confirmation will appear below
+    
+    // Immediately book the appointment (one-click)
+    await handleConfirmBookingDirect(slot);
   };
 
   // Handle back navigation
@@ -524,12 +528,12 @@ export function AppointmentBookingWidget({
     }
   };
 
-  // Book the appointment
-  const handleConfirmBooking = async () => {
-    if (!selectedSlot || !selectedDate) return;
+  // Book the appointment (called directly from slot selection for one-click)
+  const handleConfirmBookingDirect = async (slot: SlotData) => {
+    if (!slot || !selectedDate) return;
 
     // Capture slot early to prevent race conditions if state changes during async operations
-    const slotToBook = selectedSlot.original;
+    const slotToBook = slot.original;
 
     setIsBooking(true);
     setError(null);
@@ -553,6 +557,7 @@ export function AppointmentBookingWidget({
           const errorMsg = contactData?.message || "We're still setting up your account. Please try again in a moment or call us at (201) 298-8393.";
           setError(errorMsg);
           setIsBooking(false);
+          setBookingSlotId(null);
           onTrackEvent?.({ 
             eventType: 'booking_error', 
             metadata: { error: 'contact_lookup_failed', step: 'confirm' }
@@ -591,6 +596,7 @@ export function AppointmentBookingWidget({
           await fetchSlots(selectedDate, dayLabel);
         }
         setIsBooking(false);
+        setBookingSlotId(null);
         onTrackEvent?.({ 
           eventType: 'booking_error', 
           metadata: { error: 'slot_taken', step: 'confirm' }
@@ -601,6 +607,7 @@ export function AppointmentBookingWidget({
       if (bookingData?.error) {
         setError(bookingData.message || 'Something went wrong. Please try again or call us at (201) 298-8393.');
         setIsBooking(false);
+        setBookingSlotId(null);
         onTrackEvent?.({ 
           eventType: 'booking_error', 
           metadata: { error: 'booking_failed', step: 'confirm', message: bookingData.message }
@@ -632,7 +639,14 @@ export function AppointmentBookingWidget({
       });
     } finally {
       setIsBooking(false);
+      setBookingSlotId(null);
     }
+  };
+
+  // Legacy method for backward compatibility
+  const handleConfirmBooking = async () => {
+    if (!selectedSlot) return;
+    await handleConfirmBookingDirect(selectedSlot);
   };
 
   // Format selected date for display
@@ -711,12 +725,17 @@ export function AppointmentBookingWidget({
       {/* Step 1: Pick a Day - Always show immediately (no blocking loader) */}
       {bookingStep === 1 && (
         <div className="space-y-3">
-          {/* Availability Indicator */}
-          <div className="text-center mb-4 flex items-center justify-center gap-2 text-gray-600">
-            <span>📅</span>
-            <span className="text-sm">
-              {isPreloading ? 'Checking available times...' : 'Our agents have limited openings this week'}
-            </span>
+          {/* Social proof + Availability Indicator */}
+          <div className="text-center mb-4">
+            <p className="text-sm font-medium text-green-600 mb-1">
+              🔥 12 people booked today
+            </p>
+            <p className="text-sm text-gray-600 flex items-center justify-center gap-2">
+              <span>📅</span>
+              <span>
+                {isPreloading ? 'Checking available times...' : 'Pick a time — we\'ll call you then'}
+              </span>
+            </p>
           </div>
 
           {/* Show loading state if preloading and no days to show yet */}
@@ -750,6 +769,7 @@ export function AppointmentBookingWidget({
             const hasPreloadedData = preloadedSlots.has(dateStr);
             const preloadedData = preloadedSlots.get(dateStr);
             const slotCount = preloadedData?.length || 0;
+            const isFirstDay = index === 0;
             
             // Determine availability badge text
             let availabilityBadge = 'Checking times...';
@@ -760,15 +780,7 @@ export function AppointmentBookingWidget({
               availabilityBadge = 'Checking times...';
               badgeColor = 'text-gray-400';
             } else if (hasPreloadedData && slotCount > 0) {
-              const hasMorning = preloadedData?.some(s => isMorningSlot(s.original));
-              const hasAfternoon = preloadedData?.some(s => isAfternoonSlot(s.original));
-              if (hasMorning && hasAfternoon) {
-                availabilityBadge = `${slotCount} times available`;
-              } else if (hasMorning) {
-                availabilityBadge = 'Morning available';
-              } else if (hasAfternoon) {
-                availabilityBadge = 'Afternoon available';
-              }
+              availabilityBadge = `${slotCount} times available`;
               badgeColor = 'text-green-600';
               isDisabled = isBooking;
             }
@@ -778,34 +790,27 @@ export function AppointmentBookingWidget({
                 key={date.toISOString()}
                 onClick={() => handleDaySelect(date, primary)}
                 disabled={isDisabled}
-                className={`w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
+                className={`w-full min-h-[80px] p-4 bg-white border-2 rounded-xl 
                          hover:border-green-600 hover:bg-green-50 transition-all
-                         flex flex-col items-center justify-center
+                         flex flex-col items-center justify-center relative
+                         ${isFirstDay && !isPreloading ? 'border-green-500 animate-first-day-pulse' : 'border-gray-200'}
                          ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
+                {/* Recommended badge for first day */}
+                {isFirstDay && !isPreloading && (
+                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-green-600 text-white text-xs font-semibold px-3 py-0.5 rounded-full">
+                    Recommended
+                  </span>
+                )}
                 <span className="text-xl font-semibold text-gray-900">{primary}</span>
                 <span className="text-gray-500">{secondary}</span>
-                <span className={`text-xs mt-1 flex items-center gap-1 ${badgeColor}`}>
+                <span className={`text-sm mt-1 flex items-center gap-1 font-medium ${badgeColor}`}>
                   {isPreloading && <Loader2 className="w-3 h-3 animate-spin" />}
                   {availabilityBadge}
                 </span>
               </button>
             );
           })}
-
-          {/* What Happens on Your Call - Collapsible */}
-          <details className="mt-6 bg-gray-50 rounded-xl">
-            <summary className="p-4 cursor-pointer text-gray-700 font-medium flex items-center gap-2">
-              <span>📞</span> What Happens on Your Call? <span className="text-xs text-gray-500">(tap to expand)</span>
-            </summary>
-            <div className="px-4 pb-4 text-sm text-gray-600 space-y-2">
-              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> Quick review of your current coverage (2 min)</p>
-              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> Compare your rate against 20+ carriers (5 min)</p>
-              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> Get your questions answered – no pressure</p>
-              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> If you want to switch, we handle all the paperwork</p>
-              <p className="text-gray-500 mt-2 text-xs">Average call: 10-15 minutes</p>
-            </div>
-          </details>
 
           {/* Strengthened Call Now Alternative */}
           <div className="mt-6 pt-4 border-t border-gray-200 text-center">
@@ -846,68 +851,53 @@ export function AppointmentBookingWidget({
         </div>
       )}
 
-      {/* Step 2: Pick a Time + Inline Confirmation (merged step, skipping morning/afternoon) */}
+      {/* Step 2: Pick a Time - ONE-CLICK BOOKING */}
       {bookingStep === 2 && (
         <div className="space-y-3">
           <button
             onClick={handleBack}
-            className="flex items-center gap-1 text-gray-600 hover:text-gray-800 mb-4"
+            disabled={isBooking}
+            className="flex items-center gap-1 text-gray-600 hover:text-gray-800 mb-4 disabled:opacity-50"
           >
             <ChevronLeft className="w-5 h-5" />
             <span>Pick a different day</span>
           </button>
 
-          <p className="text-center text-gray-600 mb-4">
+          <p className="text-center text-gray-600 mb-2">
             {getSelectedDateDisplay()}
           </p>
+          
+          {/* Micro-copy for one-click */}
+          <p className="text-center text-sm text-green-600 font-medium mb-4">
+            Tap a time to book instantly
+          </p>
 
-          {/* All time slots with inline Book button */}
+          {/* All time slots - one-click books immediately */}
           {availableSlots.map((slot) => {
-            const isSelected = selectedSlot?.original === slot.original;
+            const isThisSlotBooking = bookingSlotId === slot.original;
             return (
-              <div
+              <button
                 key={slot.original}
+                onClick={() => handleSlotSelect(slot)}
+                disabled={isBooking}
                 className={`w-full min-h-[70px] border-2 rounded-xl transition-all overflow-hidden
-                            ${isSelected 
+                            flex items-center justify-center gap-3
+                            ${isThisSlotBooking 
                               ? 'bg-green-50 border-green-600' 
-                              : 'bg-white border-gray-200 hover:border-green-400'}
-                            ${isBooking ? 'opacity-50' : ''}`}
+                              : 'bg-white border-gray-200 hover:border-green-400 hover:bg-green-50'}
+                            ${isBooking && !isThisSlotBooking ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <div className="flex items-center h-full min-h-[70px]">
-                  {/* Time display - clickable to select */}
-                  <button
-                    onClick={() => handleSlotSelect(slot)}
-                    disabled={isBooking}
-                    className="flex-1 h-full min-h-[70px] flex items-center justify-center gap-2 p-4"
-                  >
-                    {isSelected && <span className="text-lg">⏰</span>}
-                    <span className={`text-2xl font-semibold ${isSelected ? 'text-green-700' : 'text-gray-900'}`}>
-                      {slot.display}
-                    </span>
-                  </button>
-                  
-                  {/* Inline Book button - only shows when selected */}
-                  {isSelected && (
-                    <button
-                      onClick={handleConfirmBooking}
-                      disabled={isBooking}
-                      className={`h-full min-h-[70px] px-6 bg-green-600 hover:bg-green-700 text-white 
-                                 font-bold flex items-center gap-2 animate-slide-in-right
-                                 min-w-[100px] justify-center transition-colors
-                                 ${ctaAnimationActive && !isBooking ? 'animate-cta-glow' : ''}`}
-                    >
-                      {isBooking ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <>
-                          <Check className="w-5 h-5" />
-                          Book
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
+                {isThisSlotBooking ? (
+                  <>
+                    <Loader2 className="w-5 h-5 text-green-600 animate-spin" />
+                    <span className="text-lg font-semibold text-green-700">Booking...</span>
+                  </>
+                ) : (
+                  <span className="text-2xl font-semibold text-gray-900">
+                    {slot.display}
+                  </span>
+                )}
+              </button>
             );
           })}
         </div>

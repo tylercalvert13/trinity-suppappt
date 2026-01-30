@@ -446,11 +446,11 @@ export function AppointmentBookingWidgetWithOptIn({
     preloadAllSlots();
   }, [candidateWeekdays, userTimezone, onTrackEvent]);
   
-  // Filter to only show days with actual availability (max 4)
+  // Filter to only show days with actual availability (max 3 for decision simplicity)
   const availableWeekdays = useMemo(() => {
     if (isPreloading) {
-      // While loading, show first 4 candidates as placeholders
-      return candidateWeekdays.slice(0, 4);
+      // While loading, show first 3 candidates as placeholders
+      return candidateWeekdays.slice(0, 3);
     }
     
     // Filter to days that have slots
@@ -461,8 +461,8 @@ export function AppointmentBookingWidgetWithOptIn({
       return slots && slots.length > 0;
     });
     
-    // Return first 4 days with availability
-    return daysWithSlots.slice(0, 4);
+    // Return first 3 days with availability (reduced from 4 to minimize decision paralysis)
+    return daysWithSlots.slice(0, 3);
   }, [candidateWeekdays, preloadedSlots, isPreloading]);
 
   const fetchSlots = async (date: Date, dayLabel: string) => {
@@ -843,11 +843,17 @@ export function AppointmentBookingWidgetWithOptIn({
       {/* Step 1: Pick a Day */}
       {bookingStep === 1 && (
         <div className="space-y-3">
-          <div className="text-center mb-4 flex items-center justify-center gap-2 text-gray-600">
-            <span>📅</span>
-            <span className="text-sm">
-              {isPreloading ? 'Checking available times...' : 'Our agents have limited openings this week'}
-            </span>
+          {/* Social proof + Availability Indicator */}
+          <div className="text-center mb-4">
+            <p className="text-sm font-medium text-green-600 mb-1">
+              🔥 12 people booked today
+            </p>
+            <p className="text-sm text-gray-600 flex items-center justify-center gap-2">
+              <span>📅</span>
+              <span>
+                {isPreloading ? 'Checking available times...' : 'Pick a time — we\'ll call you then'}
+              </span>
+            </p>
           </div>
 
           {/* Show loading state if preloading and no days to show yet */}
@@ -881,6 +887,7 @@ export function AppointmentBookingWidgetWithOptIn({
             const hasPreloadedData = preloadedSlots.has(dateStr);
             const preloadedData = preloadedSlots.get(dateStr);
             const slotCount = preloadedData?.length || 0;
+            const isFirstDay = index === 0;
             
             // Determine availability badge text
             let availabilityBadge = 'Checking times...';
@@ -891,15 +898,7 @@ export function AppointmentBookingWidgetWithOptIn({
               availabilityBadge = 'Checking times...';
               badgeColor = 'text-gray-400';
             } else if (hasPreloadedData && slotCount > 0) {
-              const hasMorning = preloadedData?.some(s => isMorningSlot(s.original));
-              const hasAfternoon = preloadedData?.some(s => isAfternoonSlot(s.original));
-              if (hasMorning && hasAfternoon) {
-                availabilityBadge = `${slotCount} times available`;
-              } else if (hasMorning) {
-                availabilityBadge = 'Morning available';
-              } else if (hasAfternoon) {
-                availabilityBadge = 'Afternoon available';
-              }
+              availabilityBadge = `${slotCount} times available`;
               badgeColor = 'text-green-600';
               isDisabled = isLoading;
             }
@@ -909,34 +908,27 @@ export function AppointmentBookingWidgetWithOptIn({
                 key={date.toISOString()}
                 onClick={() => handleDaySelect(date, primary)}
                 disabled={isDisabled}
-                className={`w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
+                className={`w-full min-h-[80px] p-4 bg-white border-2 rounded-xl 
                          hover:border-green-600 hover:bg-green-50 transition-all
-                         flex flex-col items-center justify-center
+                         flex flex-col items-center justify-center relative
+                         ${isFirstDay && !isPreloading ? 'border-green-500 animate-first-day-pulse' : 'border-gray-200'}
                          ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
+                {/* Recommended badge for first day */}
+                {isFirstDay && !isPreloading && (
+                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-green-600 text-white text-xs font-semibold px-3 py-0.5 rounded-full">
+                    Recommended
+                  </span>
+                )}
                 <span className="text-xl font-semibold text-gray-900">{primary}</span>
                 <span className="text-gray-500">{secondary}</span>
-                <span className={`text-xs mt-1 flex items-center gap-1 ${badgeColor}`}>
+                <span className={`text-sm mt-1 flex items-center gap-1 font-medium ${badgeColor}`}>
                   {isPreloading && <Loader2 className="w-3 h-3 animate-spin" />}
                   {availabilityBadge}
                 </span>
               </button>
             );
           })}
-
-          {/* What Happens on Your Call */}
-          <details className="mt-6 bg-gray-50 rounded-xl">
-            <summary className="p-4 cursor-pointer text-gray-700 font-medium flex items-center gap-2">
-              <span>📞</span> What Happens on Your Call? <span className="text-xs text-gray-500">(tap to expand)</span>
-            </summary>
-            <div className="px-4 pb-4 text-sm text-gray-600 space-y-2">
-              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> Quick review of your current coverage (2 min)</p>
-              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> Compare your rate against 20+ carriers (5 min)</p>
-              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> Get your questions answered – no pressure</p>
-              <p className="flex items-start gap-2"><span className="text-green-600">✓</span> If you want to switch, we handle all the paperwork</p>
-              <p className="text-gray-500 mt-2 text-xs">Average call: 10-15 minutes</p>
-            </div>
-          </details>
 
           {/* Call Now Alternative */}
           <div className="mt-6 pt-4 border-t border-gray-200 text-center">

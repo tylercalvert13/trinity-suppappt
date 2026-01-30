@@ -331,7 +331,7 @@ const MedicareSupplementAppointmentRefund = () => {
     }
   }, [step]);
 
-  // Auto-scroll to booking widget 6 seconds after qualification
+  // Auto-scroll to booking widget 3 seconds after qualification
   useEffect(() => {
     if (step === "qualified" && quoteResult && !autoScrollDone) {
       const timer = setTimeout(() => {
@@ -340,10 +340,15 @@ const MedicareSupplementAppointmentRefund = () => {
           block: 'start' 
         });
         setAutoScrollDone(true);
-      }, 6000);
+        // Track auto-scroll trigger
+        trackEvent({ 
+          eventType: 'conversion_trigger', 
+          metadata: { trigger: 'auto_scroll' }
+        });
+      }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [step, quoteResult, autoScrollDone]);
+  }, [step, quoteResult, autoScrollDone, trackEvent]);
 
   // Urgency toast 10 seconds after qualification
   useEffect(() => {
@@ -353,10 +358,15 @@ const MedicareSupplementAppointmentRefund = () => {
           duration: 5000,
         });
         setToastShown(true);
+        // Track urgency toast trigger
+        trackEvent({ 
+          eventType: 'conversion_trigger', 
+          metadata: { trigger: 'urgency_toast' }
+        });
       }, 10000);
       return () => clearTimeout(timer);
     }
-  }, [step, quoteResult, toastShown]);
+  }, [step, quoteResult, toastShown, trackEvent]);
 
   // Callback to scroll to booking widget (for exit intent modal)
   const scrollToBookingWidget = useCallback(() => {
@@ -1395,8 +1405,25 @@ const MedicareSupplementAppointmentRefund = () => {
                 </p>
               </div>
 
-              {/* Claim Refund CTA */}
-              <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center">
+              {/* Book Now CTA Button */}
+              <Button
+                onClick={() => {
+                  scrollToBookingWidget();
+                  trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'header_book_now_clicked' } });
+                }}
+                className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-xl font-semibold rounded-xl"
+              >
+                Claim My Money Back Now
+              </Button>
+
+              {/* Claim Refund CTA - Clickable */}
+              <button
+                onClick={() => {
+                  scrollToBookingWidget();
+                  trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'amber_cta_clicked' } });
+                }}
+                className="w-full bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-colors"
+              >
                 <div className="flex items-center justify-center gap-2 text-amber-800 mb-3">
                   <Clock className="h-5 w-5" />
                   <span className="font-semibold">Claim Your Money Back — 15 Minutes</span>
@@ -1408,12 +1435,12 @@ const MedicareSupplementAppointmentRefund = () => {
                   <p className="text-sm text-muted-foreground">going back to you</p>
                 </div>
                 <p className="text-base text-foreground">
-                  Pick a time below to lock it in — quick 2-min call, no obligation.
+                  Tap to book your call →
                 </p>
                 <div className="mt-3 flex justify-center">
                   <ChevronDown className="h-6 w-6 text-amber-600 animate-bounce" />
                 </div>
-              </div>
+              </button>
 
               {/* Appointment Booking Widget */}
               <AppointmentBookingWidget
@@ -1464,8 +1491,8 @@ const MedicareSupplementAppointmentRefund = () => {
         </div>
       </section>
 
-      {/* Spacer */}
-      <div className="h-[50vh]"></div>
+      {/* Spacer - reduced to push widget higher */}
+      <div className="h-16"></div>
 
       {/* Footer */}
       <footer className="py-8 md:py-12 bg-gray-50">

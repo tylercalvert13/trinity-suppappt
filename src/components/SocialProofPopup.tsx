@@ -15,6 +15,7 @@ const SOCIAL_PROOF_DATA = [
 interface SocialProofPopupProps {
   delayMs?: number;
   visibleMs?: number;
+  onTrackEvent?: (params: { eventType: string; metadata?: Record<string, string> }) => void;
 }
 
 export function SocialProofPopup({ delayMs = 8000, visibleMs = 4000 }: SocialProofPopupProps) {

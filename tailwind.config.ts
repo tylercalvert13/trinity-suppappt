@@ -117,6 +117,10 @@ export default {
 			'slide-in-right': {
 				'0%': { transform: 'translateX(20px)', opacity: '0' },
 				'100%': { transform: 'translateX(0)', opacity: '1' }
+			},
+			'first-day-pulse': {
+				'0%, 100%': { borderColor: 'rgb(34 197 94)', boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.4)' },
+				'50%': { borderColor: 'rgb(22 163 74)', boxShadow: '0 0 0 8px rgba(34, 197, 94, 0)' }
 			}
 		},
 		animation: {
@@ -125,7 +129,8 @@ export default {
 			'ring-phone': 'ring-phone 1.5s ease-in-out infinite',
 			'gentle-pulse': 'gentle-pulse 2s ease-in-out infinite',
 			'cta-glow': 'cta-glow 2s ease-in-out infinite',
-			'slide-in-right': 'slide-in-right 0.2s ease-out'
+			'slide-in-right': 'slide-in-right 0.2s ease-out',
+			'first-day-pulse': 'first-day-pulse 2s ease-in-out infinite'
 		}
 		}
 	},
