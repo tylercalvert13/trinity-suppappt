@@ -1374,7 +1374,7 @@ const MedicareSupplementAppointment = () => {
 
           {/* Loading Screen - Animated Progress Indicator */}
           {step === "loading" && (
-            <QuoteLoadingProgress />
+            <QuoteLoadingProgress planType={formData.plan} />
           )}
 
           {/* Qualified/Results Screen - Appointment Booking Widget */}

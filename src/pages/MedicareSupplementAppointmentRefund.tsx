@@ -1378,7 +1378,7 @@ const MedicareSupplementAppointmentRefund = () => {
 
           {/* Loading Screen - Animated Progress Indicator */}
           {step === "loading" && (
-            <QuoteLoadingProgress />
+            <QuoteLoadingProgress planType={formData.plan} />
           )}
 
           {/* Qualified/Results Screen - REFUND ANGLE: Savings is primary */}
