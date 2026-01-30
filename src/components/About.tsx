@@ -1,13 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, Clock, Users, Award } from "lucide-react";
+import { CheckCircle, MapPin, Users, Award, DollarSign } from "lucide-react";
 
 const About = () => {
   const stats = [
-    { number: "15+", label: "Years Experience", icon: Clock },
-    { number: "5000+", label: "Clients Served", icon: Users },
-    { number: "98%", label: "Client Satisfaction", icon: Award },
-    { number: "24/7", label: "Support Available", icon: CheckCircle }
+    { number: "50", label: "States Licensed", icon: MapPin },
+    { number: "1000+", label: "Seniors Helped", icon: Users },
+    { number: "A+", label: "Rated Carriers", icon: Award },
+    { number: "$0", label: "Rate Comparison", icon: DollarSign }
   ];
 
   return (
@@ -17,33 +16,33 @@ const About = () => {
           {/* Content */}
           <div>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-              Your Trusted Medicare Partner
+              Specializing in Medicare Supplement Plans
             </h2>
             <p className="text-lg text-muted-foreground mb-6">
-              At Health Helpers, we believe choosing the right Medicare plan shouldn't be overwhelming. 
-              Our experienced, licensed agents provide personalized guidance to help you understand your 
-              options and find coverage that truly meets your healthcare needs and budget.
+              At Health Helpers, we focus on one thing: helping seniors find the best rates on 
+              Medicare Supplement insurance. Many policyholders don't realize they're overpaying 
+              because insurers quietly raise premiums on loyal customers year after year.
             </p>
             <div className="space-y-4 mb-8">
               <div className="flex items-start space-x-3">
-                <CheckCircle className="h-6 w-6 text-accent mt-0.5" />
+                <CheckCircle className="h-6 w-6 text-accent mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">Expert Guidance</h3>
-                  <p className="text-muted-foreground">Licensed Medicare specialists who understand your unique healthcare needs and budget concerns.</p>
+                  <h3 className="font-semibold text-foreground mb-1">Same Coverage, Lower Price</h3>
+                  <p className="text-muted-foreground">Your Plan G, F, or N coverage stays exactly the same—only your premium changes. No gaps, no hassle.</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <CheckCircle className="h-6 w-6 text-accent mt-0.5" />
+                <CheckCircle className="h-6 w-6 text-accent mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">Personalized Service</h3>
-                  <p className="text-muted-foreground">One-on-one assistance to compare plans and find the best coverage for your situation.</p>
+                  <h3 className="font-semibold text-foreground mb-1">Top-Rated Carriers Only</h3>
+                  <p className="text-muted-foreground">We work with financially stable, A-rated carriers like Aflac and Medico that you can trust for the long term.</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <CheckCircle className="h-6 w-6 text-accent mt-0.5" />
+                <CheckCircle className="h-6 w-6 text-accent mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">Ongoing Support</h3>
-                  <p className="text-muted-foreground">We're here to help not just during enrollment, but throughout the year as your needs change.</p>
+                  <h3 className="font-semibold text-foreground mb-1">No Pressure, No Obligation</h3>
+                  <p className="text-muted-foreground">Our licensed agents provide honest rate comparisons with zero pressure. If we can't save you money, we'll tell you.</p>
                 </div>
               </div>
             </div>

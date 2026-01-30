@@ -1,44 +1,44 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, Heart, FileText, Stethoscope, Users, CreditCard } from "lucide-react";
+import { Shield, FileText, Wallet, Info } from "lucide-react";
 
 const Services = () => {
-  const services = [
+  const plans = [
     {
       icon: Shield,
-      title: "Medicare Advantage",
-      description: "Comprehensive Medicare plans that often include prescription drug coverage, dental, vision, and wellness programs.",
-      features: ["Low or $0 monthly premiums", "All-in-one coverage", "Extra benefits included"]
+      title: "Plan G",
+      subtitle: "Most Popular Choice",
+      description: "The gold standard in Medigap coverage. Plan G covers nearly all out-of-pocket costs, leaving you with only the Part B deductible.",
+      features: [
+        "Covers Part A deductible & hospital costs",
+        "No referrals needed for specialists",
+        "Works with any Medicare-accepting doctor"
+      ],
+      bestFor: "Seniors who want comprehensive coverage with predictable costs"
     },
     {
       icon: FileText,
-      title: "Medicare Supplements",
-      description: "Medigap insurance that helps pay for costs not covered by Original Medicare, giving you peace of mind.",
-      features: ["Nationwide coverage", "Predictable costs", "Doctor choice freedom"]
+      title: "Plan F",
+      subtitle: "Legacy Full Coverage",
+      description: "Complete coverage for those who qualified before 2020. Plan F covers 100% of Medicare gaps, including the Part B deductible.",
+      features: [
+        "Zero out-of-pocket costs for covered services",
+        "Covers Part B deductible (grandfathered)",
+        "Nationwide acceptance at any provider"
+      ],
+      bestFor: "Existing policyholders who want to keep full coverage"
     },
     {
-      icon: Stethoscope,
-      title: "DVH Plans",
-      description: "Dental, Vision, and Hearing plans to keep you healthy and active in your golden years.",
-      features: ["Affordable monthly rates", "Extensive provider networks", "Preventive care covered"]
-    },
-    {
-      icon: Heart,
-      title: "Hospital Indemnity",
-      description: "Financial protection for unexpected hospital stays, helping cover out-of-pocket expenses.",
-      features: ["Cash benefits", "No network restrictions", "Quick claim processing"]
-    },
-    {
-      icon: Users,
-      title: "Life Insurance",
-      description: "Protect your loved ones with affordable life insurance options designed for seniors.",
-      features: ["No medical exam options", "Guaranteed acceptance", "Final expense coverage"]
-    },
-    {
-      icon: CreditCard,
-      title: "Critical Illness",
-      description: "Lump-sum benefits for major health events like cancer, heart attack, or stroke.",
-      features: ["Use benefits as needed", "Covers treatment gaps", "Peace of mind protection"]
+      icon: Wallet,
+      title: "Plan N",
+      subtitle: "Budget-Friendly Option",
+      description: "Lower premiums with minimal cost-sharing. Plan N offers excellent coverage while keeping your monthly payments affordable.",
+      features: [
+        "Lower monthly premium than G or F",
+        "Small copays for office visits ($20 max)",
+        "Same freedom to choose any doctor"
+      ],
+      bestFor: "Healthy seniors looking to save on monthly premiums"
     }
   ];
 
@@ -47,49 +47,73 @@ const Services = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Our Healthcare Solutions
+            Medicare Supplement Plans Explained
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Comprehensive insurance plans tailored for seniors and their families. 
-            We make healthcare affordable and accessible.
+            Medigap plans help cover the costs that Original Medicare doesn't—like 
+            deductibles, copays, and coinsurance. Here's what you need to know.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((service, index) => {
-            const IconComponent = service.icon;
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          {plans.map((plan, index) => {
+            const IconComponent = plan.icon;
             return (
               <Card key={index} className="shadow-card hover:shadow-elegant transition-all duration-300 border-0">
                 <CardHeader className="text-center pb-4">
                   <div className="w-16 h-16 bg-healthcare rounded-full flex items-center justify-center mx-auto mb-4">
                     <IconComponent className="h-8 w-8 text-primary" />
                   </div>
-                  <CardTitle className="text-xl mb-2">{service.title}</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    {service.description}
+                  <CardTitle className="text-2xl mb-1">{plan.title}</CardTitle>
+                  <CardDescription className="text-accent font-semibold">
+                    {plan.subtitle}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <p className="text-muted-foreground mb-4 text-center">
+                    {plan.description}
+                  </p>
                   <ul className="space-y-2 mb-6">
-                    {service.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center text-sm text-foreground">
-                        <div className="w-2 h-2 bg-accent rounded-full mr-3"></div>
+                    {plan.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-start text-sm text-foreground">
+                        <div className="w-2 h-2 bg-accent rounded-full mr-3 mt-1.5 flex-shrink-0"></div>
                         {feature}
                       </li>
                     ))}
                   </ul>
-                  <Button variant="outline" className="w-full" onClick={() => window.location.href = 'tel:201-589-1901'}>
-                    Get Started
-                  </Button>
+                  <div className="bg-muted rounded-lg p-3 text-center">
+                    <span className="text-xs text-muted-foreground">Best for:</span>
+                    <p className="text-sm font-medium text-foreground">{plan.bestFor}</p>
+                  </div>
                 </CardContent>
               </Card>
             );
           })}
         </div>
 
-        <div className="text-center mt-12">
-          <Button variant="hero" size="lg" onClick={() => window.location.href = 'tel:201-589-1901'}>
-            Speak with an Agent Today
+        {/* Educational Callout */}
+        <Card className="bg-primary/5 border-primary/20 mb-12">
+          <CardContent className="py-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <Info className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-bold text-foreground mb-2">Why Switching Carriers Can Save You Money</h3>
+                <p className="text-muted-foreground">
+                  All Medigap plans are standardized by federal law—<strong>Plan G is Plan G</strong> regardless 
+                  of which company you buy from. The coverage is identical. The only difference is the price 
+                  you pay. Many carriers quietly raise rates on loyal customers, which is why comparing rates 
+                  annually can save you hundreds of dollars per year.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="text-center">
+          <Button variant="hero" size="lg" className="text-lg px-8" onClick={() => window.location.href = 'tel:+12012988393'}>
+            Compare Your Rate Today
           </Button>
         </div>
       </div>
