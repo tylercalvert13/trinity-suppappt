@@ -1,159 +1,189 @@
 
 
-## Redesign Homepage for Medicare Supplement Focus
+## Optimize Homepage SEO Metadata
 
-Transform the current general Medicare homepage into a professional, reputation-building site centered around Medicare Supplement Plans (Plan G, Plan F, Plan N). The new design will establish Health Helpers as a trusted authority while using the new phone number (201) 298-8393 for all CTAs.
-
----
-
-## Overview
-
-The homepage will be restructured with Medicare Supplement-focused messaging while maintaining a professional, trustworthy appearance that builds company reputation. Unlike the funnel pages (/suppappt, /suppquote), this will be an informational homepage rather than a conversion funnel.
+The current `index.html` has outdated SEO metadata focused on "Medicare Self-Enrollment" which no longer matches the redesigned homepage. This plan updates all metadata to align with the new Medicare Supplement focus while preserving all existing tracking pixels and funnel page behavior.
 
 ---
 
-## File Changes Summary
+## Current Problems
 
-| File | Change Type | Description |
-|------|-------------|-------------|
-| `src/components/Hero.tsx` | Major Update | Medicare Supplement-focused headline, value props, new phone number |
-| `src/components/Services.tsx` | Replace | Focus on Medigap plans (G, F, N) with educational content |
-| `src/components/About.tsx` | Update | Refresh stats and messaging for Medigap expertise |
-| `src/components/Contact.tsx` | Update | New phone number, Medigap-specific messaging |
-| `src/components/Header.tsx` | Update | New phone number (201) 298-8393 |
-| `src/components/Footer.tsx` | Update | New phone number, streamlined services list |
-
----
-
-## Detailed Changes
-
-### 1. Hero.tsx - New Headline and Value Proposition
-
-**Current:** Generic "Expert Medicare Guidance Personalized for You"
-
-**New Messaging:**
-- **Headline:** "Are You Overpaying for Medicare Supplement Coverage?"
-- **Subheadline:** "Plan G, F, and N policyholders across America are saving $100-200/month by switching carriers—with the exact same coverage. Our licensed agents help you compare rates and keep more money in your pocket."
-- **CTA:** Single prominent "Call Now" button with (201) 298-8393
-- **Trust Indicators:** Keep existing icons but update labels to:
-  - Licensed in All 50 States
-  - No-Obligation Rate Comparison
-  - Same Coverage, Lower Price
-  - Trusted by Thousands
-
-**Phone number updates:**
-- Replace all instances of `201-589-1901` with `201-298-8393`
-- Update tel: links to `tel:+12012988393`
+| Issue | Current Value | Problem |
+|-------|---------------|---------|
+| Title | "Medicare Self-Enrollment Online..." | Doesn't match new Medigap focus |
+| Description | "Skip the phone calls..." | Focuses on self-enrollment, not rate savings |
+| Keywords | "Medicare self enrollment..." | Wrong keyword targets |
+| OG Image | Logo only (small PNG) | Not optimized for social sharing |
+| OG URL | `healthhelpers.com` | Wrong domain (should be `.co`) |
+| Canonical | Missing | No canonical tag for homepage |
+| Sitemap | Missing | No sitemap.xml for SEO |
 
 ---
 
-### 2. Services.tsx - Medicare Supplement Plan Education
+## Changes
 
-**Replace 6 generic services with 3 focused Medicare Supplement sections:**
+### File: `index.html`
 
-1. **Plan G - Most Popular Choice**
-   - "The gold standard in Medigap coverage"
-   - Features: Covers Part A & B deductibles, no referrals needed, works with any Medicare-accepting doctor
-   - "Best for: Seniors who want comprehensive coverage with predictable costs"
+**1. Update Title (line 21)**
+```
+Current:  "Medicare Self-Enrollment Online | Health Helpers - Enroll Yourself Without Calls"
+New:      "Medicare Supplement Insurance | Compare Plan G, F & N Rates | Health Helpers"
+```
 
-2. **Plan F - Legacy Full Coverage** 
-   - "Complete coverage for those who qualified before 2020"
-   - Features: Zero out-of-pocket costs, covers Part B deductible (grandfathered), nationwide acceptance
-   - "Best for: Existing policyholders who want to keep full coverage"
+**2. Update Meta Description (line 22)**
+```
+Current:  "Skip the phone calls and meetings..."
+New:      "Are you overpaying for Medicare Supplement coverage? Compare Plan G, F, and N rates from A+ rated carriers. Licensed agents help you find the same coverage at a lower price. Free rate comparison."
+```
 
-3. **Plan N - Budget-Friendly Option**
-   - "Lower premiums with minimal cost-sharing"
-   - Features: Lower monthly premium, small copays for office visits, same doctor freedom
-   - "Best for: Healthy seniors looking to save on monthly premiums"
+**3. Update Keywords (line 23)**
+```
+New: "Medicare Supplement insurance, Medigap Plan G, Medigap Plan F, Medigap Plan N, Medicare Supplement rates, compare Medigap plans, Medicare Supplement savings, Medigap insurance comparison"
+```
 
-**Add educational callout box:**
-- "All Medigap plans are standardized by federal law—Plan G is Plan G regardless of which company you buy from. The only difference is the price you pay."
+**4. Update Open Graph Tags (lines 27-31)**
+```html
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://healthhelpers.co/" />
+<meta property="og:title" content="Are You Overpaying for Medicare Supplement Coverage? | Health Helpers" />
+<meta property="og:description" content="Plan G, F, and N policyholders save $100-200/month by switching carriers. Same coverage, lower price. Free rate comparison from licensed agents." />
+<meta property="og:image" content="https://healthhelpers.co/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:site_name" content="Health Helpers" />
+<meta property="og:locale" content="en_US" />
+```
 
-**CTA:** "Compare Your Rate Today" → calls (201) 298-8393
+**5. Update Twitter Tags (lines 34-38)**
+```html
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@healthhelpers" />
+<meta name="twitter:title" content="Are You Overpaying for Medicare Supplement Coverage?" />
+<meta name="twitter:description" content="Plan G, F, and N policyholders save $100-200/month by switching carriers. Same coverage, lower price." />
+<meta name="twitter:image" content="https://healthhelpers.co/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" />
+```
 
----
+**6. Add Canonical Link (after line 24)**
+```html
+<link rel="canonical" href="https://healthhelpers.co/" />
+```
 
-### 3. About.tsx - Build Credibility and Trust
-
-**Update stats to be more specific and credible:**
-- "Licensed in All 50 States" (instead of generic years)
-- "Thousands Helped" (more believable than 5000+)
-- "A+ Rated Carriers" (highlights carrier quality)
-- "Free Rate Comparison" (emphasizes no-cost service)
-
-**Update copy to focus on Medicare Supplement expertise:**
-- "Specializing in Medicare Supplement Plans"
-- Emphasize the "rate trap" education angle
-- Highlight that switching is easy with no coverage gaps
-
-**Key points to include:**
-- "We work with top-rated carriers like Aflac and Medico"
-- "No pressure, no obligation—just honest rate comparisons"
-- "Your coverage stays exactly the same, just at a lower price"
-
----
-
-### 4. Contact.tsx - Streamlined Contact Section
-
-**Update phone number:** (201) 298-8393
-
-**Simplify the form focus:**
-- Remove the full contact form (keep it simple for a homepage)
-- Keep the contact information card
-- Add a prominent call CTA card
-
-**Update messaging:**
-- "Get Your Free Medicare Supplement Rate Comparison"
-- "See if you're overpaying in just 2 minutes"
-
-**Update office hours display** to match actual availability
+**7. Add Additional SEO Tags (after author)**
+```html
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="googlebot" content="index, follow" />
+<meta name="theme-color" content="#1e40af" />
+```
 
 ---
 
-### 5. Header.tsx - Update Phone Number
+### File: `public/robots.txt`
 
-**Changes:**
-- Replace "(201) 589-1901" with "(201) 298-8393"
-- Update tel: link to `tel:+12012988393`
-- Update mobile menu phone display
+**Add sitemap reference:**
+```
+User-agent: Googlebot
+Allow: /
 
----
+User-agent: Bingbot
+Allow: /
 
-### 6. Footer.tsx - Update Phone and Streamline
+User-agent: Twitterbot
+Allow: /
 
-**Phone update:** (201) 298-8393
+User-agent: facebookexternalhit
+Allow: /
 
-**Streamline services list to focus on Medigap:**
-- Medicare Supplement Plan G
-- Medicare Supplement Plan F
-- Medicare Supplement Plan N
-- Free Rate Comparison
-- Carrier Comparison
+User-agent: *
+Allow: /
 
-**Update company description:**
-- "Your trusted partner for Medicare Supplement insurance. We help seniors find the same coverage at a lower price."
-
-**Update copyright year to 2025**
+Sitemap: https://healthhelpers.co/sitemap.xml
+```
 
 ---
 
-## Content Strategy Notes
+### New File: `public/sitemap.xml`
 
-The homepage should feel educational and trustworthy, not salesy. Key messaging pillars:
+Create a sitemap with only the pages that should be indexed (NOT the funnel pages):
 
-1. **The Rate Trap Education** - Insurers raise rates on loyal customers
-2. **Standardization Message** - Plan G is Plan G, only the price differs
-3. **No-Risk Switching** - Same coverage, same doctors, just lower cost
-4. **Trust Signals** - Licensed agents, A+ carriers, nationwide service
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://healthhelpers.co/</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://healthhelpers.co/privacy-policy</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://healthhelpers.co/terms-of-service</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://healthhelpers.co/medicare-enrollment-guide</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://healthhelpers.co/how-to-enroll-in-medicare-online</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://healthhelpers.co/medicare-enrollment-periods</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://healthhelpers.co/enroll-medicare-yourself</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+</urlset>
+```
+
+**Note:** Funnel pages (`/supp`, `/supp1`, `/suppappt`, `/suppappt1`, `/suppquote`, `/disqualified`, `/great-rate`, `/analytics`, `/booking`, `/contactcard`) are intentionally excluded since they have `noindex` set.
 
 ---
 
-## Technical Notes
+## OG Image Recommendation
 
-- All phone numbers change from 201-589-1901 to 201-298-8393
-- Tel links format: `tel:+12012988393`
-- Display format: "(201) 298-8393"
-- No functional changes to tracking or analytics
-- Maintains existing design system (colors, shadows, gradients)
-- Mobile-responsive patterns remain unchanged
+The current OG image is just the logo (`ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png`). For optimal social sharing, an OG image should be:
+- **1200x630 pixels** (Facebook/LinkedIn recommended)
+- **Compelling headline text** visible in the image
+- **Brand colors and logo** included
+
+**Current approach:** Use the existing logo with absolute URL. A dedicated OG image can be created later and uploaded to `public/lovable-uploads/`.
+
+---
+
+## What This Does NOT Touch
+
+| File/Feature | Status |
+|--------------|--------|
+| All funnel pages (`/supp*`, etc.) | Unchanged - they manage their own SEO |
+| Tracking pixels in index.html | Unchanged - all preserved |
+| Facebook domain verification | Unchanged |
+| Preconnect hints | Unchanged |
+
+---
+
+## Summary
+
+| File | Change |
+|------|--------|
+| `index.html` | Update title, description, keywords, OG tags, Twitter tags, add canonical + robots |
+| `public/robots.txt` | Add sitemap reference |
+| `public/sitemap.xml` | New file with indexable pages only |
 
