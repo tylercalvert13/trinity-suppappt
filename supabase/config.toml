@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.get-user-location]
 verify_jwt = false
+
+[functions.vibe-test-event]
+verify_jwt = false
