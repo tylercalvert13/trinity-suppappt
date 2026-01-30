@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Phone, Mail, Menu } from "lucide-react";
+import { Phone, Menu } from "lucide-react";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -39,6 +39,7 @@ const Header = () => {
       element.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
   return (
     <header className="bg-background border-b border-border shadow-sm">
       <div className="container mx-auto px-4 py-4">
@@ -55,7 +56,7 @@ const Header = () => {
           {/* Navigation - Centered (Desktop only) */}
           <nav className="hidden lg:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
             <a href="#services" onClick={(e) => handleDesktopNavClick(e, "#services")} className="text-foreground hover:text-primary transition-colors">
-              Services
+              Plans
             </a>
             <a href="#about" onClick={(e) => handleDesktopNavClick(e, "#about")} className="text-foreground hover:text-primary transition-colors">
               About
@@ -75,7 +76,7 @@ const Header = () => {
             <SheetContent side="right" className="w-80">
               <div className="flex flex-col space-y-6 mt-6">
                 <a href="#services" onClick={(e) => handleMenuItemClick(e, "#services")} className="text-lg font-medium text-foreground hover:text-primary transition-colors">
-                  Services
+                  Plans
                 </a>
                 <a href="#about" onClick={(e) => handleMenuItemClick(e, "#about")} className="text-lg font-medium text-foreground hover:text-primary transition-colors">
                   About
@@ -85,11 +86,11 @@ const Header = () => {
                 </a>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground pt-4 border-t">
                   <Phone className="h-4 w-4" />
-                  <span>(201) 589-1901</span>
+                  <span>(201) 298-8393</span>
                 </div>
                 <Button variant="hero" className="w-full" onClick={() => {
                   setIsMenuOpen(false);
-                  window.location.href = 'tel:201-589-1901';
+                  window.location.href = 'tel:+12012988393';
                 }}>
                   Call Now
                 </Button>
@@ -101,9 +102,9 @@ const Header = () => {
           <div className="hidden lg:flex items-center space-x-4">
             <div className="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground">
               <Phone className="h-4 w-4" />
-              <span>(201) 589-1901</span>
+              <span>(201) 298-8393</span>
             </div>
-            <Button variant="hero" size="sm" onClick={() => window.location.href = 'tel:201-589-1901'}>
+            <Button variant="hero" size="sm" onClick={() => window.location.href = 'tel:+12012988393'}>
               Call Now
             </Button>
           </div>

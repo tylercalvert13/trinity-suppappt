@@ -15,13 +15,13 @@ const Footer = () => {
               />
             </a>
             <p className="text-primary-foreground/80 mb-4 max-w-md">
-              Your trusted partner for Medicare and health insurance solutions. 
-              We make healthcare coverage simple and affordable for seniors and their families.
+              Your trusted partner for Medicare Supplement insurance. We help seniors find the 
+              same coverage at a lower price by comparing rates from top-rated carriers.
             </p>
             <div className="space-y-2">
               <div className="flex items-center space-x-2 text-sm">
                 <Phone className="h-4 w-4" />
-                <span>(201) 589-1901</span>
+                <span>(201) 298-8393</span>
               </div>
               <div className="flex items-center space-x-2 text-sm">
                 <Mail className="h-4 w-4" />
@@ -29,21 +29,20 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-2 text-sm">
                 <MapPin className="h-4 w-4" />
-                <span>Licensed Nationwide</span>
+                <span>Licensed in All 50 States</span>
               </div>
             </div>
           </div>
 
-          {/* Services */}
+          {/* Medicare Supplement Plans */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Our Services</h3>
+            <h3 className="font-semibold text-lg mb-4">Medicare Supplement Plans</h3>
             <ul className="space-y-2 text-sm text-primary-foreground/80">
-              <li><a href="#" className="hover:text-accent transition-colors">Medicare Advantage</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Medicare Supplements</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">DVH Plans</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Hospital Indemnity</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Life Insurance</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Critical Illness</a></li>
+              <li><a href="#services" className="hover:text-accent transition-colors">Plan G</a></li>
+              <li><a href="#services" className="hover:text-accent transition-colors">Plan F</a></li>
+              <li><a href="#services" className="hover:text-accent transition-colors">Plan N</a></li>
+              <li><a href="#contact" className="hover:text-accent transition-colors">Free Rate Comparison</a></li>
+              <li><a href="#services" className="hover:text-accent transition-colors">Carrier Comparison</a></li>
             </ul>
           </div>
 
@@ -52,10 +51,8 @@ const Footer = () => {
             <h3 className="font-semibold text-lg mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm text-primary-foreground/80">
               <li><a href="/#about" className="hover:text-accent transition-colors">About Us</a></li>
-              <li><a href="/#services" className="hover:text-accent transition-colors">Services</a></li>
+              <li><a href="/#services" className="hover:text-accent transition-colors">Plans</a></li>
               <li><a href="/#contact" className="hover:text-accent transition-colors">Contact</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Free Quote</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Resources</a></li>
               <li><a href="/privacy-policy" className="hover:text-accent transition-colors">Privacy Policy</a></li>
               <li><a href="/terms-of-service" className="hover:text-accent transition-colors">Terms of Service</a></li>
             </ul>
@@ -65,10 +62,10 @@ const Footer = () => {
         <div className="border-t border-primary-foreground/20 pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-primary-foreground/60">
-              © 2024 Health Helpers. All rights reserved. Licensed insurance agency.
+              © 2025 Health Helpers. All rights reserved. Licensed insurance agency.
             </p>
             <p className="text-sm text-primary-foreground/60 mt-2 md:mt-0">
-              Medicare Plans have enrollment periods. Limitations and exclusions may apply.
+              Medicare Supplement insurance is underwritten by participating carriers. Limitations and exclusions may apply.
             </p>
           </div>
         </div>

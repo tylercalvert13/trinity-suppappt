@@ -1,8 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 
 const Contact = () => {
@@ -11,124 +8,90 @@ const Contact = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Get Your Free Medicare Consultation
+            Get Your Free Medicare Supplement Rate Comparison
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Have questions about Medicare? Our licensed agents are ready to help you understand 
-            your options and find the right coverage. Call us today or fill out the form below.
+            See if you're overpaying for your Medigap coverage. Our licensed agents will compare 
+            rates from top carriers and show you exactly how much you could save.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Contact Form */}
-          <div className="lg:col-span-2">
-            <Card className="shadow-card border-0">
-              <CardHeader>
-                <CardTitle className="text-2xl">Request a Call Back</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">First Name</label>
-                    <Input placeholder="Enter your first name" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Last Name</label>
-                    <Input placeholder="Enter your last name" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Phone Number</label>
-                    <Input placeholder="(555) 123-4567" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Email Address</label>
-                    <Input placeholder="your.email@example.com" type="email" />
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Contact Information */}
+          <Card className="shadow-card border-0">
+            <CardHeader>
+              <CardTitle className="text-xl">Contact Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-healthcare rounded-full flex items-center justify-center">
+                  <Phone className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">What can we help you with?</label>
-                  <Textarea 
-                    placeholder="I'm turning 65 soon and need help choosing a Medicare plan..." 
-                    rows={4}
-                  />
+                  <div className="font-medium text-foreground">(201) 298-8393</div>
+                  <div className="text-sm text-muted-foreground">Speak with an agent</div>
                 </div>
-                
-                {/* TCPA Consent Checkbox */}
-                <div className="flex items-start space-x-3 p-4 bg-muted rounded-lg">
-                  <Checkbox id="tcpa-consent" className="mt-1" />
-                  <label htmlFor="tcpa-consent" className="text-sm text-foreground leading-relaxed cursor-pointer">
-                    <span className="font-medium">Communication Consent:</span> By checking this box, I consent to receive calls, text messages, and emails from Health Helpers regarding my Medicare enrollment inquiry. I understand these communications may be made using an automatic telephone dialing system or prerecorded messages. I may receive up to 8 text messages per month. Message and data rates may apply. I can opt out at any time by texting STOP or calling directly. This consent is not required as a condition of service. I also agree to the <a href="/terms-of-service" className="text-primary hover:underline font-medium" target="_blank" rel="noopener noreferrer">Terms of Service</a>.
-                  </label>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-healthcare rounded-full flex items-center justify-center">
+                  <Mail className="h-5 w-5 text-primary" />
                 </div>
-                
-                <Button variant="hero" size="lg" className="w-full" onClick={() => window.location.href = 'tel:201-589-1901'}>
-                  Request Consultation
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+                <div>
+                  <div className="font-medium text-foreground">support@healthhelpers.co</div>
+                  <div className="text-sm text-muted-foreground">Email us anytime</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-healthcare rounded-full flex items-center justify-center">
+                  <MapPin className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <div className="font-medium text-foreground">Serving Nationwide</div>
+                  <div className="text-sm text-muted-foreground">Licensed in all 50 states</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-healthcare rounded-full flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <div className="font-medium text-foreground">Mon-Fri: 9AM-5PM EST</div>
+                  <div className="text-sm text-muted-foreground">Saturday: 10AM-2PM EST</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Contact Information */}
-          <div className="space-y-6">
-            <Card className="shadow-card border-0">
-              <CardHeader>
-                <CardTitle className="text-xl">Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-healthcare rounded-full flex items-center justify-center">
-                    <Phone className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-foreground">(201) 589-1901</div>
-                    <div className="text-sm text-muted-foreground">Speak with an agent</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-healthcare rounded-full flex items-center justify-center">
-                    <Mail className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-foreground">support@healthhelpers.co</div>
-                    <div className="text-sm text-muted-foreground">Email us anytime</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-healthcare rounded-full flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-foreground">Serving Nationwide</div>
-                    <div className="text-sm text-muted-foreground">Licensed in all 50 states</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-healthcare rounded-full flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-foreground">Mon-Fri: 8AM-6PM</div>
-                    <div className="text-sm text-muted-foreground">Saturday: 9AM-2PM</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-card border-0 bg-primary text-primary-foreground">
-              <CardContent className="pt-6">
-                <h3 className="font-bold text-lg mb-2">Ready to Get Started?</h3>
-                <p className="text-primary-foreground/90 mb-4 text-sm">
-                  Call now to speak with a licensed Medicare specialist who can answer your questions 
-                  and help you enroll in the right plan.
-                </p>
-                <Button variant="outline" className="w-full bg-background text-primary hover:bg-background/90" onClick={() => window.location.href = 'tel:201-589-1901'}>
-                  Call (201) 589-1901
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+          {/* CTA Card */}
+          <Card className="shadow-card border-0 bg-primary text-primary-foreground">
+            <CardContent className="pt-8 pb-8 flex flex-col justify-center h-full">
+              <h3 className="font-bold text-2xl mb-4">Ready to Compare Rates?</h3>
+              <p className="text-primary-foreground/90 mb-6">
+                Call now to speak with a licensed Medicare Supplement specialist. We'll compare 
+                rates from top-rated carriers and show you how much you could save—with no 
+                obligation and no pressure.
+              </p>
+              <ul className="space-y-2 mb-6 text-primary-foreground/90">
+                <li className="flex items-center gap-2">
+                  <span className="text-accent">✓</span> Free rate comparison
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-accent">✓</span> Takes just 2 minutes
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-accent">✓</span> No obligation to switch
+                </li>
+              </ul>
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="w-full bg-background text-primary hover:bg-background/90 text-lg" 
+                onClick={() => window.location.href = 'tel:+12012988393'}
+              >
+                Call (201) 298-8393
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
