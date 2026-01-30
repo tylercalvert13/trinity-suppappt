@@ -36,7 +36,8 @@ interface SlotData {
   display: string;  // Formatted for user's timezone
 }
 
-// Generate next 4 available weekdays, respecting 4 PM Eastern cutoff for "today"
+// Generate next N available weekdays, respecting 4 PM Eastern cutoff for "today"
+// We generate more than we need so we can filter out days with no slots
 function getNextAvailableWeekdays(count: number): Date[] {
   const weekdays: Date[] = [];
   const now = new Date();
@@ -312,8 +313,8 @@ export function AppointmentBookingWidget({
     }
   }, [bookingStep, confirmedTime]);
 
-  // Get next 4 available weekdays
-  const availableWeekdays = useMemo(() => getNextAvailableWeekdays(4), []);
+  // Get next 10 candidate weekdays (we'll filter to show only 4 with availability)
+  const candidateWeekdays = useMemo(() => getNextAvailableWeekdays(10), []);
 
   // Track widget view on mount
   useEffect(() => {
@@ -326,8 +327,6 @@ export function AppointmentBookingWidget({
     
     return () => clearTimeout(pulseTimer);
   }, [onTrackEvent]);
-  
-  // Auto-select functionality removed to let users choose their preferred day
 
   // Check if morning/afternoon have slots
   const hasMorningSlots = useMemo(() => 
@@ -335,13 +334,13 @@ export function AppointmentBookingWidget({
   const hasAfternoonSlots = useMemo(() => 
     availableSlots.some(slot => isAfternoonSlot(slot.original)), [availableSlots]);
 
-  // Batch preload ALL days' slots on mount (single API call)
+  // Batch preload ALL candidate days' slots on mount (single API call)
   useEffect(() => {
     // Skip if already preloaded
     if (preloadedSlots.size > 0) return;
     
-    const firstDay = availableWeekdays[0];
-    const lastDay = availableWeekdays[availableWeekdays.length - 1];
+    const firstDay = candidateWeekdays[0];
+    const lastDay = candidateWeekdays[candidateWeekdays.length - 1];
     if (!firstDay || !lastDay) return;
     
     const startDate = formatDateString(firstDay);
@@ -368,6 +367,7 @@ export function AppointmentBookingWidget({
           const newCache = new Map<string, SlotData[]>();
           
           for (const [dateStr, slots] of Object.entries(data.slotsByDate)) {
+            // Backend now returns [] for empty days, so we always cache
             const slotsWithDisplay: SlotData[] = (slots as string[]).map((slot: string) => ({
               original: slot,
               display: convertToUserTimezone(slot, userTimezone)
@@ -377,8 +377,23 @@ export function AppointmentBookingWidget({
           
           setPreloadedSlots(newCache);
           console.log('[Batch Preload] Cached slots for', newCache.size, 'days');
+          
+          // Check if we have any days with slots
+          const daysWithSlots = Array.from(newCache.entries()).filter(([_, slots]) => slots.length > 0);
+          if (daysWithSlots.length === 0) {
+            setPreloadError('No availability');
+            // Track analytics for no slots in range
+            onTrackEvent?.({ 
+              eventType: 'booking_error', 
+              metadata: { error: 'no_slots_in_range', startDate, endDate }
+            });
+          }
         } else {
           setPreloadError('No availability');
+          onTrackEvent?.({ 
+            eventType: 'booking_error', 
+            metadata: { error: 'no_slots_in_range', startDate, endDate }
+          });
         }
       } catch (err) {
         console.error('[Batch Preload] Error:', err);
@@ -389,7 +404,26 @@ export function AppointmentBookingWidget({
     };
 
     preloadAllSlots();
-  }, [availableWeekdays, userTimezone]);
+  }, [candidateWeekdays, userTimezone, onTrackEvent]);
+  
+  // Filter to only show days with actual availability (max 4)
+  const availableWeekdays = useMemo(() => {
+    if (isPreloading) {
+      // While loading, show first 4 candidates as placeholders
+      return candidateWeekdays.slice(0, 4);
+    }
+    
+    // Filter to days that have slots
+    const daysWithSlots = candidateWeekdays.filter(date => {
+      const dateStr = formatDateString(date);
+      const slots = preloadedSlots.get(dateStr);
+      // Only show if we have data AND slots > 0
+      return slots && slots.length > 0;
+    });
+    
+    // Return first 4 days with availability
+    return daysWithSlots.slice(0, 4);
+  }, [candidateWeekdays, preloadedSlots, isPreloading]);
 
   // Fetch available slots for a date (uses cache if available)
   const fetchSlots = async (date: Date, dayLabel: string) => {
@@ -680,42 +714,51 @@ export function AppointmentBookingWidget({
           {/* Availability Indicator */}
           <div className="text-center mb-4 flex items-center justify-center gap-2 text-gray-600">
             <span>📅</span>
-            <span className="text-sm">Our agents have limited openings this week</span>
+            <span className="text-sm">
+              {isPreloading ? 'Checking available times...' : 'Our agents have limited openings this week'}
+            </span>
           </div>
 
-          {availableWeekdays
-            .filter((date) => {
-              // Always show during preloading (prevents layout shift)
-              if (isPreloading) return true;
-              
-              const dateStr = formatDateString(date);
-              const hasPreloadedData = preloadedSlots.has(dateStr);
-              const slotCount = preloadedSlots.get(dateStr)?.length || 0;
-              
-              // Hide days we know have 0 slots
-              if (hasPreloadedData && slotCount === 0) return false;
-              
-              // Show days we don't have data for (edge case / fallback)
-              return true;
-            })
-            .map((date, index) => {
+          {/* Show loading state if preloading and no days to show yet */}
+          {isPreloading && availableWeekdays.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 text-green-600 animate-spin mb-3" />
+              <p className="text-gray-600">Loading available times...</p>
+            </div>
+          )}
+
+          {/* No availability fallback */}
+          {!isPreloading && availableWeekdays.length === 0 && (
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 text-center">
+              <p className="text-amber-800 font-medium mb-2">No online appointments available soon</p>
+              <p className="text-gray-600 text-sm mb-4">Our calendar is fully booked for the next two weeks.</p>
+              <a 
+                href="tel:+12012988393" 
+                className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors"
+              >
+                <Phone className="w-5 h-5" />
+                Call Now: (201) 298-8393
+              </a>
+              <p className="text-gray-500 text-xs mt-3">We can often fit you in same-day by phone</p>
+            </div>
+          )}
+
+          {/* Day buttons - only shown days with actual availability */}
+          {availableWeekdays.map((date, index) => {
             const { primary, secondary } = formatDateLabel(date, index);
             const dateStr = formatDateString(date);
-            const isFirstDay = index === 0;
             const hasPreloadedData = preloadedSlots.has(dateStr);
             const preloadedData = preloadedSlots.get(dateStr);
             const slotCount = preloadedData?.length || 0;
             
             // Determine availability badge text
-            let availabilityBadge = 'Morning & Afternoon';
-            let badgeColor = 'text-green-600';
+            let availabilityBadge = 'Checking times...';
+            let badgeColor = 'text-gray-400';
+            let isDisabled = isPreloading || isBooking;
             
-            if (isFirstDay && isPreloading) {
-              availabilityBadge = 'Loading times...';
+            if (isPreloading) {
+              availabilityBadge = 'Checking times...';
               badgeColor = 'text-gray-400';
-            } else if (isFirstDay && preloadError) {
-              availabilityBadge = preloadError;
-              badgeColor = 'text-amber-600';
             } else if (hasPreloadedData && slotCount > 0) {
               const hasMorning = preloadedData?.some(s => isMorningSlot(s.original));
               const hasAfternoon = preloadedData?.some(s => isAfternoonSlot(s.original));
@@ -727,22 +770,23 @@ export function AppointmentBookingWidget({
                 availabilityBadge = 'Afternoon available';
               }
               badgeColor = 'text-green-600';
+              isDisabled = isBooking;
             }
             
             return (
               <button
                 key={date.toISOString()}
                 onClick={() => handleDaySelect(date, primary)}
-                disabled={isBooking}
+                disabled={isDisabled}
                 className={`w-full min-h-[70px] p-4 bg-white border-2 border-gray-200 rounded-xl 
                          hover:border-green-600 hover:bg-green-50 transition-all
                          flex flex-col items-center justify-center
-                         ${isBooking ? 'opacity-50 cursor-not-allowed' : ''}`}
+                         ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <span className="text-xl font-semibold text-gray-900">{primary}</span>
                 <span className="text-gray-500">{secondary}</span>
                 <span className={`text-xs mt-1 flex items-center gap-1 ${badgeColor}`}>
-                  {isFirstDay && isPreloading && <Loader2 className="w-3 h-3 animate-spin" />}
+                  {isPreloading && <Loader2 className="w-3 h-3 animate-spin" />}
                   {availabilityBadge}
                 </span>
               </button>
