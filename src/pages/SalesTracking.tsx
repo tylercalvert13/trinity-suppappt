@@ -331,7 +331,7 @@ export default function SalesTracking() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <StatCard
             title="Total Sales"
             value={loading ? null : data?.totalSales ?? 0}
@@ -369,13 +369,6 @@ export default function SalesTracking() {
             value={loading ? null : formatCurrency(data?.totalCommission ?? 0)}
             icon={<DollarSign className="h-5 w-5 text-blue-500" />}
             subtitle="▲ Live data"
-            loading={loading}
-          />
-          <StatCard
-            title="Total Leads"
-            value={loading ? null : data?.totalLeads ?? 0}
-            icon={<Users className="h-5 w-5" />}
-            subtitle={`+${data?.recentSubmissions?.filter((s) => formatDate(s.date) === formatDate(new Date().toISOString())).length || 0} today`}
             loading={loading}
           />
         </div>
