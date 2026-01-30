@@ -1,103 +1,83 @@
 
-# Create Sales Tracking Dashboard Page
+# Fix Sales Tracking Dashboard Column References
 
-## Overview
-Convert the uploaded HTML dashboard to a React page at `/salestracking` that displays live sales data from two Google Sheets CSV URLs. The dashboard will show sales KPIs, agent performance, and recent submissions.
-
----
-
-## Data Sources
-
-| Data | URL |
-|------|-----|
-| Tracking (daily stats) | `https://docs.google.com/spreadsheets/d/e/2PACX-1vRsCOzfJF0q1V49FLlNRi6FYVac_rlo-xsGZOhTi6hVI_lcHb-2-TC9LOL5RiMRT0A5cA8jei4V3hv2/pub?gid=100064359&single=true&output=csv` |
-| Submissions | `https://docs.google.com/spreadsheets/d/e/2PACX-1vRsCOzfJF0q1V49FLlNRi6FYVac_rlo-xsGZOhTi6hVI_lcHb-2-TC9LOL5RiMRT0A5cA8jei4V3hv2/pub?gid=1684442142&single=true&output=csv` |
+## Problem
+The dashboard is referencing incorrect column names from the Submissions CSV and has incorrect logic for "Total Sales" count.
 
 ---
 
-## Dashboard Features
+## Column Mapping Fix
 
-### Header Section
-- Title: "Health Helpers Dashboard"
-- Subtitle: "Medicare Supplement Sales Tracker"
-- Last updated timestamp with refresh button
-
-### Stats Grid (6 cards)
-- **Total Sales** - count of all sales (approved + pending)
-- **Approved** - count with approval rate percentage
-- **Pending** - count awaiting decision
-- **Total Premium** - sum of approved premiums
-- **Total Commission** - sum of commissions
-- **Total Leads** - from submissions count
-
-### Charts (2 side-by-side)
-- **Sales by Day** - Bar chart using Recharts (existing library)
-- **Sales by Agent** - Pie/Donut chart using Recharts
-
-### Tables (2 side-by-side)
-- **Top Agents** - Agent name, sales count, premium, commission, approved ratio
-- **Recent Submissions** - Date, client, agent, premium, status badge
+| Dashboard Expects | Actual CSV Column |
+|-------------------|-------------------|
+| `Client Name` / `clientName` / `Name` | `Client` |
+| Other columns | Already correct (Date, Agent, Premium, Status, Commission) |
 
 ---
 
-## Files to Create/Modify
+## Calculation Logic Fixes
 
-### 1. Create `src/pages/SalesTracking.tsx`
-New React component containing:
-- CSV fetching and parsing logic (converted from the HTML's JavaScript)
-- State management for dashboard data
-- Stats cards using existing Card components
-- Bar and Pie charts using Recharts (already installed)
-- Data tables using existing Table components
-- Gradient background styling matching the original
-- Refresh button functionality
-- Loading and error states
+### Total Sales
+- **Current**: Counts only `approved + pending`
+- **Should be**: Count ALL submissions regardless of status
 
-### 2. Update `src/App.tsx`
-Add the new route:
+### Premium & Commission (Already Correct)
+- Current code already filters for `status === "approved"` before summing Premium and Commission
+- No change needed for revenue calculations
+
+### Status Counts (Minor Fix)
+- Add counting for Denied status separately (already done, but verify totals)
+
+---
+
+## Files to Modify
+
+### `src/pages/SalesTracking.tsx`
+
+#### 1. Fix Client Column Mapping (line ~172)
 ```text
-const SalesTracking = lazy(() => import("./pages/SalesTracking"));
-...
-<Route path="/salestracking" element={<SalesTracking />} />
+Before: row["Client Name"] || row["clientName"] || row["Name"]
+After:  row["Client"] || row["Client Name"] || row["clientName"]
+```
+
+#### 2. Fix Total Sales Calculation (line ~255)
+```text
+Before: totalSales: approved + pending
+After:  totalSales: submissions.length (count ALL submissions)
 ```
 
 ---
 
-## Technical Implementation
+## Technical Details
 
-### CSV Parsing
-Convert the HTML's `parseCSV` function to handle:
-- Quoted values with commas inside
-- Header row extraction
-- Type coercion for numbers
+The Submissions tab has these exact column headers:
+- **A**: Date
+- **B**: Agent  
+- **C**: Client
+- **D**: State
+- **E**: Previous Carrier
+- **F**: New Carrier
+- **G**: Premium
+- **H**: Status
+- **I**: Commission
+- **J**: Submission ID
 
-### Data Processing Functions
-- `processSubmissions()` - Calculate totals, approved/pending counts, recent entries
-- `processDailyData()` - Extract last 7 days for bar chart
-- `processAgentData()` - Aggregate by agent for pie chart and table
-
-### UI Components Used
-- `Card`, `CardHeader`, `CardContent` from existing UI library
-- `Table`, `TableHeader`, `TableRow`, `TableCell` from existing UI library
-- `Badge` for status display
-- `Button` for refresh action
-- Recharts: `BarChart`, `PieChart`, `ResponsiveContainer`, `Tooltip`, `Legend`, `Cell`
-
-### Status Badge Colors
-| Status | Color |
-|--------|-------|
-| Approved | Green (`bg-green-100 text-green-800`) |
-| Pending | Yellow (`bg-yellow-100 text-yellow-800`) |
-| Denied | Red (`bg-red-100 text-red-800`) |
+The code will now:
+1. Dynamically match column headers from the CSV (case-insensitive fallbacks)
+2. Count **all** submissions for Total Sales
+3. Only include **Approved** status rows when summing Premium and Commission
+4. Group by Agent with correct totals per agent
 
 ---
 
 ## Expected Result
-A fully functional sales tracking dashboard at `/salestracking` that:
-- Fetches live data from the Google Sheets CSV URLs
-- Displays 6 KPI stat cards
-- Shows interactive bar chart (sales by day) and donut chart (sales by agent)
-- Lists top agents with performance metrics
-- Shows 5 most recent submissions with status badges
-- Supports manual refresh
-- Has responsive layout for mobile/desktop
+
+| Metric | Calculation |
+|--------|-------------|
+| Total Sales | Count of ALL rows in Submissions tab |
+| Approved | Count where Status = "Approved" |
+| Pending | Count where Status = "Pending" |
+| Denied | Count where Status = "Denied" |
+| Annual Premium | Sum of Premium where Status = "Approved" |
+| Total Commission | Sum of Commission where Status = "Approved" |
+| Agent Table | Grouped by Agent with Sales (all), Premium (approved), Commission (approved), Approved/Total ratio |
