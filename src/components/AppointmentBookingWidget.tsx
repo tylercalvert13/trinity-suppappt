@@ -644,9 +644,14 @@ export function AppointmentBookingWidget({
               <h2 className="text-2xl font-bold text-gray-900">Schedule Your Consultation</h2>
               <p className="text-gray-600 mt-1 text-sm">Pick a convenient time for your free Medicare consultation</p>
             </>
+          ) : isRefundAngle ? (
+            <>
+              <h2 className="text-2xl font-bold text-gray-900">Pick a Time to Lock In Your Money Back</h2>
+              <p className="text-gray-600 mt-1 text-sm">Medicare rates can change daily – this quote is only guaranteed once we confirm your policy</p>
+            </>
           ) : (
             <>
-              <h2 className="text-2xl font-bold text-gray-900">Lock In Your ${monthlySavings.toFixed(2)} Savings</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Lock In Your ${Math.round(monthlySavings)} Savings</h2>
               <p className="text-gray-600 mt-1 text-sm">Medicare rates can change daily – this quote is only guaranteed once we confirm your policy</p>
             </>
           )}

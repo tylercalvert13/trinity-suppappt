@@ -101,7 +101,7 @@ export function ExitIntentModalRefund({ monthlySavings, onBookClick }: ExitInten
             <Clock className="h-8 w-8 text-amber-600" />
           </div>
           <DialogTitle className="text-2xl font-bold text-foreground">
-            Wait! Your ${monthlySavings.toFixed(2)}/month refund expires soon.
+            Wait! Your ${Math.round(monthlySavings)}/month refund expires soon.
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
