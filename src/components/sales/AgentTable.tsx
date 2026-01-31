@@ -32,13 +32,13 @@ export function AgentTable({ data, loading }: AgentTableProps) {
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table className="min-w-[400px]">
+          <div className="w-full overflow-x-auto">
+            <Table className="min-w-max whitespace-nowrap">
               <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs sm:text-sm">Agent</TableHead>
                     <TableHead className="text-right text-xs sm:text-sm">Sales</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm hidden sm:table-cell">Premium</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">Premium</TableHead>
                     <TableHead className="text-right text-xs sm:text-sm">Comm.</TableHead>
                     <TableHead className="text-right text-xs sm:text-sm">Appr.</TableHead>
                   </TableRow>
@@ -55,7 +55,7 @@ export function AgentTable({ data, loading }: AgentTableProps) {
                       <TableRow key={index}>
                         <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-4">{agent.name}</TableCell>
                         <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{agent.sales}</TableCell>
-                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4 hidden sm:table-cell">
+                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">
                           {formatCurrency(agent.premium)}
                         </TableCell>
                         <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">
