@@ -56,7 +56,7 @@ export default function SalesTracking() {
         {/* Stats Grid - 6 Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <StatCard
-            title="Total Sales"
+            title="Total Applications"
             value={loading ? null : data?.totalSales ?? 0}
             icon={<TrendingUp className="h-5 w-5" />}
             subtitle="All submissions"
