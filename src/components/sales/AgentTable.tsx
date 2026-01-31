@@ -32,10 +32,9 @@ export function AgentTable({ data, loading }: AgentTableProps) {
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-2 sm:mx-0">
-            <div className="min-w-[400px] px-2 sm:px-0">
-              <Table>
-                <TableHeader>
+          <div className="overflow-x-auto">
+            <Table className="min-w-[400px]">
+              <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs sm:text-sm">Agent</TableHead>
                     <TableHead className="text-right text-xs sm:text-sm">Sales</TableHead>
@@ -67,10 +66,9 @@ export function AgentTable({ data, loading }: AgentTableProps) {
                         </TableCell>
                       </TableRow>
                     ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                )}
+              </TableBody>
+            </Table>
           </div>
         )}
       </CardContent>
