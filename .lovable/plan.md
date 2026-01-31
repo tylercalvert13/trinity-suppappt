@@ -1,32 +1,32 @@
 
-# Fix Sales Tracking Dashboard Column References
+# Simplify & Enhance Sales Dashboard - Submissions Only
 
-## Problem
-The dashboard is referencing incorrect column names from the Submissions CSV and has incorrect logic for "Total Sales" count.
-
----
-
-## Column Mapping Fix
-
-| Dashboard Expects | Actual CSV Column |
-|-------------------|-------------------|
-| `Client Name` / `clientName` / `Name` | `Client` |
-| Other columns | Already correct (Date, Agent, Premium, Status, Commission) |
+## Overview
+Remove the Tracking tab dependency and enhance the dashboard using only the Submissions tab data. Add new insights using the additional columns available (State, Previous Carrier, New Carrier).
 
 ---
 
-## Calculation Logic Fixes
+## Changes Summary
 
-### Total Sales
-- **Current**: Counts only `approved + pending`
-- **Should be**: Count ALL submissions regardless of status
+### 1. Remove Tracking Tab Dependency
+- Delete the `TRACKING_URL` constant
+- Simplify fetch to only call `SUBMISSIONS_URL`
+- Generate daily stats purely from submission dates (already has fallback logic)
 
-### Premium & Commission (Already Correct)
-- Current code already filters for `status === "approved"` before summing Premium and Commission
-- No change needed for revenue calculations
+### 2. Update Data Model
+Add new fields from the spreadsheet:
+- **State** - For geographic insights
+- **Previous Carrier** - Track where clients are switching from
+- **New Carrier** - Track which carriers we're placing with
 
-### Status Counts (Minor Fix)
-- Add counting for Denied status separately (already done, but verify totals)
+### 3. New Dashboard Enhancements
+
+| New Feature | Description |
+|-------------|-------------|
+| **Carrier Breakdown** | Pie chart showing New Carrier distribution |
+| **State Distribution** | Show which states have the most sales |
+| **Avg Commission** | Display average commission per approved sale |
+| **Pending Premium** | Show potential premium from pending sales |
 
 ---
 
@@ -34,50 +34,100 @@ The dashboard is referencing incorrect column names from the Submissions CSV and
 
 ### `src/pages/SalesTracking.tsx`
 
-#### 1. Fix Client Column Mapping (line ~172)
+#### Data Fetching (lines 147-273)
+- Remove `TRACKING_URL` fetch
+- Add state, previousCarrier, newCarrier to Submission interface
+- Generate dailyStats directly from submissions (remove tracking fallback)
+
+#### New Stats Calculations
 ```text
-Before: row["Client Name"] || row["clientName"] || row["Name"]
-After:  row["Client"] || row["Client Name"] || row["clientName"]
+- avgCommission = totalCommission / approved
+- pendingPremium = sum of premium where status = "pending"
+- carrierStats = group by New Carrier with counts
+- stateStats = group by State with counts
 ```
 
-#### 2. Fix Total Sales Calculation (line ~255)
-```text
-Before: totalSales: approved + pending
-After:  totalSales: submissions.length (count ALL submissions)
-```
+#### Enhanced Stats Grid
+Replace current 5-card grid with 6 cards:
+1. Total Sales (all submissions)
+2. Approved (with approval rate)
+3. Pending (with pending premium as subtitle)
+4. Denied (new card)
+5. Total Premium (approved only)
+6. Total Commission (approved only, with avg per sale)
+
+#### New Charts
+- **Replace "Sales by Day"** with a stacked bar showing Approved vs Pending by day
+- **Add "Top Carriers"** chart showing New Carrier distribution
+
+#### Enhanced Recent Submissions Table
+Add columns:
+- State
+- Previous Carrier → New Carrier (as a transition indicator)
 
 ---
 
 ## Technical Details
 
-The Submissions tab has these exact column headers:
-- **A**: Date
-- **B**: Agent  
-- **C**: Client
-- **D**: State
-- **E**: Previous Carrier
-- **F**: New Carrier
-- **G**: Premium
-- **H**: Status
-- **I**: Commission
-- **J**: Submission ID
+### Submission Interface Update
+```text
+interface Submission {
+  date: string;
+  agent: string;
+  clientName: string;
+  state: string;
+  previousCarrier: string;
+  newCarrier: string;
+  premium: number;
+  status: string;
+  commission: number;
+}
+```
 
-The code will now:
-1. Dynamically match column headers from the CSV (case-insensitive fallbacks)
-2. Count **all** submissions for Total Sales
-3. Only include **Approved** status rows when summing Premium and Commission
-4. Group by Agent with correct totals per agent
+### New Carrier Stats Interface
+```text
+interface CarrierStats {
+  name: string;
+  count: number;
+  premium: number;
+}
+```
+
+### Daily Stats Enhancement
+```text
+interface DailyStats {
+  date: string;
+  approved: number;
+  pending: number;
+  denied: number;
+  total: number;
+}
+```
+
+---
+
+## Calculation Logic (Unchanged Core)
+
+| Metric | Calculation |
+|--------|-------------|
+| Total Sales | Count of ALL submissions |
+| Approved | Count where Status = "Approved" |
+| Pending | Count where Status = "Pending" |
+| Denied | Count where Status = "Denied" |
+| Total Premium | Sum Premium where Status = "Approved" |
+| Total Commission | Sum Commission where Status = "Approved" |
+| Pending Premium (new) | Sum Premium where Status = "Pending" |
+| Avg Commission (new) | Total Commission / Approved count |
 
 ---
 
 ## Expected Result
 
-| Metric | Calculation |
-|--------|-------------|
-| Total Sales | Count of ALL rows in Submissions tab |
-| Approved | Count where Status = "Approved" |
-| Pending | Count where Status = "Pending" |
-| Denied | Count where Status = "Denied" |
-| Annual Premium | Sum of Premium where Status = "Approved" |
-| Total Commission | Sum of Commission where Status = "Approved" |
-| Agent Table | Grouped by Agent with Sales (all), Premium (approved), Commission (approved), Approved/Total ratio |
+A streamlined dashboard that:
+- Fetches from only the Submissions tab (single data source)
+- Shows 6 KPI cards including Denied count and enhanced subtitles
+- Displays stacked bar chart with Approved/Pending/Denied by day
+- Shows carrier distribution to see which carriers are most popular
+- Lists top agents with complete metrics
+- Shows recent submissions with state and carrier transition info
+- Maintains existing refresh and loading states
