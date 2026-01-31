@@ -77,66 +77,78 @@ export default function SalesTracking() {
           </TabsList>
 
           <TabsContent value="sales" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
-            {/* Stats Grid - 6 Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-              <StatCard
-                title="Total Applications"
-                value={salesLoading ? null : salesData?.totalSales ?? 0}
-                icon={<TrendingUp className="h-5 w-5" />}
-                subtitle="All submissions"
-                loading={salesLoading}
-              />
-              <StatCard
-                title="Approved"
-                value={salesLoading ? null : salesData?.approved ?? 0}
-                icon={<CheckCircle className="h-5 w-5 text-green-500" />}
-                subtitle={
-                  salesData && salesData.totalSales > 0
-                    ? `${Math.round((salesData.approved / salesData.totalSales) * 100)}% rate`
-                    : "—"
-                }
-                loading={salesLoading}
-              />
-              <StatCard
-                title="Pending"
-                value={salesLoading ? null : salesData?.pending ?? 0}
-                icon={<Clock className="h-5 w-5 text-yellow-500" />}
-                subtitle={
-                  salesData && salesData.pendingPremium > 0
-                    ? `${formatCurrency(salesData.pendingPremium)} potential`
-                    : "Awaiting decision"
-                }
-                loading={salesLoading}
-              />
-              <StatCard
-                title="Denied"
-                value={salesLoading ? null : salesData?.denied ?? 0}
-                icon={<XCircle className="h-5 w-5 text-red-500" />}
-                subtitle={
-                  salesData && salesData.totalSales > 0
-                    ? `${Math.round((salesData.denied / salesData.totalSales) * 100)}% rate`
-                    : "—"
-                }
-                loading={salesLoading}
-              />
-              <StatCard
-                title="Total Premium"
-                value={salesLoading ? null : formatCurrency(salesData?.totalPremium ?? 0)}
-                icon={<DollarSign className="h-5 w-5 text-green-500" />}
-                subtitle="Approved only"
-                loading={salesLoading}
-              />
-              <StatCard
-                title="Total Commission"
-                value={salesLoading ? null : formatCurrency(salesData?.totalCommission ?? 0)}
-                icon={<DollarSign className="h-5 w-5 text-blue-500" />}
-                subtitle={
-                  salesData && salesData.avgCommission > 0
-                    ? `Avg: ${formatCurrency(salesData.avgCommission)}/sale`
-                    : "Approved only"
-                }
-                loading={salesLoading}
-              />
+            {/* Stats Grid - 6 Cards - Horizontally scrollable on mobile */}
+            <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:gap-4 sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0">
+              <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <StatCard
+                  title="Total Applications"
+                  value={salesLoading ? null : salesData?.totalSales ?? 0}
+                  icon={<TrendingUp className="h-5 w-5" />}
+                  subtitle="All submissions"
+                  loading={salesLoading}
+                />
+              </div>
+              <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <StatCard
+                  title="Approved"
+                  value={salesLoading ? null : salesData?.approved ?? 0}
+                  icon={<CheckCircle className="h-5 w-5 text-green-500" />}
+                  subtitle={
+                    salesData && salesData.totalSales > 0
+                      ? `${Math.round((salesData.approved / salesData.totalSales) * 100)}% rate`
+                      : "—"
+                  }
+                  loading={salesLoading}
+                />
+              </div>
+              <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <StatCard
+                  title="Pending"
+                  value={salesLoading ? null : salesData?.pending ?? 0}
+                  icon={<Clock className="h-5 w-5 text-yellow-500" />}
+                  subtitle={
+                    salesData && salesData.pendingPremium > 0
+                      ? `${formatCurrency(salesData.pendingPremium)} potential`
+                      : "Awaiting decision"
+                  }
+                  loading={salesLoading}
+                />
+              </div>
+              <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <StatCard
+                  title="Denied"
+                  value={salesLoading ? null : salesData?.denied ?? 0}
+                  icon={<XCircle className="h-5 w-5 text-red-500" />}
+                  subtitle={
+                    salesData && salesData.totalSales > 0
+                      ? `${Math.round((salesData.denied / salesData.totalSales) * 100)}% rate`
+                      : "—"
+                  }
+                  loading={salesLoading}
+                />
+              </div>
+              <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <StatCard
+                  title="Total Premium"
+                  value={salesLoading ? null : formatCurrency(salesData?.totalPremium ?? 0)}
+                  icon={<DollarSign className="h-5 w-5 text-green-500" />}
+                  subtitle="Approved only"
+                  loading={salesLoading}
+                />
+              </div>
+              <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <StatCard
+                  title="Total Commission"
+                  value={salesLoading ? null : formatCurrency(salesData?.totalCommission ?? 0)}
+                  icon={<DollarSign className="h-5 w-5 text-blue-500" />}
+                  subtitle={
+                    salesData && salesData.avgCommission > 0
+                      ? `Avg: ${formatCurrency(salesData.avgCommission)}/sale`
+                      : "Approved only"
+                  }
+                  loading={salesLoading}
+                />
+              </div>
             </div>
 
             {/* Charts Row */}
