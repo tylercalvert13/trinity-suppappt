@@ -9,6 +9,7 @@ import {
   Legend,
 } from "recharts";
 import type { CarrierStats } from "@/types/salesTracking";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const CHART_COLORS = [
   "#3b82f6",
@@ -27,34 +28,36 @@ interface CarrierChartProps {
 }
 
 export function CarrierChart({ data, loading }: CarrierChartProps) {
+  const isMobile = useIsMobile();
+  
   return (
     <Card className="bg-white/95 backdrop-blur">
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          🏢 Top Carriers (Approved Sales)
+      <CardHeader className="pb-2 sm:pb-4">
+        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+          🏢 Top Carriers
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         {loading ? (
-          <Skeleton className="h-[250px] w-full" />
+          <Skeleton className="h-[200px] sm:h-[250px] w-full" />
         ) : data.length === 0 ? (
-          <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+          <div className="h-[200px] sm:h-[250px] flex items-center justify-center text-muted-foreground text-sm">
             No carrier data yet
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={isMobile ? 200 : 250}>
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={50}
-                outerRadius={80}
+                innerRadius={isMobile ? 35 : 50}
+                outerRadius={isMobile ? 60 : 80}
                 paddingAngle={2}
                 dataKey="count"
                 nameKey="name"
-                label={({ name, count }) => `${name}: ${count}`}
-                labelLine={false}
+                label={isMobile ? false : ({ name, count }) => `${name}: ${count}`}
+                labelLine={!isMobile}
               >
                 {data.map((_, index) => (
                   <Cell
@@ -68,10 +71,14 @@ export function CarrierChart({ data, loading }: CarrierChartProps) {
                   backgroundColor: "hsl(var(--card))",
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "8px",
+                  fontSize: isMobile ? 12 : 14,
                 }}
                 formatter={(value: number, name: string) => [value, name]}
               />
-              <Legend />
+              <Legend 
+                iconSize={isMobile ? 10 : 14}
+                wrapperStyle={{ fontSize: isMobile ? 10 : 12 }}
+              />
             </PieChart>
           </ResponsiveContainer>
         )}
