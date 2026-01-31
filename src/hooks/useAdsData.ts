@@ -79,28 +79,34 @@ export function useAdsData() {
       let totalLeads = 0;
       let totalAppointments = 0;
 
-      const dailyStats: DailyAdsStats[] = rawData.map((row) => {
-        const spend = parseNumber(row["Spend"] || row["spend"] || "0");
-        const leads = parseNumber(row["Leads"] || row["leads"] || "0");
-        const appointments = parseNumber(row["Appointments"] || row["appointments"] || "0");
-        const costPerLead = parseNumber(row["Cost Per Lead"] || row["cost per lead"] || "0");
-        const costPerAppointment = parseNumber(row["Cost per Appointment"] || row["cost per appointment"] || "0");
-        const leadToApptRate = parseNumber(row["Lead -> Appt Ratio"] || row["lead -> appt ratio"] || "0");
+      const dailyStats: DailyAdsStats[] = rawData
+        .map((row) => {
+          const spend = parseNumber(row["Spend"] || row["spend"] || "0");
+          const leads = parseNumber(row["Leads"] || row["leads"] || "0");
+          const appointments = parseNumber(row["Appointments"] || row["appointments"] || "0");
+          const costPerLead = parseNumber(row["Cost Per Lead"] || row["cost per lead"] || "0");
+          const costPerAppointment = parseNumber(row["Cost per Appointment"] || row["cost per appointment"] || "0");
+          const leadToApptRate = parseNumber(row["Lead -> Appt Ratio"] || row["lead -> appt ratio"] || "0");
 
-        totalSpend += spend;
-        totalLeads += leads;
-        totalAppointments += appointments;
+          return {
+            date: formatDateKey(row["Date"] || row["date"] || ""),
+            spend,
+            leads,
+            appointments,
+            costPerLead,
+            costPerAppointment,
+            leadToApptRate,
+          };
+        })
+        // Only include dates that have actual data (spend, leads, or appointments > 0)
+        .filter(stat => stat.date && (stat.spend > 0 || stat.leads > 0 || stat.appointments > 0));
 
-        return {
-          date: formatDateKey(row["Date"] || row["date"] || ""),
-          spend,
-          leads,
-          appointments,
-          costPerLead,
-          costPerAppointment,
-          leadToApptRate,
-        };
-      }).filter(stat => stat.date);
+      // Calculate totals only from filtered data
+      dailyStats.forEach(stat => {
+        totalSpend += stat.spend;
+        totalLeads += stat.leads;
+        totalAppointments += stat.appointments;
+      });
 
       // Sort by date
       dailyStats.sort((a, b) => {
