@@ -28,52 +28,54 @@ export function DailyAdsTable({ data, loading }: DailyAdsTableProps) {
 
   return (
     <Card className="bg-white/95 backdrop-blur">
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
+      <CardHeader className="pb-2 sm:pb-4">
+        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
           📊 Daily Ads Performance
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         {loading ? (
-          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[200px] sm:h-[300px] w-full" />
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Spend</TableHead>
-                  <TableHead className="text-right">Leads</TableHead>
-                  <TableHead className="text-right">Appts</TableHead>
-                  <TableHead className="text-right">CPL</TableHead>
-                  <TableHead className="text-right">CPA</TableHead>
-                  <TableHead className="text-right">Lead→Appt</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedData.length === 0 ? (
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <div className="min-w-[500px] px-2 sm:px-0">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
-                      No ads data available
-                    </TableCell>
+                    <TableHead className="text-xs sm:text-sm">Date</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">Spend</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">Leads</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">Appts</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">CPL</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm hidden sm:table-cell">CPA</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">Conv.</TableHead>
                   </TableRow>
-                ) : (
-                  sortedData.map((row, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{row.date}</TableCell>
-                      <TableCell className="text-right text-red-600">
-                        {formatCurrency(row.spend)}
+                </TableHeader>
+                <TableBody>
+                  {sortedData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground text-xs sm:text-sm">
+                        No ads data available
                       </TableCell>
-                      <TableCell className="text-right text-blue-600">{row.leads}</TableCell>
-                      <TableCell className="text-right text-yellow-600">{row.appointments}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(row.costPerLead)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(row.costPerAppointment)}</TableCell>
-                      <TableCell className="text-right">{row.leadToApptRate.toFixed(1)}%</TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    sortedData.map((row, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-4">{row.date}</TableCell>
+                        <TableCell className="text-right text-red-600 text-xs sm:text-sm py-2 sm:py-4">
+                          {formatCurrency(row.spend)}
+                        </TableCell>
+                        <TableCell className="text-right text-blue-600 text-xs sm:text-sm py-2 sm:py-4">{row.leads}</TableCell>
+                        <TableCell className="text-right text-yellow-600 text-xs sm:text-sm py-2 sm:py-4">{row.appointments}</TableCell>
+                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{formatCurrency(row.costPerLead)}</TableCell>
+                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4 hidden sm:table-cell">{formatCurrency(row.costPerAppointment)}</TableCell>
+                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{row.leadToApptRate.toFixed(1)}%</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
       </CardContent>

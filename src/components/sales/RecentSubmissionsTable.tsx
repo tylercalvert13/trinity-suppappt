@@ -33,64 +33,68 @@ function getStatusBadge(status: string) {
 export function RecentSubmissionsTable({ data, loading }: RecentSubmissionsTableProps) {
   return (
     <Card className="bg-white/95 backdrop-blur">
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <FileText className="h-5 w-5" />
+      <CardHeader className="pb-2 sm:pb-4">
+        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+          <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
           Recent Submissions
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         {loading ? (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
+              <Skeleton key={i} className="h-10 sm:h-12 w-full" />
             ))}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>State</TableHead>
-                <TableHead>Carrier Transition</TableHead>
-                <TableHead className="text-right">Premium</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    No submissions yet
-                  </TableCell>
-                </TableRow>
-              ) : (
-                data.map((sub, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{formatDate(sub.date)}</TableCell>
-                    <TableCell className="font-medium">{sub.clientName}</TableCell>
-                    <TableCell>{sub.state || "—"}</TableCell>
-                    <TableCell>
-                      {sub.previousCarrier || sub.newCarrier ? (
-                        <span className="flex items-center gap-1 text-sm">
-                          <span className="text-muted-foreground">{sub.previousCarrier || "New"}</span>
-                          <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-medium">{sub.newCarrier || "—"}</span>
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(sub.premium)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(sub.status)}</TableCell>
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <div className="min-w-[500px] px-2 sm:px-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Date</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Client</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">State</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Carrier</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">Premium</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Status</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {data.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground text-xs sm:text-sm">
+                        No submissions yet
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    data.map((sub, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="text-xs sm:text-sm py-2 sm:py-4">{formatDate(sub.date)}</TableCell>
+                        <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-4">{sub.clientName}</TableCell>
+                        <TableCell className="text-xs sm:text-sm py-2 sm:py-4 hidden sm:table-cell">{sub.state || "—"}</TableCell>
+                        <TableCell className="py-2 sm:py-4">
+                          {sub.previousCarrier || sub.newCarrier ? (
+                            <span className="flex items-center gap-1 text-xs sm:text-sm">
+                              <span className="text-muted-foreground hidden sm:inline">{sub.previousCarrier || "New"}</span>
+                              <ArrowRight className="h-3 w-3 text-muted-foreground hidden sm:inline" />
+                              <span className="font-medium">{sub.newCarrier || "—"}</span>
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">
+                          {formatCurrency(sub.premium)}
+                        </TableCell>
+                        <TableCell className="py-2 sm:py-4">{getStatusBadge(sub.status)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -19,55 +19,59 @@ interface AgentTableProps {
 export function AgentTable({ data, loading }: AgentTableProps) {
   return (
     <Card className="bg-white/95 backdrop-blur">
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
+      <CardHeader className="pb-2 sm:pb-4">
+        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
           🏆 Top Agents
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         {loading ? (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
+              <Skeleton key={i} className="h-10 sm:h-12 w-full" />
             ))}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Agent</TableHead>
-                <TableHead className="text-right">Sales</TableHead>
-                <TableHead className="text-right">Premium</TableHead>
-                <TableHead className="text-right">Commission</TableHead>
-                <TableHead className="text-right">Approved</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No agent data yet
-                  </TableCell>
-                </TableRow>
-              ) : (
-                data.map((agent, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{agent.name}</TableCell>
-                    <TableCell className="text-right">{agent.sales}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(agent.premium)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(agent.commission)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {agent.approved}/{agent.sales}
-                    </TableCell>
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <div className="min-w-[400px] px-2 sm:px-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Agent</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">Sales</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm hidden sm:table-cell">Premium</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">Comm.</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">Appr.</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {data.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground text-xs sm:text-sm">
+                        No agent data yet
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    data.map((agent, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-4">{agent.name}</TableCell>
+                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{agent.sales}</TableCell>
+                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4 hidden sm:table-cell">
+                          {formatCurrency(agent.premium)}
+                        </TableCell>
+                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">
+                          {formatCurrency(agent.commission)}
+                        </TableCell>
+                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">
+                          {agent.approved}/{agent.sales}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

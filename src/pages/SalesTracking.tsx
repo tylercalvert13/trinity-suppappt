@@ -40,15 +40,15 @@ export default function SalesTracking() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-3 sm:p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center justify-center gap-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white flex items-center justify-center gap-2">
             🏥 Health Helpers Dashboard
           </h1>
-          <p className="text-blue-200 text-lg">Medicare Supplement Sales Tracker</p>
-          <div className="flex items-center justify-center gap-4 text-sm text-blue-300">
+          <p className="text-blue-200 text-sm sm:text-base md:text-lg">Medicare Supplement Sales Tracker</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-blue-300">
             <span>
               Last updated: {lastUpdated ? lastUpdated.toLocaleString() : "—"}
             </span>
@@ -57,7 +57,7 @@ export default function SalesTracking() {
               size="sm"
               onClick={handleRefresh}
               disabled={loading}
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 min-h-[44px] px-4"
             >
               <RefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
               Refresh
@@ -67,18 +67,18 @@ export default function SalesTracking() {
 
         {/* Tabs */}
         <Tabs defaultValue="sales" className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-white/10">
-            <TabsTrigger value="sales" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-white/10 h-11 sm:h-10">
+            <TabsTrigger value="sales" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white text-xs sm:text-sm min-h-[40px]">
               Sales Overview
             </TabsTrigger>
-            <TabsTrigger value="ads" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white">
+            <TabsTrigger value="ads" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white text-xs sm:text-sm min-h-[40px]">
               Ads Tracking
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="sales" className="space-y-6 mt-6">
+          <TabsContent value="sales" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
             {/* Stats Grid - 6 Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
               <StatCard
                 title="Total Applications"
                 value={salesLoading ? null : salesData?.totalSales ?? 0}
@@ -140,13 +140,13 @@ export default function SalesTracking() {
             </div>
 
             {/* Charts Row */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
               <DailySalesChart data={salesData?.dailyStats || []} loading={salesLoading} />
               <CarrierChart data={salesData?.carrierStats || []} loading={salesLoading} />
             </div>
 
             {/* Tables Row */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
               <AgentTable data={salesData?.agentStats || []} loading={salesLoading} />
               <RecentSubmissionsTable data={salesData?.recentSubmissions || []} loading={salesLoading} />
             </div>
