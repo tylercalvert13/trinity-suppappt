@@ -1,150 +1,75 @@
 
-# Mobile Optimization for Sales Tracking Dashboard
+Goal
+- Make the “Top Agents” and “Recent Submissions” cards on /salestracking fully horizontally scrollable on mobile (so no columns are cut off), matching what you see in your screenshot.
 
-## Overview
-Optimize the `/salestracking` page and all its child components for mobile devices, ensuring a smooth experience on smaller screens with proper touch targets, readable text, and efficient use of limited screen space.
+What’s happening (why it still goes off-screen)
+- Those two cards sit inside a CSS grid (the “Tables Row” in SalesTracking.tsx).
+- In CSS grid, items default to min-width: auto, which means they refuse to shrink smaller than their content’s “minimum” width.
+- Since the tables have wide content (multiple columns + “Carrier Transition”), the grid item/card expands wider than the viewport, and because the page container uses overflow-x-hidden, it looks like the right side is cut off and you can’t swipe to it.
+- Even though the table itself has overflow wrappers, the parent grid item’s “won’t shrink” behavior can prevent the scroll container from being the thing that overflows.
 
----
+Plan (implementation steps)
 
-## Current Issues Identified
+1) Allow grid items to shrink so internal scrolling can work
+- File: src/pages/SalesTracking.tsx
+- In the “Tables Row” section, wrap each table card in a div with min-w-0 (this is the key fix for grid overflow problems):
+  - <div className="min-w-0"><AgentTable ... /></div>
+  - <div className="min-w-0"><RecentSubmissionsTable ... /></div>
+- Optional: also add min-w-0 to the grid container itself (harmless but helps in some layouts).
 
-| Component | Issue |
-|-----------|-------|
-| **Header** | Title and refresh button layout could stack better on mobile |
-| **StatCard** | Values could be larger, padding could be tighter on mobile |
-| **Tables** | No horizontal scroll indicator, text too small, columns cramped |
-| **Charts** | X-axis labels overlap, legend takes too much space |
-| **Pie Chart Labels** | Labels overlap on small screens |
-| **Tabs** | Tab text could be more touch-friendly |
+2) Ensure the card itself can’t force overflow
+- Files:
+  - src/components/sales/AgentTable.tsx
+  - src/components/sales/RecentSubmissionsTable.tsx
+- Add min-w-0 to the Card className so the card doesn’t keep a “content-sized” minimum width:
+  - Card className="bg-white/95 backdrop-blur min-w-0"
 
----
+3) Fix scrolling at the correct layer (avoid nested scroll wrappers)
+Right now there’s a subtle structural issue:
+- Your Table component (src/components/ui/table.tsx) already wraps <table> in a <div className="relative w-full overflow-auto">.
+- AgentTable/RecentSubmissionsTable additionally wrap <Table> in another div with overflow-x-auto.
+- Nested scroll containers often behave poorly on mobile (especially swipe gestures), and can make it feel like “it’s not scrollable”.
 
-## Files to Modify
+We’ll make scrolling consistent by doing ONE of these approaches (I’ll implement the safer/cleaner one):
 
-### 1. `src/pages/SalesTracking.tsx`
+Approach A (recommended): Make the shared Table wrapper be the horizontal scroll container
+- File: src/components/ui/table.tsx
+- Change the wrapper div around <table> from:
+  - "relative w-full overflow-auto"
+  to something explicitly horizontal and mobile-friendly, e.g.:
+  - "relative w-full max-w-full overflow-x-auto overflow-y-hidden"
+  - add: "min-w-0" (prevents layout expansion in grids)
+  - add: "[-webkit-overflow-scrolling:touch]" (smooth iOS scrolling)
+  - optionally add: "overscroll-x-contain" (prevents weird rubber-banding)
+- Then remove the extra wrapper divs in AgentTable and RecentSubmissionsTable, since Table will be the scroll container.
 
-**Header improvements:**
-- Stack last updated and refresh button vertically on mobile
-- Reduce header padding on mobile
-- Make subtitle text responsive
+This yields:
+- The card stays within the screen (thanks to min-w-0)
+- The table scrolls horizontally inside the card (thanks to the updated Table wrapper)
+- Swiping left/right directly on the table works reliably on mobile
 
-**Stats grid:**
-- Already uses `grid-cols-2` on mobile - this is good
-- Add smaller gap on mobile (gap-3 vs gap-4)
+4) Add a subtle “this is scrollable” cue (optional but helpful)
+- Files:
+  - AgentTable.tsx
+  - RecentSubmissionsTable.tsx
+- Add a light right-edge gradient overlay inside the table area on mobile only (pointer-events-none), so users immediately understand they can swipe horizontally.
+- This is optional; we can skip if you want it minimal.
 
-### 2. `src/components/sales/StatCard.tsx`
+5) Verification checklist (mobile)
+- On /salestracking (Sales tab), confirm:
+  - The “Top Agents” card stays within the screen width (no cut-off card border)
+  - Swiping left/right inside the Top Agents table reveals Premium / Comm / Appr columns
+  - The “Recent Submissions” table can be swiped to fully see “Carrier Transition”, “Premium”, “Status”
+  - No horizontal page scrolling (only the table area scrolls horizontally)
 
-**Mobile optimizations:**
-- Reduce padding on mobile (pt-3 pb-2 vs pt-4 pb-3)
-- Make value text responsive (text-xl on mobile, text-2xl on desktop)
-- Truncate long titles if needed
-- Ensure icon doesn't shrink
+Files that will be updated
+- src/pages/SalesTracking.tsx (wrap table cards with min-w-0)
+- src/components/sales/AgentTable.tsx (min-w-0 on Card; remove redundant overflow wrapper if using Approach A)
+- src/components/sales/RecentSubmissionsTable.tsx (min-w-0 on Card; remove redundant overflow wrapper if using Approach A)
+- src/components/ui/table.tsx (make the built-in wrapper the horizontal scroll container; mobile-friendly scrolling)
 
-### 3. `src/components/sales/DailySalesChart.tsx`
+Notes / edge cases handled
+- This approach fixes the root grid “min-width” issue and avoids nested horizontal scroll containers, which is typically what causes “it’s cut off and won’t scroll” on mobile.
+- Because Table is a shared component, we’ll keep changes conservative: horizontal scrolling for wide tables is generally desirable everywhere, and this shouldn’t break existing pages. If any other page relies on vertical overflow inside tables (rare), we can scope the change to horizontal-only without affecting height.
 
-**Mobile optimizations:**
-- Reduce chart height on mobile (200px vs 250px)
-- Angle X-axis labels on mobile to prevent overlap
-- Compact legend layout
-- Smaller tick font sizes
-
-### 4. `src/components/sales/CarrierChart.tsx`
-
-**Mobile optimizations:**
-- Remove inline labels on mobile (they overlap)
-- Show legend below chart instead
-- Reduce inner/outer radius on mobile
-- Reduce chart height on mobile
-
-### 5. `src/components/sales/AgentTable.tsx`
-
-**Mobile optimizations:**
-- Add horizontal scroll with visible scrollbar indicator
-- Make table cells more compact
-- Use smaller font sizes
-- Consider hiding less critical columns on mobile (Premium column)
-- Add min-width to table
-
-### 6. `src/components/sales/RecentSubmissionsTable.tsx`
-
-**Mobile optimizations:**
-- Add horizontal scroll wrapper
-- Condense carrier transition display on mobile
-- Hide State column on smallest screens
-- Smaller text sizes
-- Sticky first column (Date)
-
-### 7. `src/components/sales/AdsTrackingTab.tsx`
-
-**Mobile optimizations:**
-- Already uses `grid-cols-2` - good
-- Reduce spacing between rows on mobile
-
-### 8. `src/components/sales/AdsPerformanceChart.tsx`
-
-**Mobile optimizations:**
-- Reduce chart height on mobile
-- Hide right Y-axis on mobile (too cramped)
-- Angle X-axis labels
-- Compact legend
-
-### 9. `src/components/sales/AdsFunnelChart.tsx`
-
-**Mobile optimizations:**
-- Already has a good grid layout for conversion rates
-- Reduce bar chart height on mobile
-- Smaller margin values
-
-### 10. `src/components/sales/DailyAdsTable.tsx`
-
-**Mobile optimizations:**
-- Add horizontal scroll wrapper
-- Compact table headers
-- Smaller font sizes
-- Consider abbreviating column headers further
-
----
-
-## Implementation Details
-
-### Responsive Breakpoint Strategy
-Using Tailwind's responsive prefixes:
-- Default (no prefix): Mobile-first styles
-- `sm:` (640px+): Small tablets
-- `md:` (768px+): Tablets/small desktops
-- `lg:` (1024px+): Desktops
-
-### Chart Mobile Patterns
-```text
-Charts will use:
-- height: 180-200px on mobile, 250px on desktop
-- XAxis: angle={-45} with dy={10} for readability
-- Legend: iconSize={12} and smaller font on mobile
-- Hide secondary Y-axis on mobile when dual-axis
-```
-
-### Table Mobile Patterns
-```text
-Tables will use:
-- overflow-x-auto wrapper with -webkit-overflow-scrolling: touch
-- Minimum column widths to prevent text wrapping
-- Smaller text: text-xs on mobile, text-sm on desktop
-- Condensed padding in cells
-```
-
-### Touch Target Standards
-- Minimum 44px touch targets for interactive elements
-- Adequate spacing between clickable items
-- Larger tap areas for refresh button
-
----
-
-## Expected Result
-
-A fully mobile-optimized dashboard that:
-- Displays all 6/8 KPI cards in a 2-column grid on mobile
-- Charts are readable without horizontal scrolling
-- Tables scroll horizontally with clear indicators
-- Text is appropriately sized for mobile reading
-- Touch targets meet accessibility standards
-- Maintains all functionality on smaller screens
+If you approve this plan, I’ll implement the min-w-0 grid fix plus the Table wrapper scroll fix so those two cards become reliably swipe-scrollable on mobile.
