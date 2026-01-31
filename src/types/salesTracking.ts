@@ -32,6 +32,41 @@ export interface CarrierStats {
   premium: number;
 }
 
+export interface DailyAdsStats {
+  date: string;
+  spend: number;
+  leads: number;
+  appointments: number;
+  costPerLead: number;
+  costPerAppointment: number;
+  leadToApptRate: number;
+}
+
+export interface AdsData {
+  totalSpend: number;
+  totalLeads: number;
+  totalAppointments: number;
+  avgCostPerLead: number;
+  avgCostPerAppointment: number;
+  dailyStats: DailyAdsStats[];
+}
+
+export interface CombinedAdsMetrics {
+  totalSpend: number;
+  totalLeads: number;
+  totalAppointments: number;
+  avgCostPerLead: number;
+  avgCostPerAppointment: number;
+  costPerSale: number;
+  leadToApptRate: number;
+  apptToSaleRate: number;
+  leadToSaleRate: number;
+  roas: number;
+  revenuePerLead: number;
+  profit: number;
+  dailyStats: DailyAdsStats[];
+}
+
 export interface DashboardData {
   totalSales: number;
   approved: number;
