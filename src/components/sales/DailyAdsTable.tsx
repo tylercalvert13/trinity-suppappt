@@ -46,7 +46,7 @@ export function DailyAdsTable({ data, loading }: DailyAdsTableProps) {
                     <TableHead className="text-right text-xs sm:text-sm">Leads</TableHead>
                     <TableHead className="text-right text-xs sm:text-sm">Appts</TableHead>
                     <TableHead className="text-right text-xs sm:text-sm">CPL</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm hidden sm:table-cell">CPA</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">CPA</TableHead>
                     <TableHead className="text-right text-xs sm:text-sm">Conv.</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -67,7 +67,7 @@ export function DailyAdsTable({ data, loading }: DailyAdsTableProps) {
                         <TableCell className="text-right text-blue-600 text-xs sm:text-sm py-2 sm:py-4">{row.leads}</TableCell>
                         <TableCell className="text-right text-yellow-600 text-xs sm:text-sm py-2 sm:py-4">{row.appointments}</TableCell>
                         <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{formatCurrency(row.costPerLead)}</TableCell>
-                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4 hidden sm:table-cell">{formatCurrency(row.costPerAppointment)}</TableCell>
+                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{formatCurrency(row.costPerAppointment)}</TableCell>
                         <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{row.leadToApptRate.toFixed(1)}%</TableCell>
                       </TableRow>
                   ))

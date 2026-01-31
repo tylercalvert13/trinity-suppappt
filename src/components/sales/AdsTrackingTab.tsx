@@ -75,13 +75,22 @@ export function AdsTrackingTab({ adsData, salesData, loading }: AdsTrackingTabPr
       </div>
 
       {/* Row 2: Performance KPIs - Horizontally scrollable on mobile */}
-      <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0">
+      <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-5 sm:gap-4 sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0">
         <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
           <StatCard
             title="Cost Per Lead"
             value={loading ? null : formatCurrency(avgCostPerLead)}
             icon={<Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />}
             subtitle="Avg acquisition"
+            loading={loading}
+          />
+        </div>
+        <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+          <StatCard
+            title="Cost Per Appt"
+            value={loading ? null : formatCurrency(adsData?.avgCostPerAppointment ?? 0)}
+            icon={<Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />}
+            subtitle="Per booking"
             loading={loading}
           />
         </div>
