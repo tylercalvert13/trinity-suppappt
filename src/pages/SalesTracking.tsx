@@ -1,15 +1,27 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw, TrendingUp, DollarSign, CheckCircle, Clock, XCircle } from "lucide-react";
 import { useSalesData, formatCurrency } from "@/hooks/useSalesData";
+import { useAdsData } from "@/hooks/useAdsData";
 import { StatCard } from "@/components/sales/StatCard";
 import { DailySalesChart } from "@/components/sales/DailySalesChart";
 import { CarrierChart } from "@/components/sales/CarrierChart";
 import { AgentTable } from "@/components/sales/AgentTable";
 import { RecentSubmissionsTable } from "@/components/sales/RecentSubmissionsTable";
+import { AdsTrackingTab } from "@/components/sales/AdsTrackingTab";
 
 export default function SalesTracking() {
-  const { data, loading, error, lastUpdated, refetch } = useSalesData();
+  const { data: salesData, loading: salesLoading, error: salesError, lastUpdated, refetch: refetchSales } = useSalesData();
+  const { data: adsData, loading: adsLoading, error: adsError, refetch: refetchAds } = useAdsData();
+
+  const loading = salesLoading || adsLoading;
+  const error = salesError || adsError;
+
+  const handleRefresh = () => {
+    refetchSales();
+    refetchAds();
+  };
 
   if (error) {
     return (
@@ -17,7 +29,7 @@ export default function SalesTracking() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <p className="text-destructive mb-4">{error}</p>
-            <Button onClick={refetch}>
+            <Button onClick={handleRefresh}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Retry
             </Button>
@@ -43,7 +55,7 @@ export default function SalesTracking() {
             <Button
               variant="outline"
               size="sm"
-              onClick={refetch}
+              onClick={handleRefresh}
               disabled={loading}
               className="bg-white/10 border-white/20 text-white hover:bg-white/20"
             >
@@ -53,79 +65,101 @@ export default function SalesTracking() {
           </div>
         </div>
 
-        {/* Stats Grid - 6 Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <StatCard
-            title="Total Applications"
-            value={loading ? null : data?.totalSales ?? 0}
-            icon={<TrendingUp className="h-5 w-5" />}
-            subtitle="All submissions"
-            loading={loading}
-          />
-          <StatCard
-            title="Approved"
-            value={loading ? null : data?.approved ?? 0}
-            icon={<CheckCircle className="h-5 w-5 text-green-500" />}
-            subtitle={
-              data && data.totalSales > 0
-                ? `${Math.round((data.approved / data.totalSales) * 100)}% rate`
-                : "—"
-            }
-            loading={loading}
-          />
-          <StatCard
-            title="Pending"
-            value={loading ? null : data?.pending ?? 0}
-            icon={<Clock className="h-5 w-5 text-yellow-500" />}
-            subtitle={
-              data && data.pendingPremium > 0
-                ? `${formatCurrency(data.pendingPremium)} potential`
-                : "Awaiting decision"
-            }
-            loading={loading}
-          />
-          <StatCard
-            title="Denied"
-            value={loading ? null : data?.denied ?? 0}
-            icon={<XCircle className="h-5 w-5 text-red-500" />}
-            subtitle={
-              data && data.totalSales > 0
-                ? `${Math.round((data.denied / data.totalSales) * 100)}% rate`
-                : "—"
-            }
-            loading={loading}
-          />
-          <StatCard
-            title="Total Premium"
-            value={loading ? null : formatCurrency(data?.totalPremium ?? 0)}
-            icon={<DollarSign className="h-5 w-5 text-green-500" />}
-            subtitle="Approved only"
-            loading={loading}
-          />
-          <StatCard
-            title="Total Commission"
-            value={loading ? null : formatCurrency(data?.totalCommission ?? 0)}
-            icon={<DollarSign className="h-5 w-5 text-blue-500" />}
-            subtitle={
-              data && data.avgCommission > 0
-                ? `Avg: ${formatCurrency(data.avgCommission)}/sale`
-                : "Approved only"
-            }
-            loading={loading}
-          />
-        </div>
+        {/* Tabs */}
+        <Tabs defaultValue="sales" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-white/10">
+            <TabsTrigger value="sales" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white">
+              Sales Overview
+            </TabsTrigger>
+            <TabsTrigger value="ads" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white">
+              Ads Tracking
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Charts Row */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <DailySalesChart data={data?.dailyStats || []} loading={loading} />
-          <CarrierChart data={data?.carrierStats || []} loading={loading} />
-        </div>
+          <TabsContent value="sales" className="space-y-6 mt-6">
+            {/* Stats Grid - 6 Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <StatCard
+                title="Total Applications"
+                value={salesLoading ? null : salesData?.totalSales ?? 0}
+                icon={<TrendingUp className="h-5 w-5" />}
+                subtitle="All submissions"
+                loading={salesLoading}
+              />
+              <StatCard
+                title="Approved"
+                value={salesLoading ? null : salesData?.approved ?? 0}
+                icon={<CheckCircle className="h-5 w-5 text-green-500" />}
+                subtitle={
+                  salesData && salesData.totalSales > 0
+                    ? `${Math.round((salesData.approved / salesData.totalSales) * 100)}% rate`
+                    : "—"
+                }
+                loading={salesLoading}
+              />
+              <StatCard
+                title="Pending"
+                value={salesLoading ? null : salesData?.pending ?? 0}
+                icon={<Clock className="h-5 w-5 text-yellow-500" />}
+                subtitle={
+                  salesData && salesData.pendingPremium > 0
+                    ? `${formatCurrency(salesData.pendingPremium)} potential`
+                    : "Awaiting decision"
+                }
+                loading={salesLoading}
+              />
+              <StatCard
+                title="Denied"
+                value={salesLoading ? null : salesData?.denied ?? 0}
+                icon={<XCircle className="h-5 w-5 text-red-500" />}
+                subtitle={
+                  salesData && salesData.totalSales > 0
+                    ? `${Math.round((salesData.denied / salesData.totalSales) * 100)}% rate`
+                    : "—"
+                }
+                loading={salesLoading}
+              />
+              <StatCard
+                title="Total Premium"
+                value={salesLoading ? null : formatCurrency(salesData?.totalPremium ?? 0)}
+                icon={<DollarSign className="h-5 w-5 text-green-500" />}
+                subtitle="Approved only"
+                loading={salesLoading}
+              />
+              <StatCard
+                title="Total Commission"
+                value={salesLoading ? null : formatCurrency(salesData?.totalCommission ?? 0)}
+                icon={<DollarSign className="h-5 w-5 text-blue-500" />}
+                subtitle={
+                  salesData && salesData.avgCommission > 0
+                    ? `Avg: ${formatCurrency(salesData.avgCommission)}/sale`
+                    : "Approved only"
+                }
+                loading={salesLoading}
+              />
+            </div>
 
-        {/* Tables Row */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <AgentTable data={data?.agentStats || []} loading={loading} />
-          <RecentSubmissionsTable data={data?.recentSubmissions || []} loading={loading} />
-        </div>
+            {/* Charts Row */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <DailySalesChart data={salesData?.dailyStats || []} loading={salesLoading} />
+              <CarrierChart data={salesData?.carrierStats || []} loading={salesLoading} />
+            </div>
+
+            {/* Tables Row */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <AgentTable data={salesData?.agentStats || []} loading={salesLoading} />
+              <RecentSubmissionsTable data={salesData?.recentSubmissions || []} loading={salesLoading} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="ads" className="mt-6">
+            <AdsTrackingTab
+              adsData={adsData}
+              salesData={salesData}
+              loading={loading}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
