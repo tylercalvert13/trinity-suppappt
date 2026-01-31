@@ -47,10 +47,9 @@ export function RecentSubmissionsTable({ data, loading }: RecentSubmissionsTable
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-2 sm:mx-0">
-            <div className="min-w-[500px] px-2 sm:px-0">
-              <Table>
-                <TableHeader>
+          <div className="overflow-x-auto">
+            <Table className="min-w-[500px]">
+              <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs sm:text-sm">Date</TableHead>
                     <TableHead className="text-xs sm:text-sm">Client</TableHead>
@@ -93,7 +92,6 @@ export function RecentSubmissionsTable({ data, loading }: RecentSubmissionsTable
                   )}
                 </TableBody>
               </Table>
-            </div>
           </div>
         )}
       </CardContent>

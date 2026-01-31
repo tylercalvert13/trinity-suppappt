@@ -37,10 +37,9 @@ export function DailyAdsTable({ data, loading }: DailyAdsTableProps) {
         {loading ? (
           <Skeleton className="h-[200px] sm:h-[300px] w-full" />
         ) : (
-          <div className="overflow-x-auto -mx-2 sm:mx-0">
-            <div className="min-w-[500px] px-2 sm:px-0">
-              <Table>
-                <TableHeader>
+          <div className="overflow-x-auto">
+            <Table className="min-w-[500px]">
+              <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs sm:text-sm">Date</TableHead>
                     <TableHead className="text-right text-xs sm:text-sm">Spend</TableHead>
@@ -71,11 +70,10 @@ export function DailyAdsTable({ data, loading }: DailyAdsTableProps) {
                         <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4 hidden sm:table-cell">{formatCurrency(row.costPerAppointment)}</TableCell>
                         <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{row.leadToApptRate.toFixed(1)}%</TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         )}
       </CardContent>
