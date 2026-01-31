@@ -158,9 +158,13 @@ export default function SalesTracking() {
             </div>
 
             {/* Tables Row */}
-            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-              <AgentTable data={salesData?.agentStats || []} loading={salesLoading} />
-              <RecentSubmissionsTable data={salesData?.recentSubmissions || []} loading={salesLoading} />
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6 min-w-0">
+              <div className="min-w-0">
+                <AgentTable data={salesData?.agentStats || []} loading={salesLoading} />
+              </div>
+              <div className="min-w-0">
+                <RecentSubmissionsTable data={salesData?.recentSubmissions || []} loading={salesLoading} />
+              </div>
             </div>
           </TabsContent>
 

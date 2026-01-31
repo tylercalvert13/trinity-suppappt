@@ -32,7 +32,7 @@ function getStatusBadge(status: string) {
 
 export function RecentSubmissionsTable({ data, loading }: RecentSubmissionsTableProps) {
   return (
-    <Card className="bg-white/95 backdrop-blur">
+    <Card className="bg-white/95 backdrop-blur min-w-0">
       <CardHeader className="pb-2 sm:pb-4">
         <CardTitle className="text-base sm:text-lg flex items-center gap-2">
           <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -47,8 +47,7 @@ export function RecentSubmissionsTable({ data, loading }: RecentSubmissionsTable
             ))}
           </div>
         ) : (
-          <div className="w-full overflow-x-auto">
-            <Table className="min-w-max whitespace-nowrap">
+          <Table className="min-w-max whitespace-nowrap">
               <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs sm:text-sm">Date</TableHead>
@@ -92,7 +91,6 @@ export function RecentSubmissionsTable({ data, loading }: RecentSubmissionsTable
                   )}
                 </TableBody>
               </Table>
-          </div>
         )}
       </CardContent>
     </Card>
