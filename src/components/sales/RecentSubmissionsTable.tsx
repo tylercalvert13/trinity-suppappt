@@ -47,14 +47,14 @@ export function RecentSubmissionsTable({ data, loading }: RecentSubmissionsTable
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table className="min-w-[500px]">
+          <div className="w-full overflow-x-auto">
+            <Table className="min-w-max whitespace-nowrap">
               <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs sm:text-sm">Date</TableHead>
                     <TableHead className="text-xs sm:text-sm">Client</TableHead>
-                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">State</TableHead>
-                    <TableHead className="text-xs sm:text-sm">Carrier</TableHead>
+                    <TableHead className="text-xs sm:text-sm">State</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Carrier Transition</TableHead>
                     <TableHead className="text-right text-xs sm:text-sm">Premium</TableHead>
                     <TableHead className="text-xs sm:text-sm">Status</TableHead>
                   </TableRow>
@@ -71,12 +71,12 @@ export function RecentSubmissionsTable({ data, loading }: RecentSubmissionsTable
                       <TableRow key={index}>
                         <TableCell className="text-xs sm:text-sm py-2 sm:py-4">{formatDate(sub.date)}</TableCell>
                         <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-4">{sub.clientName}</TableCell>
-                        <TableCell className="text-xs sm:text-sm py-2 sm:py-4 hidden sm:table-cell">{sub.state || "—"}</TableCell>
+                        <TableCell className="text-xs sm:text-sm py-2 sm:py-4">{sub.state || "—"}</TableCell>
                         <TableCell className="py-2 sm:py-4">
                           {sub.previousCarrier || sub.newCarrier ? (
                             <span className="flex items-center gap-1 text-xs sm:text-sm">
-                              <span className="text-muted-foreground hidden sm:inline">{sub.previousCarrier || "New"}</span>
-                              <ArrowRight className="h-3 w-3 text-muted-foreground hidden sm:inline" />
+                              <span className="text-muted-foreground">{sub.previousCarrier || "New"}</span>
+                              <ArrowRight className="h-3 w-3 text-muted-foreground" />
                               <span className="font-medium">{sub.newCarrier || "—"}</span>
                             </span>
                           ) : (
