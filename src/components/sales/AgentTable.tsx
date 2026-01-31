@@ -18,7 +18,7 @@ interface AgentTableProps {
 
 export function AgentTable({ data, loading }: AgentTableProps) {
   return (
-    <Card className="bg-white/95 backdrop-blur">
+    <Card className="bg-white/95 backdrop-blur min-w-0">
       <CardHeader className="pb-2 sm:pb-4">
         <CardTitle className="text-base sm:text-lg flex items-center gap-2">
           🏆 Top Agents
@@ -32,8 +32,7 @@ export function AgentTable({ data, loading }: AgentTableProps) {
             ))}
           </div>
         ) : (
-          <div className="w-full overflow-x-auto">
-            <Table className="min-w-max whitespace-nowrap">
+          <Table className="min-w-max whitespace-nowrap">
               <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs sm:text-sm">Agent</TableHead>
@@ -69,7 +68,6 @@ export function AgentTable({ data, loading }: AgentTableProps) {
                 )}
               </TableBody>
             </Table>
-          </div>
         )}
       </CardContent>
     </Card>
