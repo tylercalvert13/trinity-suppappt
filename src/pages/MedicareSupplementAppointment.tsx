@@ -331,7 +331,7 @@ const MedicareSupplementAppointment = () => {
     }
   }, [step]);
 
-  // Auto-scroll to booking widget 3 seconds after qualification
+  // Auto-scroll to booking widget 5 seconds after qualification
   useEffect(() => {
     if (step === "qualified" && quoteResult && !autoScrollDone) {
       const timer = setTimeout(() => {
@@ -345,7 +345,7 @@ const MedicareSupplementAppointment = () => {
           eventType: 'conversion_trigger', 
           metadata: { trigger: 'auto_scroll' }
         });
-      }, 3000);
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [step, quoteResult, autoScrollDone, trackEvent]);
@@ -736,30 +736,9 @@ const MedicareSupplementAppointment = () => {
             EXPOSED: Medicare Supplement "Rate Trap"
           </div>
 
-          {(() => {
-            // Priority: zip-derived state > detected state > no state
-            const displayState = formData.zipCode 
-              ? getStateFromZip(formData.zipCode) 
-              : detectedState;
-            const stateText = displayState && displayState !== "American" 
-              ? `in ${displayState} ` 
-              : "";
-            
-            // Show skeleton while loading location (only if no zip entered yet)
-            if (isLoadingLocation && !formData.zipCode) {
-              return (
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
-                  Seniors <span className="inline-block bg-white/20 rounded animate-pulse w-24 h-8 align-middle mx-1"></span> on Plan G, F, or N Are Overpaying by $100-200/Month
-                </h1>
-              );
-            }
-            
-            return (
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
-                Seniors {stateText}on Plan G, F, or N Are Overpaying by $100-200/Month
-              </h1>
-            );
-          })()}
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+            Seniors on Plan G, F, or N Are Overpaying by $100-200/Month
+          </h1>
           
           <p className="text-lg md:text-xl text-blue-100 mb-4 max-w-2xl mx-auto">
             Your benefits are <span className="font-bold text-white">federally standardized</span> — the only difference is the price.
