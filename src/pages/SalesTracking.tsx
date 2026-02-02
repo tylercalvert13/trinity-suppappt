@@ -4,23 +4,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw, TrendingUp, DollarSign, CheckCircle, Clock, XCircle } from "lucide-react";
 import { useSalesData, formatCurrency } from "@/hooks/useSalesData";
 import { useAdsData } from "@/hooks/useAdsData";
+import { useAppointmentData } from "@/hooks/useAppointmentData";
 import { StatCard } from "@/components/sales/StatCard";
 import { DailySalesChart } from "@/components/sales/DailySalesChart";
 import { CarrierChart } from "@/components/sales/CarrierChart";
 import { AgentTable } from "@/components/sales/AgentTable";
 import { RecentSubmissionsTable } from "@/components/sales/RecentSubmissionsTable";
 import { AdsTrackingTab } from "@/components/sales/AdsTrackingTab";
+import { AppointmentsTrackingTab } from "@/components/sales/AppointmentsTrackingTab";
 
 export default function SalesTracking() {
   const { data: salesData, loading: salesLoading, error: salesError, lastUpdated, refetch: refetchSales } = useSalesData();
   const { data: adsData, loading: adsLoading, error: adsError, refetch: refetchAds } = useAdsData();
+  const { data: appointmentData, loading: appointmentLoading, error: appointmentError, refetch: refetchAppointments } = useAppointmentData();
 
-  const loading = salesLoading || adsLoading;
-  const error = salesError || adsError;
+  const loading = salesLoading || adsLoading || appointmentLoading;
+  const error = salesError || adsError || appointmentError;
 
   const handleRefresh = () => {
     refetchSales();
     refetchAds();
+    refetchAppointments();
   };
 
   if (error) {
@@ -67,12 +71,15 @@ export default function SalesTracking() {
 
         {/* Tabs */}
         <Tabs defaultValue="sales" className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-white/10 h-11 sm:h-10">
+          <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-white/10 h-11 sm:h-10">
             <TabsTrigger value="sales" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white text-xs sm:text-sm min-h-[40px]">
-              Sales Overview
+              Sales
             </TabsTrigger>
             <TabsTrigger value="ads" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white text-xs sm:text-sm min-h-[40px]">
-              Ads Tracking
+              Ads
+            </TabsTrigger>
+            <TabsTrigger value="appointments" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white text-xs sm:text-sm min-h-[40px]">
+              Appointments
             </TabsTrigger>
           </TabsList>
 
@@ -173,6 +180,13 @@ export default function SalesTracking() {
               adsData={adsData}
               salesData={salesData}
               loading={loading}
+            />
+          </TabsContent>
+
+          <TabsContent value="appointments" className="mt-6">
+            <AppointmentsTrackingTab
+              data={appointmentData}
+              loading={appointmentLoading}
             />
           </TabsContent>
         </Tabs>
