@@ -65,30 +65,30 @@ const Contact = () => {
           {/* CTA Card */}
           <Card className="shadow-card border-0 bg-primary text-primary-foreground">
             <CardContent className="pt-8 pb-8 flex flex-col justify-center h-full">
-              <h3 className="font-bold text-2xl mb-4">Ready to Compare Rates?</h3>
+              <h3 className="font-bold text-2xl mb-4">Ready to See Your Savings?</h3>
               <p className="text-primary-foreground/90 mb-6">
-                Call now to speak with a licensed Medicare Supplement specialist. We'll compare 
-                rates from top-rated carriers and show you how much you could save—with no 
-                obligation and no pressure.
+                Get your personalized rate comparison online in just 2 minutes. We'll show you 
+                exactly how much you could save, then schedule a call with a licensed agent 
+                to answer any questions.
               </p>
               <ul className="space-y-2 mb-6 text-primary-foreground/90">
                 <li className="flex items-center gap-2">
-                  <span className="text-accent">✓</span> Free rate comparison
+                  <span className="text-accent">✓</span> See your savings instantly online
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-accent">✓</span> Takes just 2 minutes
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-accent">✓</span> No obligation to switch
+                  <span className="text-accent">✓</span> No obligation—switch only if it saves you money
                 </li>
               </ul>
               <Button 
                 variant="outline" 
                 size="lg"
                 className="w-full bg-background text-primary hover:bg-background/90 text-lg" 
-                onClick={() => window.location.href = 'tel:+12012988393'}
+                onClick={() => window.location.href = '/suppappt'}
               >
-                Call (201) 298-8393
+                Get My Free Quote
               </Button>
             </CardContent>
           </Card>
