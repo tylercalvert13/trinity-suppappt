@@ -106,7 +106,7 @@ export function useSalesData() {
         } else if (status === "pending") {
           pending++;
           pendingPremium += sub.premium;
-        } else if (status === "denied" || status === "rejected") {
+        } else if (status === "denied" || status === "rejected" || status === "declined") {
           denied++;
         }
       });
@@ -157,7 +157,7 @@ export function useSalesData() {
           existing.approved++;
         } else if (status === "pending") {
           existing.pending++;
-        } else if (status === "denied" || status === "rejected") {
+        } else if (status === "denied" || status === "rejected" || status === "declined") {
           existing.denied++;
         }
         

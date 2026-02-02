@@ -24,7 +24,7 @@ function getStatusBadge(status: string) {
     return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>;
   } else if (s === "pending") {
     return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>;
-  } else if (s === "denied" || s === "rejected") {
+  } else if (s === "denied" || s === "rejected" || s === "declined") {
     return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Denied</Badge>;
   }
   return <Badge variant="outline">{status}</Badge>;
