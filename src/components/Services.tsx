@@ -112,8 +112,8 @@ const Services = () => {
         </Card>
 
         <div className="text-center">
-          <Button variant="hero" size="lg" className="text-lg px-8" onClick={() => window.location.href = 'tel:+12012988393'}>
-            Compare Your Rate Today
+          <Button variant="hero" size="lg" className="text-lg px-8" onClick={() => window.location.href = '/suppappt'}>
+            Compare My Rate Now
           </Button>
         </div>
       </div>

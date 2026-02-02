@@ -41,7 +41,7 @@ const Footer = () => {
               <li><a href="#services" className="hover:text-accent transition-colors">Plan G</a></li>
               <li><a href="#services" className="hover:text-accent transition-colors">Plan F</a></li>
               <li><a href="#services" className="hover:text-accent transition-colors">Plan N</a></li>
-              <li><a href="#contact" className="hover:text-accent transition-colors">Free Rate Comparison</a></li>
+              <li><a href="/suppappt" className="hover:text-accent transition-colors">Free Rate Comparison</a></li>
               <li><a href="#services" className="hover:text-accent transition-colors">Carrier Comparison</a></li>
             </ul>
           </div>

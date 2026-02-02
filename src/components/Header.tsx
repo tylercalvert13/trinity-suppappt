@@ -90,9 +90,9 @@ const Header = () => {
                 </div>
                 <Button variant="hero" className="w-full" onClick={() => {
                   setIsMenuOpen(false);
-                  window.location.href = 'tel:+12012988393';
+                  window.location.href = '/suppappt';
                 }}>
-                  Call Now
+                  Get My Rate
                 </Button>
               </div>
             </SheetContent>
@@ -104,8 +104,8 @@ const Header = () => {
               <Phone className="h-4 w-4" />
               <span>(201) 298-8393</span>
             </div>
-            <Button variant="hero" size="sm" onClick={() => window.location.href = 'tel:+12012988393'}>
-              Call Now
+            <Button variant="hero" size="sm" onClick={() => window.location.href = '/suppappt'}>
+              Get My Rate
             </Button>
           </div>
         </div>
