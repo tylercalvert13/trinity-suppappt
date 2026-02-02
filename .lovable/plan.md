@@ -1,75 +1,119 @@
 
-Goal
-- Make the “Top Agents” and “Recent Submissions” cards on /salestracking fully horizontally scrollable on mobile (so no columns are cut off), matching what you see in your screenshot.
+# Appointments Tracking Tab - Implementation Plan
 
-What’s happening (why it still goes off-screen)
-- Those two cards sit inside a CSS grid (the “Tables Row” in SalesTracking.tsx).
-- In CSS grid, items default to min-width: auto, which means they refuse to shrink smaller than their content’s “minimum” width.
-- Since the tables have wide content (multiple columns + “Carrier Transition”), the grid item/card expands wider than the viewport, and because the page container uses overflow-x-hidden, it looks like the right side is cut off and you can’t swipe to it.
-- Even though the table itself has overflow wrappers, the parent grid item’s “won’t shrink” behavior can prevent the scroll container from being the thing that overflows.
+## Overview
+Add a new "Appointments" tab to the `/salestracking` page that displays daily appointment performance metrics including show rates, close rates, and conversion tracking.
 
-Plan (implementation steps)
+## Data Source
+- **CSV URL**: `https://docs.google.com/spreadsheets/d/e/2PACX-1vT4lAOPdwFRuw6cy-Cd473TD80rsj-kCfGCKTlvIaWHqDagTDWNjOtyiY8Ih1_Lwyo-b7OSHzFZ8LL4/pub?gid=1434770554&single=true&output=csv`
+- **Columns**: Date, Due, Showed, Show %, Closed, Appt -> Close, Show -> Close
 
-1) Allow grid items to shrink so internal scrolling can work
-- File: src/pages/SalesTracking.tsx
-- In the “Tables Row” section, wrap each table card in a div with min-w-0 (this is the key fix for grid overflow problems):
-  - <div className="min-w-0"><AgentTable ... /></div>
-  - <div className="min-w-0"><RecentSubmissionsTable ... /></div>
-- Optional: also add min-w-0 to the grid container itself (harmless but helps in some layouts).
+## UI Components
 
-2) Ensure the card itself can’t force overflow
-- Files:
-  - src/components/sales/AgentTable.tsx
-  - src/components/sales/RecentSubmissionsTable.tsx
-- Add min-w-0 to the Card className so the card doesn’t keep a “content-sized” minimum width:
-  - Card className="bg-white/95 backdrop-blur min-w-0"
+### Row 1: Primary KPIs (4 cards, horizontally scrollable on mobile)
+1. **Total Due** - Total appointments scheduled
+2. **Total Showed** - How many showed up
+3. **Total Closed** - Deals closed from appointments
+4. **No Shows** - Calculated (Due - Showed)
 
-3) Fix scrolling at the correct layer (avoid nested scroll wrappers)
-Right now there’s a subtle structural issue:
-- Your Table component (src/components/ui/table.tsx) already wraps <table> in a <div className="relative w-full overflow-auto">.
-- AgentTable/RecentSubmissionsTable additionally wrap <Table> in another div with overflow-x-auto.
-- Nested scroll containers often behave poorly on mobile (especially swipe gestures), and can make it feel like “it’s not scrollable”.
+### Row 2: Rate KPIs (3 cards, horizontally scrollable on mobile)
+1. **Show Rate** - Overall (Total Showed / Total Due)
+2. **Close Rate (Appt)** - (Total Closed / Total Due)
+3. **Close Rate (Show)** - (Total Closed / Total Showed)
 
-We’ll make scrolling consistent by doing ONE of these approaches (I’ll implement the safer/cleaner one):
+### Row 3: Charts (2-column grid on desktop)
+1. **Appointments Trend Chart** - Line/bar chart showing Due vs Showed vs Closed over time
+2. **Conversion Funnel** - Horizontal bar chart: Due → Showed → Closed with conversion percentages
 
-Approach A (recommended): Make the shared Table wrapper be the horizontal scroll container
-- File: src/components/ui/table.tsx
-- Change the wrapper div around <table> from:
-  - "relative w-full overflow-auto"
-  to something explicitly horizontal and mobile-friendly, e.g.:
-  - "relative w-full max-w-full overflow-x-auto overflow-y-hidden"
-  - add: "min-w-0" (prevents layout expansion in grids)
-  - add: "[-webkit-overflow-scrolling:touch]" (smooth iOS scrolling)
-  - optionally add: "overscroll-x-contain" (prevents weird rubber-banding)
-- Then remove the extra wrapper divs in AgentTable and RecentSubmissionsTable, since Table will be the scroll container.
+### Row 4: Daily Performance Table
+- Columns: Date, Due, Showed, No Shows, Closed, Show %, Close %
+- Mobile-optimized with horizontal scrolling
+- Most recent dates first
 
-This yields:
-- The card stays within the screen (thanks to min-w-0)
-- The table scrolls horizontally inside the card (thanks to the updated Table wrapper)
-- Swiping left/right directly on the table works reliably on mobile
+## Files to Create
 
-4) Add a subtle “this is scrollable” cue (optional but helpful)
-- Files:
-  - AgentTable.tsx
-  - RecentSubmissionsTable.tsx
-- Add a light right-edge gradient overlay inside the table area on mobile only (pointer-events-none), so users immediately understand they can swipe horizontally.
-- This is optional; we can skip if you want it minimal.
+### 1. Types (`src/types/salesTracking.ts`)
+Add new interfaces:
+```text
+DailyAppointmentStats {
+  date: string
+  due: number
+  showed: number
+  showRate: number
+  closed: number
+  apptToCloseRate: number
+  showToCloseRate: number
+}
 
-5) Verification checklist (mobile)
-- On /salestracking (Sales tab), confirm:
-  - The “Top Agents” card stays within the screen width (no cut-off card border)
-  - Swiping left/right inside the Top Agents table reveals Premium / Comm / Appr columns
-  - The “Recent Submissions” table can be swiped to fully see “Carrier Transition”, “Premium”, “Status”
-  - No horizontal page scrolling (only the table area scrolls horizontally)
+AppointmentData {
+  totalDue: number
+  totalShowed: number
+  totalClosed: number
+  totalNoShows: number
+  avgShowRate: number
+  avgCloseRate: number
+  avgShowToCloseRate: number
+  dailyStats: DailyAppointmentStats[]
+}
+```
 
-Files that will be updated
-- src/pages/SalesTracking.tsx (wrap table cards with min-w-0)
-- src/components/sales/AgentTable.tsx (min-w-0 on Card; remove redundant overflow wrapper if using Approach A)
-- src/components/sales/RecentSubmissionsTable.tsx (min-w-0 on Card; remove redundant overflow wrapper if using Approach A)
-- src/components/ui/table.tsx (make the built-in wrapper the horizontal scroll container; mobile-friendly scrolling)
+### 2. Data Hook (`src/hooks/useAppointmentData.ts`)
+- Fetch and parse CSV from the new gid
+- Calculate aggregates (totals, averages)
+- Follow existing pattern from `useAdsData.ts`
 
-Notes / edge cases handled
-- This approach fixes the root grid “min-width” issue and avoids nested horizontal scroll containers, which is typically what causes “it’s cut off and won’t scroll” on mobile.
-- Because Table is a shared component, we’ll keep changes conservative: horizontal scrolling for wide tables is generally desirable everywhere, and this shouldn’t break existing pages. If any other page relies on vertical overflow inside tables (rare), we can scope the change to horizontal-only without affecting height.
+### 3. Tab Component (`src/components/sales/AppointmentsTrackingTab.tsx`)
+- Primary and secondary KPI rows
+- Charts section
+- Daily table
+- Follow mobile patterns from `AdsTrackingTab.tsx`
 
-If you approve this plan, I’ll implement the min-w-0 grid fix plus the Table wrapper scroll fix so those two cards become reliably swipe-scrollable on mobile.
+### 4. Chart Components
+- `AppointmentsTrendChart.tsx` - Dual-axis showing Due/Showed/Closed over time
+- `AppointmentsFunnelChart.tsx` - Horizontal funnel: Due → Showed → Closed
+
+### 5. Table Component (`src/components/sales/DailyAppointmentsTable.tsx`)
+- Mobile-optimized with horizontal scrolling
+- Color-coded columns (green for good rates, red for no-shows)
+
+### 6. Update Main Page (`src/pages/SalesTracking.tsx`)
+- Add third tab "Appointments" to TabsList (3-column grid)
+- Import and render `AppointmentsTrackingTab`
+- Add `useAppointmentData` hook to data fetching
+
+## Mobile Optimization
+- All KPI cards in horizontally scrollable flex containers
+- Tables with `min-w-0` wrapper and horizontal scroll
+- Responsive text sizes (text-xs on mobile, text-sm on desktop)
+- Touch-friendly tap targets (min-h-[44px])
+
+---
+
+## Technical Details
+
+### Hook Pattern (matching existing)
+```text
+useAppointmentData() returns {
+  data: AppointmentData | null
+  loading: boolean
+  error: string | null
+  refetch: () => void
+}
+```
+
+### CSV Parsing
+- Reuse the existing `parseCSVLine` and `parseCSV` helper functions
+- Handle percentage fields by stripping `%` symbol
+- Filter out rows with no data (due === 0)
+
+### Calculations
+- No Shows = Due - Showed
+- Overall Show Rate = Total Showed / Total Due × 100
+- Overall Close Rate = Total Closed / Total Due × 100
+- Show → Close Rate = Total Closed / Total Showed × 100
+
+### Color Scheme
+- Due: Blue (#3b82f6)
+- Showed: Yellow/Amber (#f59e0b)
+- Closed: Green (#22c55e)
+- No Shows: Red (#ef4444)
