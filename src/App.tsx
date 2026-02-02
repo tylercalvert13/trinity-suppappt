@@ -11,10 +11,10 @@ const Index = lazy(() => import("./pages/Index"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const MedicareEnrollmentGuide = lazy(() => import("./pages/MedicareEnrollmentGuide"));
-const HowToEnrollMedicareOnline = lazy(() => import("./pages/HowToEnrollMedicareOnline"));
-const MedicareEnrollmentPeriods = lazy(() => import("./pages/MedicareEnrollmentPeriods"));
-const EnrollMedicareYourself = lazy(() => import("./pages/EnrollMedicareYourself"));
+const WhyMedigapRatesIncrease = lazy(() => import("./pages/WhyMedigapRatesIncrease"));
+const SwitchMedigapPlans = lazy(() => import("./pages/SwitchMedigapPlans"));
+const PlanGvsFvsN = lazy(() => import("./pages/PlanGvsFvsN"));
+const CheapestPlanGRates = lazy(() => import("./pages/CheapestPlanGRates"));
 const MedicareSupplementLP = lazy(() => import("./pages/MedicareSupplementLP"));
 const MedicareSupplementLP1 = lazy(() => import("./pages/MedicareSupplementLP1"));
 const MedicareSupplementQuote = lazy(() => import("./pages/MedicareSupplementQuote"));
@@ -49,10 +49,10 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/medicare-enrollment-guide" element={<MedicareEnrollmentGuide />} />
-            <Route path="/how-to-enroll-in-medicare-online" element={<HowToEnrollMedicareOnline />} />
-            <Route path="/medicare-enrollment-periods" element={<MedicareEnrollmentPeriods />} />
-            <Route path="/enroll-medicare-yourself" element={<EnrollMedicareYourself />} />
+            <Route path="/why-medigap-rates-increase" element={<WhyMedigapRatesIncrease />} />
+            <Route path="/switch-medigap-plans" element={<SwitchMedigapPlans />} />
+            <Route path="/plan-g-vs-f-vs-n" element={<PlanGvsFvsN />} />
+            <Route path="/cheapest-plan-g-rates" element={<CheapestPlanGRates />} />
             <Route path="/supp" element={<MedicareSupplementLP />} />
             <Route path="/supp1" element={<MedicareSupplementLP1 />} />
             <Route path="/suppquote" element={<MedicareSupplementQuote />} />
