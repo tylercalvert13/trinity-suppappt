@@ -37,8 +37,8 @@ const Hero = () => {
             </Button>
             <Button 
               size="lg" 
-              variant="outline" 
-              className="text-lg px-8 py-6 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+              variant="ghost" 
+              className="text-lg px-8 py-6 border-2 border-white/40 bg-white/10 text-white hover:bg-white/20"
               onClick={() => window.location.href = '/suppappt'}
             >
               Compare Rates in 2 Minutes
