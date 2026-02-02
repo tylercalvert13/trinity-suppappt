@@ -67,6 +67,27 @@ export interface CombinedAdsMetrics {
   dailyStats: DailyAdsStats[];
 }
 
+export interface DailyAppointmentStats {
+  date: string;
+  due: number;
+  showed: number;
+  showRate: number;
+  closed: number;
+  apptToCloseRate: number;
+  showToCloseRate: number;
+}
+
+export interface AppointmentData {
+  totalDue: number;
+  totalShowed: number;
+  totalClosed: number;
+  totalNoShows: number;
+  avgShowRate: number;
+  avgCloseRate: number;
+  avgShowToCloseRate: number;
+  dailyStats: DailyAppointmentStats[];
+}
+
 export interface DashboardData {
   totalSales: number;
   approved: number;
