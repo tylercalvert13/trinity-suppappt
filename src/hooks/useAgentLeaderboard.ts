@@ -54,7 +54,38 @@ function isToday(dateStr: string): boolean {
   );
 }
 
-export interface LeaderboardData {
+function isWithinCurrentWeek(dateStr: string): boolean {
+  if (!dateStr) return false;
+  const submissionDate = new Date(dateStr);
+  const today = new Date();
+  
+  // Get start of current week (Sunday)
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  // Get end of current week (Saturday)
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+  
+  return submissionDate >= startOfWeek && submissionDate <= endOfWeek;
+}
+
+function isWithinCurrentMonth(dateStr: string): boolean {
+  if (!dateStr) return false;
+  const submissionDate = new Date(dateStr);
+  const today = new Date();
+  
+  return (
+    submissionDate.getFullYear() === today.getFullYear() &&
+    submissionDate.getMonth() === today.getMonth()
+  );
+}
+
+export type TimePeriod = "all" | "weekly" | "monthly";
+
+interface PeriodStats {
   agents: AgentLeaderboardStats[];
   teamStats: {
     totalAppsToday: number;
@@ -62,7 +93,96 @@ export interface LeaderboardData {
     teamApprovalRate: number;
     totalApps: number;
   };
+}
+
+export interface LeaderboardData {
+  all: PeriodStats;
+  weekly: PeriodStats;
+  monthly: PeriodStats;
   recentActivity: RecentActivity[];
+}
+
+function calculatePeriodStats(
+  submissions: { date: string; agent: string; status: string }[],
+  filterFn?: (dateStr: string) => boolean
+): PeriodStats {
+  const filteredSubmissions = filterFn 
+    ? submissions.filter((s) => filterFn(s.date))
+    : submissions;
+
+  // Calculate per-agent stats
+  const agentMap = new Map<string, {
+    name: string;
+    totalApps: number;
+    approved: number;
+    pending: number;
+    declined: number;
+    todayApps: number;
+  }>();
+
+  filteredSubmissions.forEach((sub) => {
+    if (!sub.agent) return;
+    
+    const existing = agentMap.get(sub.agent) || {
+      name: sub.agent,
+      totalApps: 0,
+      approved: 0,
+      pending: 0,
+      declined: 0,
+      todayApps: 0,
+    };
+
+    existing.totalApps++;
+    
+    const status = sub.status.toLowerCase();
+    if (status === "approved") {
+      existing.approved++;
+    } else if (status === "pending") {
+      existing.pending++;
+    } else if (status === "denied" || status === "rejected" || status === "declined") {
+      existing.declined++;
+    }
+
+    if (isToday(sub.date)) {
+      existing.todayApps++;
+    }
+
+    agentMap.set(sub.agent, existing);
+  });
+
+  // Convert to array and calculate rates + ranks
+  const agentsArray = Array.from(agentMap.values())
+    .map((agent) => ({
+      ...agent,
+      approvalRate: agent.totalApps > 0 
+        ? Math.round((agent.approved / agent.totalApps) * 100) 
+        : 0,
+      rank: 0,
+    }))
+    .sort((a, b) => b.approved - a.approved);
+
+  // Assign ranks
+  agentsArray.forEach((agent, index) => {
+    agent.rank = index + 1;
+  });
+
+  // Calculate team stats
+  const totalAppsToday = filteredSubmissions.filter((s) => isToday(s.date)).length;
+  const totalApproved = filteredSubmissions.filter((s) => s.status.toLowerCase() === "approved").length;
+  const totalApps = filteredSubmissions.length;
+  const teamApprovalRate = totalApps > 0 
+    ? Math.round((totalApproved / totalApps) * 100) 
+    : 0;
+
+  return {
+    agents: agentsArray,
+    teamStats: {
+      totalAppsToday,
+      totalApproved,
+      teamApprovalRate,
+      totalApps,
+    },
+  };
 }
 
 export function useAgentLeaderboard() {
@@ -88,69 +208,10 @@ export function useAgentLeaderboard() {
         status: row["Status"] || row["status"] || "Pending",
       }));
 
-      // Calculate per-agent stats
-      const agentMap = new Map<string, {
-        name: string;
-        totalApps: number;
-        approved: number;
-        pending: number;
-        declined: number;
-        todayApps: number;
-      }>();
-
-      submissions.forEach((sub) => {
-        if (!sub.agent) return;
-        
-        const existing = agentMap.get(sub.agent) || {
-          name: sub.agent,
-          totalApps: 0,
-          approved: 0,
-          pending: 0,
-          declined: 0,
-          todayApps: 0,
-        };
-
-        existing.totalApps++;
-        
-        const status = sub.status.toLowerCase();
-        if (status === "approved") {
-          existing.approved++;
-        } else if (status === "pending") {
-          existing.pending++;
-        } else if (status === "denied" || status === "rejected" || status === "declined") {
-          existing.declined++;
-        }
-
-        if (isToday(sub.date)) {
-          existing.todayApps++;
-        }
-
-        agentMap.set(sub.agent, existing);
-      });
-
-      // Convert to array and calculate rates + ranks
-      const agentsArray = Array.from(agentMap.values())
-        .map((agent) => ({
-          ...agent,
-          approvalRate: agent.totalApps > 0 
-            ? Math.round((agent.approved / agent.totalApps) * 100) 
-            : 0,
-          rank: 0, // Will be assigned after sorting
-        }))
-        .sort((a, b) => b.approved - a.approved);
-
-      // Assign ranks
-      agentsArray.forEach((agent, index) => {
-        agent.rank = index + 1;
-      });
-
-      // Calculate team stats
-      const totalAppsToday = submissions.filter((s) => isToday(s.date)).length;
-      const totalApproved = submissions.filter((s) => s.status.toLowerCase() === "approved").length;
-      const totalApps = submissions.length;
-      const teamApprovalRate = totalApps > 0 
-        ? Math.round((totalApproved / totalApps) * 100) 
-        : 0;
+      // Calculate stats for each time period
+      const allTimeStats = calculatePeriodStats(submissions);
+      const weeklyStats = calculatePeriodStats(submissions, isWithinCurrentWeek);
+      const monthlyStats = calculatePeriodStats(submissions, isWithinCurrentMonth);
 
       // Generate recent activity (last 5 submissions with agent names)
       const recentActivity: RecentActivity[] = submissions
@@ -169,13 +230,9 @@ export function useAgentLeaderboard() {
         }));
 
       setData({
-        agents: agentsArray,
-        teamStats: {
-          totalAppsToday,
-          totalApproved,
-          teamApprovalRate,
-          totalApps,
-        },
+        all: allTimeStats,
+        weekly: weeklyStats,
+        monthly: monthlyStats,
         recentActivity,
       });
       setLastUpdated(new Date());
