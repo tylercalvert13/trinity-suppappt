@@ -102,3 +102,22 @@ export interface DashboardData {
   carrierStats: CarrierStats[];
   recentSubmissions: Submission[];
 }
+
+export interface AgentLeaderboardStats {
+  name: string;
+  rank: number;
+  totalApps: number;
+  approved: number;
+  pending: number;
+  declined: number;
+  approvalRate: number;
+  todayApps: number;
+}
+
+export interface RecentActivity {
+  id: string;
+  agent: string;
+  action: string;
+  timestamp: string;
+  type: "approved" | "submitted";
+}

@@ -28,6 +28,7 @@ const AnalyticsLogin = lazy(() => import("./pages/AnalyticsLogin"));
 const ContactCard = lazy(() => import("./pages/ContactCard"));
 const StandaloneBooking = lazy(() => import("./pages/StandaloneBooking"));
 const SalesTracking = lazy(() => import("./pages/SalesTracking"));
+const AgentLeaderboard = lazy(() => import("./pages/AgentLeaderboard"));
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/contactcard" element={<ContactCard />} />
             <Route path="/booking" element={<StandaloneBooking />} />
             <Route path="/salestracking" element={<SalesTracking />} />
+            <Route path="/leaderboard" element={<AgentLeaderboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
