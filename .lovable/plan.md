@@ -1,157 +1,69 @@
 
 
-# Agent Leaderboard Dashboard Plan
+# Fix: Leaderboard Page Not Loading
 
-## Goal
-Create a motivational, TV/monitor-friendly dashboard for agents that displays competitive metrics and encourages performance throughout the day - without exposing commission or premium data.
+## Problem Identified
 
----
+After investigating the code, I found the issue on **line 129** of `AgentLeaderboard.tsx`:
 
-## Available Metrics (From Sales/Submissions Data)
-
-| Metric | Source | Why It's Motivating |
-|--------|--------|---------------------|
-| **Applications Submitted** | Total submissions per agent | Raw activity metric |
-| **Approved Count** | Status = "approved" | Success/win metric |
-| **Approval Rate** | approved/total apps | Quality metric |
-| **Pending Apps** | Status = "pending" | "Money in the pipeline" |
-| **Today's Submissions** | Filter by today's date | Daily competition |
-
----
-
-## Dashboard Layout
-
-### Route: `/leaderboard`
-
-### Design: "Big Screen" Optimized
-- Large fonts, high contrast
-- Auto-refresh every 60 seconds
-- Dark theme (matches existing /salestracking)
-- Designed for office TV or monitor display
-
----
-
-## UI Sections
-
-### 1. Team Stats Hero (Top Row)
-Large team-wide numbers to celebrate collective wins:
-- **Total Apps Today** - Big number showing daily team activity
-- **Total Approved** - Cumulative team success count
-- **Team Approval Rate** - Quality benchmark percentage
-
-### 2. Agent Leaderboard Table (Main Section)
-Ranked table showing:
-
-| Rank | Agent | Apps | Approved | Rate | Today |
-|------|-------|------|----------|------|-------|
-| 1    | Name  | 12   | 10       | 83%  | +2    |
-| 2    | Name  | 9    | 7        | 78%  | +1    |
-| 3    | Name  | 8    | 6        | 75%  | 0     |
-
-**Visual Elements:**
-- Trophy/medal icons for top 3 positions
-- Green indicator for agents with activity today
-- Highlighted row for #1 position
-- Default sort by Approved count (descending)
-
-### 3. Recent Wins Feed (Right Sidebar on Desktop)
-Real-time activity feed:
-- "Sarah just got an app approved!"
-- "Mike submitted a new application"
-- Shows last 5 activities (no client names, just agent + action)
-
----
-
-## Technical Implementation
-
-### New Type (salesTracking.ts)
-```text
-interface AgentLeaderboardStats {
-  name: string;
-  rank: number;
-  totalApps: number;
-  approved: number;
-  pending: number;
-  declined: number;
-  approvalRate: number;
-  todayApps: number;
-}
+```tsx
+<div className={`space-y-${isFullscreen ? "4" : "6"}`}>
 ```
 
-### New Hook: `useAgentLeaderboard.ts`
-- Fetches from same CSV as useSalesData
-- Calculates per-agent stats (excluding commission/premium)
-- Adds "today" filter by comparing dates
-- Sorts by approved count and assigns ranks
-- 60-second auto-refresh interval
+This **dynamic Tailwind class construction doesn't work** because Tailwind CSS purges classes at build time and cannot detect dynamically constructed class names like `space-y-${variable}`.
 
-### New Components
-- `src/pages/AgentLeaderboard.tsx` - Main page
-- `src/components/leaderboard/LeaderboardHeader.tsx` - Page header with refresh indicator
-- `src/components/leaderboard/TeamStatsCards.tsx` - Hero stats row
-- `src/components/leaderboard/LeaderboardTable.tsx` - Ranked agent table with medals
-- `src/components/leaderboard/RecentWinsCard.tsx` - Activity feed sidebar
+When `isFullscreen` is `false`, Tailwind looks for the literal string `space-y-6`, but since this class is constructed dynamically, it's purged from the production build and doesn't exist in the CSS.
 
 ---
 
-## Files to Create
+## Solution
 
-| File | Purpose |
-|------|---------|
-| `src/pages/AgentLeaderboard.tsx` | Main page component |
-| `src/hooks/useAgentLeaderboard.ts` | Data hook (no sensitive data) |
-| `src/components/leaderboard/TeamStatsCards.tsx` | Hero stats cards |
-| `src/components/leaderboard/LeaderboardTable.tsx` | Ranked agent table |
-| `src/components/leaderboard/RecentWinsCard.tsx` | Activity feed |
+### Fix the Dynamic Tailwind Class
 
-### Files to Edit
+**File:** `src/pages/AgentLeaderboard.tsx`
+
+**Change line 129 from:**
+```tsx
+<div className={`space-y-${isFullscreen ? "4" : "6"}`}>
+```
+
+**To:**
+```tsx
+<div className={isFullscreen ? "space-y-4" : "space-y-6"}>
+```
+
+This ensures both `space-y-4` AND `space-y-6` are complete, static strings that Tailwind can detect and include in the build.
+
+---
+
+## Additional Safety Improvement
+
+While investigating, I noticed the async data fetching has proper try/catch handling, which is good. However, to add extra robustness for edge cases, we could add a check for malformed data.
+
+**Optional enhancement in `useAgentLeaderboard.ts`:**
+Add a validation check to ensure the parsed CSV data has the expected structure before processing.
+
+---
+
+## Summary of Changes
 
 | File | Change |
 |------|--------|
-| `src/App.tsx` | Add `/leaderboard` route |
-| `src/types/salesTracking.ts` | Add `AgentLeaderboardStats` type |
+| `src/pages/AgentLeaderboard.tsx` | Fix dynamic Tailwind class on line 129 to use complete static class strings |
 
 ---
 
-## Key Features
+## Technical Details
 
-### Auto-Refresh (60 seconds)
-```text
-useEffect(() => {
-  const interval = setInterval(refetch, 60000);
-  return () => clearInterval(interval);
-}, []);
-```
+### Why Dynamic Tailwind Classes Fail
 
-### No Sensitive Data Exposed
-- **Hidden**: Commission, Premium, Cost metrics
-- **Shown**: Counts, Rates, Ranks only
+Tailwind uses a JIT (Just-In-Time) compiler that scans your source code for class names. It can only detect:
+- Complete, static class names: `"space-y-4"`
+- Conditional complete classes: `isFullscreen ? "space-y-4" : "space-y-6"`
 
-### "Today" Detection
-- Compares submission dates to current date
-- Shows green badge/count for agents active today
-- Creates daily competition element
+It **cannot** detect:
+- Template literals with variables: `` `space-y-${value}` ``
+- Dynamically constructed strings
 
-### Mobile + TV Friendly
-- Responsive design works on phones and large screens
-- High contrast colors for visibility
-- Large touch targets for mobile
-
----
-
-## Visual Design Notes
-
-### Color Scheme
-- Background: Dark (slate-900)
-- Cards: White with subtle shadows
-- #1 Rank: Gold highlight
-- #2 Rank: Silver accent
-- #3 Rank: Bronze accent
-- "Today" activity: Green badges
-
-### Trophy Icons
-- 1st place: Gold trophy
-- 2nd place: Silver medal
-- 3rd place: Bronze medal
-- Others: Rank number
+The class simply doesn't get included in the final CSS bundle, causing the element to render without proper spacing - which in some edge cases can cause layout issues or React hydration mismatches.
 
