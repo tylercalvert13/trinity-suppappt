@@ -1,7 +1,8 @@
-import { RefreshCw, Trophy } from "lucide-react";
+import { RefreshCw, Trophy, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAgentLeaderboard } from "@/hooks/useAgentLeaderboard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAgentLeaderboard, TimePeriod } from "@/hooks/useAgentLeaderboard";
 import { TeamStatsCards } from "@/components/leaderboard/TeamStatsCards";
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
 import { RecentWinsCard } from "@/components/leaderboard/RecentWinsCard";
@@ -22,6 +23,28 @@ function LoadingSkeleton() {
       </div>
     </div>
   );
+}
+
+function getPeriodLabel(period: TimePeriod): string {
+  const today = new Date();
+  
+  if (period === "weekly") {
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
+    const formatDate = (d: Date) => 
+      `${d.getMonth() + 1}/${d.getDate()}`;
+    
+    return `Week of ${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
+  }
+  
+  if (period === "monthly") {
+    return today.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  }
+  
+  return "All Time";
 }
 
 export default function AgentLeaderboard() {
@@ -68,26 +91,59 @@ export default function AgentLeaderboard() {
         {/* Loading State */}
         {loading && !data && <LoadingSkeleton />}
 
-        {/* Data Display */}
+        {/* Data Display with Tabs */}
         {data && (
-          <div className="space-y-6">
-            {/* Team Stats Hero */}
-            <TeamStatsCards
-              totalAppsToday={data.teamStats.totalAppsToday}
-              totalApproved={data.teamStats.totalApproved}
-              teamApprovalRate={data.teamStats.teamApprovalRate}
-            />
+          <Tabs defaultValue="all" className="space-y-6">
+            <TabsList className="bg-slate-800 border border-slate-700 p-1">
+              <TabsTrigger 
+                value="all" 
+                className="data-[state=active]:bg-slate-600 data-[state=active]:text-white text-slate-300"
+              >
+                All Time
+              </TabsTrigger>
+              <TabsTrigger 
+                value="monthly"
+                className="data-[state=active]:bg-slate-600 data-[state=active]:text-white text-slate-300"
+              >
+                This Month
+              </TabsTrigger>
+              <TabsTrigger 
+                value="weekly"
+                className="data-[state=active]:bg-slate-600 data-[state=active]:text-white text-slate-300"
+              >
+                This Week
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Main Content: Leaderboard + Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <LeaderboardTable agents={data.agents} />
-              </div>
-              <div>
-                <RecentWinsCard activities={data.recentActivity} />
-              </div>
-            </div>
-          </div>
+            {(["all", "monthly", "weekly"] as TimePeriod[]).map((period) => (
+              <TabsContent key={period} value={period} className="space-y-6">
+                {/* Period Label */}
+                <div className="flex items-center gap-2 text-slate-400">
+                  <Calendar className="h-4 w-4" />
+                  <span className="text-sm font-medium">{getPeriodLabel(period)}</span>
+                </div>
+
+                {/* Team Stats Hero */}
+                <TeamStatsCards
+                  totalAppsToday={data[period].teamStats.totalAppsToday}
+                  totalApproved={data[period].teamStats.totalApproved}
+                  teamApprovalRate={data[period].teamStats.teamApprovalRate}
+                  periodLabel={period === "all" ? "Today" : period === "weekly" ? "This Week" : "This Month"}
+                  totalApps={data[period].teamStats.totalApps}
+                />
+
+                {/* Main Content: Leaderboard + Recent Activity */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2">
+                    <LeaderboardTable agents={data[period].agents} />
+                  </div>
+                  <div>
+                    <RecentWinsCard activities={data.recentActivity} />
+                  </div>
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
         )}
       </div>
     </div>
