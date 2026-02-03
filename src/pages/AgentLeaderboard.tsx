@@ -126,7 +126,7 @@ export default function AgentLeaderboard() {
 
         {/* Data Display */}
         {data && (
-          <div className={`space-y-${isFullscreen ? "4" : "6"}`}>
+          <div className={isFullscreen ? "space-y-4" : "space-y-6"}>
             {/* Team Stats Hero */}
             <TeamStatsCards
               totalAppsToday={data.all.teamStats.totalAppsToday}
