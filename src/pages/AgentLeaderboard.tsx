@@ -1,31 +1,21 @@
-import { RefreshCw, Trophy, Calendar } from "lucide-react";
+import { RefreshCw, Trophy, Calendar, CalendarDays, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAgentLeaderboard, TimePeriod } from "@/hooks/useAgentLeaderboard";
-import { TeamStatsCards } from "@/components/leaderboard/TeamStatsCards";
-import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
+import { useAgentLeaderboard } from "@/hooks/useAgentLeaderboard";
+import { CompactLeaderboardTable } from "@/components/leaderboard/CompactLeaderboardTable";
 import { RecentWinsCard } from "@/components/leaderboard/RecentWinsCard";
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-40 rounded-lg" />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Skeleton className="h-96 rounded-lg" />
-        </div>
-        <Skeleton className="h-96 rounded-lg" />
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[1, 2, 3, 4].map((i) => (
+        <Skeleton key={i} className="h-[500px] rounded-lg" />
+      ))}
     </div>
   );
 }
 
-function getPeriodLabel(period: TimePeriod): string {
+function getPeriodDateRange(period: "weekly" | "monthly"): string {
   const today = new Date();
   
   if (period === "weekly") {
@@ -34,17 +24,11 @@ function getPeriodLabel(period: TimePeriod): string {
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     
-    const formatDate = (d: Date) => 
-      `${d.getMonth() + 1}/${d.getDate()}`;
-    
-    return `Week of ${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
+    const formatDate = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+    return `${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
   }
   
-  if (period === "monthly") {
-    return today.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  }
-  
-  return "All Time";
+  return today.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
 export default function AgentLeaderboard() {
@@ -52,25 +36,25 @@ export default function AgentLeaderboard() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-foreground">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-6 max-w-[1920px]">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <Trophy className="h-10 w-10 text-yellow-500" />
+            <Trophy className="h-8 w-8 text-yellow-500" />
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white">
+              <h1 className="text-2xl md:text-3xl font-bold text-white">
                 Agent Leaderboard
               </h1>
               {lastUpdated && (
-                <p className="text-sm text-slate-400">
-                  Last updated: {lastUpdated.toLocaleTimeString()}
+                <p className="text-xs text-slate-400">
+                  Auto-refreshes every 60s • Last: {lastUpdated.toLocaleTimeString()}
                 </p>
               )}
             </div>
           </div>
           <Button
             variant="outline"
-            size="lg"
+            size="sm"
             onClick={() => refetch()}
             disabled={loading}
             className="flex items-center gap-2"
@@ -91,59 +75,42 @@ export default function AgentLeaderboard() {
         {/* Loading State */}
         {loading && !data && <LoadingSkeleton />}
 
-        {/* Data Display with Tabs */}
+        {/* All Leaderboards Side by Side */}
         {data && (
-          <Tabs defaultValue="all" className="space-y-6">
-            <TabsList className="bg-slate-800 border border-slate-700 p-1">
-              <TabsTrigger 
-                value="all" 
-                className="data-[state=active]:bg-slate-600 data-[state=active]:text-white text-slate-300"
-              >
-                All Time
-              </TabsTrigger>
-              <TabsTrigger 
-                value="monthly"
-                className="data-[state=active]:bg-slate-600 data-[state=active]:text-white text-slate-300"
-              >
-                This Month
-              </TabsTrigger>
-              <TabsTrigger 
-                value="weekly"
-                className="data-[state=active]:bg-slate-600 data-[state=active]:text-white text-slate-300"
-              >
-                This Week
-              </TabsTrigger>
-            </TabsList>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {/* This Week */}
+            <CompactLeaderboardTable
+              title="This Week"
+              subtitle={getPeriodDateRange("weekly")}
+              icon={<Clock className="h-5 w-5 text-emerald-400" />}
+              agents={data.weekly.agents}
+              stats={data.weekly.teamStats}
+              accentColor="emerald"
+            />
 
-            {(["all", "monthly", "weekly"] as TimePeriod[]).map((period) => (
-              <TabsContent key={period} value={period} className="space-y-6">
-                {/* Period Label */}
-                <div className="flex items-center gap-2 text-slate-400">
-                  <Calendar className="h-4 w-4" />
-                  <span className="text-sm font-medium">{getPeriodLabel(period)}</span>
-                </div>
+            {/* This Month */}
+            <CompactLeaderboardTable
+              title="This Month"
+              subtitle={getPeriodDateRange("monthly")}
+              icon={<CalendarDays className="h-5 w-5 text-blue-400" />}
+              agents={data.monthly.agents}
+              stats={data.monthly.teamStats}
+              accentColor="blue"
+            />
 
-                {/* Team Stats Hero */}
-                <TeamStatsCards
-                  totalAppsToday={data[period].teamStats.totalAppsToday}
-                  totalApproved={data[period].teamStats.totalApproved}
-                  teamApprovalRate={data[period].teamStats.teamApprovalRate}
-                  periodLabel={period === "all" ? "Today" : period === "weekly" ? "This Week" : "This Month"}
-                  totalApps={data[period].teamStats.totalApps}
-                />
+            {/* All Time */}
+            <CompactLeaderboardTable
+              title="All Time"
+              subtitle="Total Performance"
+              icon={<Calendar className="h-5 w-5 text-purple-400" />}
+              agents={data.all.agents}
+              stats={data.all.teamStats}
+              accentColor="purple"
+            />
 
-                {/* Main Content: Leaderboard + Recent Activity */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2">
-                    <LeaderboardTable agents={data[period].agents} />
-                  </div>
-                  <div>
-                    <RecentWinsCard activities={data.recentActivity} />
-                  </div>
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
+            {/* Recent Activity */}
+            <RecentWinsCard activities={data.recentActivity} />
+          </div>
         )}
       </div>
     </div>

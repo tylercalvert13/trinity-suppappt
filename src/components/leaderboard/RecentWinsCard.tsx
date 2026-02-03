@@ -8,53 +8,41 @@ interface RecentWinsCardProps {
 
 function ActivityIcon({ type }: { type: string }) {
   if (type === "approved") {
-    return <CheckCircle2 className="h-5 w-5 text-emerald-500" />;
+    return <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />;
   }
-  return <FileText className="h-5 w-5 text-blue-500" />;
+  return <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />;
 }
 
 export function RecentWinsCard({ activities }: RecentWinsCardProps) {
-  if (activities.length === 0) {
-    return (
-      <Card className="shadow-lg h-full">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-xl font-bold flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-yellow-500" />
-            Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-8">
-            No recent activity yet
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="shadow-lg h-full">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-xl font-bold flex items-center gap-2">
+    <Card className="bg-slate-800 border-slate-700 shadow-lg h-full flex flex-col">
+      <CardHeader className="pb-3 bg-gradient-to-b from-yellow-500/10 to-transparent">
+        <CardTitle className="text-lg font-bold flex items-center gap-2 text-white">
           <Sparkles className="h-5 w-5 text-yellow-500" />
           Recent Activity
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {activities.map((activity) => (
-          <div 
-            key={activity.id}
-            className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
-          >
-            <ActivityIcon type={activity.type} />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">
-                <span className="font-bold">{activity.agent}</span>{" "}
-                {activity.action}
-              </p>
-            </div>
+      <CardContent className="flex-1 pt-2 px-3 pb-3">
+        {activities.length === 0 ? (
+          <p className="text-slate-500 text-center py-8 text-sm">
+            No recent activity yet
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {activities.map((activity) => (
+              <div 
+                key={activity.id}
+                className="flex items-start gap-2 p-2 rounded-lg bg-slate-700/30"
+              >
+                <ActivityIcon type={activity.type} />
+                <p className="text-sm text-slate-300">
+                  <span className="font-semibold text-white">{activity.agent}</span>{" "}
+                  {activity.action}
+                </p>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </CardContent>
     </Card>
   );
