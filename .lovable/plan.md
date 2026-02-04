@@ -1,85 +1,108 @@
 
-## What’s happening (most likely)
-Because your report is “blank / stuck loading” on the live custom domain, the most common cause in a Vite + React Router app like this is:
 
-- the `/leaderboard` page is **lazy-loaded** (`lazy(() => import("./pages/AgentLeaderboard"))`)
-- on some browsers/CDN-cache states, the **JS chunk for that route fails to load** (stale cache after a deploy, or a transient CDN mismatch)
-- React stays in the global `<Suspense fallback={<PageLoader />}>` forever, so it looks like “it never loads”
+# Fix: Recent Submissions Box Not Updating
 
-This typically shows up in the browser console as something like:
-- `Loading chunk ... failed`
-- `Failed to fetch dynamically imported module`
-- `net::ERR_ABORTED` on a `*.js` chunk request
+## Problem Analysis
 
-Important note: we already fixed the Tailwind dynamic class issue, but that wouldn’t normally cause an infinite “loading” screen; it would more often cause styling issues. The “stuck loading” symptom aligns more with a chunk-load failure.
+After investigating the code, I've identified several issues with the "Recent Submissions" box:
 
-## Goal
-Make the live site resilient so that if a route chunk fails to load, it:
-1) automatically recovers (one forced refresh), and
-2) if it still can’t load, shows a clear on-screen error with a “Reload” button instead of hanging forever.
+### Issue 1: Date Parsing Problem
+In `useSalesData.ts` (lines 193-196), the recent submissions are sorted using:
+```typescript
+.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+```
 
-## Plan (implementation steps)
+If the date format from your Google Sheet (e.g., `2/4/2026` or `02-04-2026`) is not a format that JavaScript's `Date` constructor reliably parses, **all dates may become `NaN`**, causing the sort to be random/arbitrary. This means "recent" submissions may not actually be the most recent ones.
 
-### 1) Add a “lazy import with retry + auto-reload” helper
-- Create a small helper (e.g. `lazyWithRetry`) that wraps `React.lazy`.
-- If the import fails, do a **single automatic page reload** (guarded by `sessionStorage` so it doesn’t loop forever).
-- After the one reload attempt, if it still fails, rethrow so an error boundary can show a message.
+### Issue 2: No Automatic Refresh
+The data only fetches once when the page loads. If new submissions are added to the Google Sheet, users must manually click "Refresh" to see them.
 
-Where:
-- Add helper in a small utility file (e.g. `src/lib/lazyWithRetry.ts`) or inline it in `src/App.tsx` if you prefer fewer files.
+---
 
-### 2) Use `lazyWithRetry` for the `/leaderboard` route (and optionally all routes)
-- Update `src/App.tsx` to replace:
-  - `const AgentLeaderboard = lazy(() => import("./pages/AgentLeaderboard"));`
-  with:
-  - `const AgentLeaderboard = lazyWithRetry(() => import("./pages/AgentLeaderboard"));`
+## Solution
 
-Optional but recommended:
-- Apply it to all lazy routes so the entire site is protected from the same deploy-cache scenario.
+### Step 1: Robust Date Parsing for Recent Submissions
 
-### 3) Add an Error Boundary around the router (so failures aren’t “blank forever”)
-Right now you have Suspense but no error boundary. If a lazy import errors, it can lead to a bad UX.
+Update the sorting logic to handle common date formats from Google Sheets (MM/DD/YYYY, M/D/YYYY, YYYY-MM-DD, etc.):
 
-- Add a small `AppErrorBoundary` component (either inline in `App.tsx` or as `src/components/AppErrorBoundary.tsx`)
-- Wrap the `<Suspense>` / `<Routes>` block so that:
-  - On chunk-load failures, it shows:
-    - “We just updated the site. Please reload.”
-    - a “Reload” button that runs `window.location.reload()`
+**File:** `src/hooks/useSalesData.ts`
 
-### 4) Add Vite-specific preload error recovery (extra safety)
-Vite can emit a `vite:preloadError` event for modulepreload problems.
+Add a helper function to parse dates more robustly:
+```typescript
+function parseDate(dateStr: string): Date {
+  if (!dateStr) return new Date(0);
+  
+  // Try standard ISO format first
+  let date = new Date(dateStr);
+  if (!isNaN(date.getTime())) return date;
+  
+  // Try MM/DD/YYYY or M/D/YYYY format
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const month = parseInt(parts[0], 10) - 1;
+    const day = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+    date = new Date(year, month, day);
+    if (!isNaN(date.getTime())) return date;
+  }
+  
+  return new Date(0); // Fallback to epoch if unparseable
+}
+```
 
-- In `src/main.tsx`, add:
-  - `window.addEventListener("vite:preloadError", () => window.location.reload());`
+Then update the recent submissions sort:
+```typescript
+const recentSubmissions = [...submissions]
+  .sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime())
+  .slice(0, 5);
+```
 
-This is a lightweight “belt and suspenders” fix that often resolves edge cases where the browser can’t resolve a preloaded module after deploy.
+### Step 2: Increase Recent Submissions Count
 
-### 5) Add a “stuck loading” timeout message (UX improvement)
-Even if nothing throws, a user might still get stuck due to an extension/network issue.
+Show more submissions for better visibility (e.g., 10 instead of 5):
+```typescript
+.slice(0, 10);
+```
 
-- Enhance `PageLoader` in `App.tsx`:
-  - After ~8–12 seconds, show a small message:
-    - “Still loading? Try reloading the page.”
-  - Optionally provide a reload button.
+### Step 3: Add Auto-Refresh (Optional Enhancement)
 
-### 6) Validate end-to-end on live + custom domain
-After implementing:
-- Test on:
-  - `https://health-helpers-oasis-site.lovable.app/leaderboard`
-  - `https://healthhelpers.co/leaderboard`
-- Test scenarios:
-  1) Normal navigation (open homepage then go to `/leaderboard`)
-  2) Direct deep link (paste `/leaderboard` into a fresh tab)
-  3) Hard refresh (Cmd/Ctrl+Shift+R)
-  4) Incognito/private window (eliminates extensions + cache)
+Add a polling mechanism to refresh data every 60 seconds:
+```typescript
+useEffect(() => {
+  fetchData();
+  const interval = setInterval(fetchData, 60000); // Refresh every 60s
+  return () => clearInterval(interval);
+}, [fetchData]);
+```
 
-## Expected result
-- The leaderboard should no longer “hang” indefinitely.
-- If the browser ever hits a stale deploy cache state, it will self-heal with one refresh.
-- If something still prevents loading, users will see a clear error UI with a reload button instead of a blank screen.
+### Step 4: Add Cache-Busting to Google Sheets Request
 
-## Notes (technical)
-- This approach doesn’t require backend changes.
-- It specifically addresses the most common production-only issue with `React.lazy` + deployments + caching.
-- It’s safe to ship; it only triggers the forced reload when an import fails, and only once per session.
+Google Sheets can cache responses. Add a timestamp parameter to force fresh data:
+```typescript
+const response = await fetch(`${SUBMISSIONS_URL}&_t=${Date.now()}`);
+```
+
+---
+
+## Summary of Changes
+
+| File | Change |
+|------|--------|
+| `src/hooks/useSalesData.ts` | Add robust date parsing, cache-busting, and optional auto-refresh |
+
+---
+
+## Technical Details
+
+### Why Date Parsing Fails
+
+JavaScript's `Date` constructor is inconsistent across browsers. For example:
+- `new Date("2/4/2026")` works in Chrome but may fail in Safari
+- `new Date("02-04-2026")` is often interpreted as February 4th or April 2nd depending on locale
+
+By explicitly parsing the date parts, we ensure consistent behavior across all browsers.
+
+### Why Cache-Busting Helps
+
+Google Sheets published CSV URLs can be cached by browsers and CDNs. Adding a unique timestamp query parameter (`&_t=1738698000000`) ensures each request fetches fresh data without being served a stale cached response.
 
