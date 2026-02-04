@@ -50,6 +50,26 @@ function parseNumber(value: string): number {
   return isNaN(num) ? 0 : num;
 }
 
+function parseDate(dateStr: string): Date {
+  if (!dateStr) return new Date(0);
+  
+  // Try standard ISO format first
+  let date = new Date(dateStr);
+  if (!isNaN(date.getTime())) return date;
+  
+  // Try MM/DD/YYYY or M/D/YYYY format
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const month = parseInt(parts[0], 10) - 1;
+    const day = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+    date = new Date(year, month, day);
+    if (!isNaN(date.getTime())) return date;
+  }
+  
+  return new Date(0); // Fallback to epoch if unparseable
+}
+
 function formatDateKey(dateStr: string): string {
   if (!dateStr) return "";
   const date = new Date(dateStr);
@@ -68,7 +88,7 @@ export function useSalesData() {
     setError(null);
 
     try {
-      const response = await fetch(SUBMISSIONS_URL);
+      const response = await fetch(`${SUBMISSIONS_URL}&_t=${Date.now()}`);
       if (!response.ok) {
         throw new Error("Failed to fetch data from Google Sheets");
       }
@@ -190,10 +210,10 @@ export function useSalesData() {
         (a, b) => b.count - a.count
       );
 
-      // Recent submissions (last 5)
+      // Recent submissions (last 10)
       const recentSubmissions = [...submissions]
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 5);
+        .sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime())
+        .slice(0, 10);
 
       setData({
         totalSales: submissions.length,
@@ -220,6 +240,8 @@ export function useSalesData() {
 
   useEffect(() => {
     fetchData();
+    const interval = setInterval(fetchData, 60000); // Auto-refresh every 60s
+    return () => clearInterval(interval);
   }, [fetchData]);
 
   return { data, loading, error, lastUpdated, refetch: fetchData };
