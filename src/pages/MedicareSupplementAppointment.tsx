@@ -630,28 +630,71 @@ const MedicareSupplementAppointment = () => {
     trackStepChange("loading");
 
     try {
-      // Get quote from CSG API with 30-second timeout to prevent infinite hangs
-      const quotePromise = supabase.functions.invoke('get-medicare-quote', {
-        body: {
-          plan: formData.plan,
-          currentPayment: parseFloat(formData.currentPayment),
-          gender: formData.gender,
-          tobacco: formData.tobacco,
-          spouse: formData.spouse,
-          age: parseInt(formData.age),
-          zipCode: formData.zipCode,
-        }
-      });
-      
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Quote request timed out after 30 seconds')), 30000)
-      );
+      // Get quote from CSG API with 30-second timeout and one retry on transient failures
+      const fetchQuote = async (isRetry = false): Promise<{ data: any; error: any }> => {
+        const quotePromise = supabase.functions.invoke('get-medicare-quote', {
+          body: {
+            plan: formData.plan,
+            currentPayment: parseFloat(formData.currentPayment),
+            gender: formData.gender,
+            tobacco: formData.tobacco,
+            spouse: formData.spouse,
+            age: parseInt(formData.age),
+            zipCode: formData.zipCode,
+          }
+        });
+        
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Quote request timed out after 30 seconds')), 30000)
+        );
 
-      const { data, error: quoteError } = await Promise.race([quotePromise, timeoutPromise]);
+        try {
+          const result = await Promise.race([quotePromise, timeoutPromise]);
+          
+          // Retry once on transient server errors (500, 502, 503, 504)
+          if (!isRetry && result.error) {
+            const status = result.error?.context?.status || result.error?.status;
+            if ([500, 502, 503, 504].includes(status)) {
+              console.log('Retrying quote after transient error:', status);
+              trackEvent({ 
+                eventType: 'quote_retry', 
+                metadata: { status, attempt: 2 } 
+              });
+              return fetchQuote(true);
+            }
+          }
+          return result;
+        } catch (err) {
+          // Retry once on timeout or network errors
+          if (!isRetry) {
+            console.log('Retrying quote after error:', err);
+            trackEvent({ 
+              eventType: 'quote_retry', 
+              metadata: { error: String(err), attempt: 2 } 
+            });
+            return fetchQuote(true);
+          }
+          throw err;
+        }
+      };
+
+      const { data, error: quoteError } = await fetchQuote();
 
       if (quoteError) {
         console.error("Quote error:", quoteError);
-        setError("Unable to retrieve quotes. Please try again or call us directly.");
+        // Log analytics event for quote failure
+        trackEvent({ 
+          eventType: 'quote_error', 
+          step: 'contact',
+          metadata: { 
+            errorMessage: quoteError?.message || 'Unknown error',
+            status: quoteError?.context?.status,
+            zip: formData.zipCode,
+            age: formData.age,
+            plan: formData.plan,
+          } 
+        });
+        setError("We're having trouble retrieving rates right now. Please try again in a moment or call us directly.");
         setStep("contact");
         return;
       }
@@ -1277,7 +1320,6 @@ const MedicareSupplementAppointment = () => {
                   type="hidden" 
                   name="xxTrustedFormCertUrl" 
                   id="xxTrustedFormCertUrl" 
-                  value="" 
                 />
                 {/* Noscript fallback for TrustedForm */}
                 <noscript>
