@@ -322,12 +322,16 @@ const MedicareSupplementAppointment = () => {
   // Warmup the quote API to pre-cache CSG token
   useQuoteWarmup();
 
-  // Auto-scroll to question container when step changes
+  // Auto-scroll behavior based on step changes
   useEffect(() => {
     if (QUESTION_STEPS.includes(step)) {
+      // Scroll to question container for question steps
       setTimeout(() => {
         questionContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
+    } else if (step === "loading" || step === "qualified") {
+      // Scroll to top for loading and results pages
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
     }
   }, [step]);
 
