@@ -1,133 +1,101 @@
 
-## Diagnosis (why it’s still coming through as `null`)
-Based on your current implementation and the TrustedForm docs you linked, there are two high-probability blockers:
+## Scroll-to-Top Fix for Supplement Appointment Funnel
 
-1) **The TrustedForm SDK expects the `<form>` to exist in the DOM before the SDK loads.**  
-   - Your app loads the TrustedForm script on component mount (`useEffect([])`), but the actual lead-gen `<form>` is only rendered later when `step === "contact"`.
-   - TrustedForm’s prerequisite explicitly says: *“The form must be present in the page before loading the TrustedForm Certify Web SDK.”*  
-   - Result: the SDK never properly attaches to your form, and no cert URL is injected.
+### Problem
+Currently, the `/suppappt`, `/suppappt1`, and `/suppappt-refund` funnels scroll to the question container on question steps, but do NOT scroll to the top of the page when transitioning to the "loading" or "qualified" (results) steps. This can leave users mid-page or at the bottom, especially on mobile devices.
 
-2) **You’re using `use_tagged_consent=true` but the form currently has no consent tags.**  
-   - Their Consent Tagging doc states this is required when `use_tagged_consent=true`.
-   - Missing/incorrect tags can cause the certificate to fail checks and can also prevent expected behavior depending on configuration.
+### Solution
+We will implement a two-part fix:
 
-A secondary (but important) robustness issue:
-- TrustedForm often creates the hidden input with an ID like `xxTrustedFormCertUrl_0`. If we only read `#xxTrustedFormCertUrl`, we may miss the populated field.
+1. **Add a global ScrollToTop component** - Ensures every route change scrolls to the top (handles direct navigation, refreshes, and cross-page navigation)
+
+2. **Add scroll-to-top behavior for "loading" and "qualified" steps** - Within each funnel page, explicitly scroll to the top when entering these critical steps
 
 ---
 
-## What we will change (high-level)
-We’ll make the TrustedForm integration match TrustedForm’s documented assumptions:
+### Changes
 
-### A) Ensure the lead `<form>` exists before the TrustedForm script runs
-We will refactor `src/pages/MedicareSupplementAppointment.tsx` so the contact `<form>` is **always mounted** in the DOM, but visually hidden until the user reaches the `contact` step.
+#### 1. Create `src/components/ScrollToTop.tsx`
+A simple component that scrolls to the top of the page whenever the route pathname changes.
 
-- Today: `{step === "contact" && <form ... />}` (form is mounted too late)
-- Target: `<form ... className={step === "contact" ? "" : "hidden"} ...>` (form exists from page load)
+```text
++---------------+
+|  ScrollToTop  |
++---------------+
+        |
+        v
+Listens for pathname changes via useLocation
+        |
+        v
+Calls window.scrollTo(0, 0) instantly
+```
 
-This keeps the DOM stable and satisfies TrustedForm’s prerequisite.
+#### 2. Update `src/App.tsx`
+Import and add the `ScrollToTop` component inside the `BrowserRouter` so it can access the router context.
 
-### B) Put TrustedForm hidden fields inside that form (not outside)
-TrustedForm is designed to append/capture hidden fields **within the form** being submitted.
+#### 3. Update `src/pages/MedicareSupplementAppointment.tsx`
+Modify the existing scroll `useEffect` to also handle "loading" and "qualified" steps by scrolling to the top of the page:
+- When entering "loading": scroll to top immediately so users see the loading animation
+- When entering "qualified": scroll to top so users see their results from the beginning (the 5-second auto-scroll to booking widget will still happen after)
 
-We will:
-- Remove the top-level hidden input you added outside the form.
-- Add the hidden input back **inside the always-mounted contact form**, using a TrustedForm-compatible ID.
+#### 4. Update `src/pages/MedicareSupplementAppointment1.tsx`
+Apply the same scroll-to-top logic for "loading" and "qualified" steps.
 
-Planned hidden fields:
-- `<input type="hidden" name="xxTrustedFormCertUrl" id="xxTrustedFormCertUrl_0" />`
-- (Optional but recommended) `<input type="hidden" name="xxTrustedFormPingUrl" id="xxTrustedFormPingUrl_0" />`
-  - and add `ping_field=xxTrustedFormPingUrl` to the script URL
-
-### C) Implement consent tags to match `use_tagged_consent=true`
-Because your script URL includes `use_tagged_consent=true`, we’ll add the required `data-tf-element-role` attributes.
-
-Minimum viable tagging for your current UI:
-- Add `data-tf-element-role="offer"` to the `<form>`
-- Add `data-tf-element-role="submit"` to the submit `<Button>`
-- Move the consent paragraph into the `<form>` (so it’s clearly associated with the offer)
-- Add:
-  - `data-tf-element-role="consent-language"` on the paragraph container
-  - Wrap the exact submit label text (“See My New Rate”) with `data-tf-element-role="submit-text"` (must match button label)
-  - Wrap “Health Helpers” with `data-tf-element-role="consent-advertiser-name"` (since consent is being granted to one advertiser)
-
-This aligns with the ActiveProspect consent-tagging specification.
-
-### D) Make certificate capture more robust (eliminate “still null” edge cases)
-In `handleContactSubmit`, instead of reading only one ID, we’ll implement a helper that finds the cert URL in any of the common places TrustedForm uses:
-
-- `#xxTrustedFormCertUrl`
-- `#xxTrustedFormCertUrl_0`
-- Any `input[name="xxTrustedFormCertUrl"]`
-- Any `input[id^="xxTrustedFormCertUrl"]` with a value starting with `https://cert.trustedform.com/`
-
-Also, because your flow does async quote retrieval before sending the lead, we’ll add a short “wait for cert” step:
-- Poll for up to ~1500–2000ms (every 100ms) to see if TrustedForm populated the value.
-- If still empty after the wait, we send null (but we’ll log clearly so we can diagnose adblock/script failure).
-
-### E) Ensure the server-side webhook payload is easy to map
-In `supabase/functions/send-lead-webhook-suppappt/index.ts`, we will include **both** keys to reduce CRM mapping mistakes:
-- `trustedFormCertUrl` (current)
-- `xxTrustedFormCertUrl` (TrustedForm’s standard field name)
-
-This avoids “it’s in the payload but the CRM expects a different key” scenarios.
+#### 5. Update `src/pages/MedicareSupplementAppointmentRefund.tsx`
+Apply the same scroll-to-top logic for "loading" and "qualified" steps.
 
 ---
 
-## “Send a test lead” without using a browser (what’s possible vs not)
-TrustedForm certificates are generated by the Web SDK running in a real browser session (it captures page context, events, etc.). So:
+### Technical Details
 
-- We **cannot generate a real TrustedForm certificate URL purely server-side** (no browser).
-- We **can** send a test lead payload to your CRM via a backend call, but it would need:
-  - either a real cert URL copied from a browser run, or
-  - a dummy/sandbox value (useful for pipeline/mapping, not for true certificate verification)
+**ScrollToTop Component:**
+```typescript
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
-To support your request, we’ll do both:
-1) Add a small internal capability to **send a test lead via backend invocation** (no browser automation).  
-   - You provide an optional `trustedFormCertUrl` value.
-2) Recommend a one-time manual step (you do it once): open `/suppappt`, inspect DOM, copy the generated cert URL, then we can resend that cert server-side as many times as you want for setup/testing.
+export const ScrollToTop = () => {
+  const { pathname } = useLocation();
 
-(If you want, we can also add a “preview-only sandbox mode” toggle using TrustedForm’s `sandbox=true` parameter so test certificates are clearly marked as sandbox.)
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname]);
 
----
+  return null;
+};
+```
 
-## Implementation checklist (files)
-### 1) `src/pages/MedicareSupplementAppointment.tsx`
-- Refactor contact step rendering so the `<form>` is always mounted, only hidden when not on contact step.
-- Move TrustedForm hidden inputs inside the form, use `_0` IDs.
-- Add `ping_field` support (optional but recommended).
-- Add consent tags (`data-tf-element-role`) consistent with `use_tagged_consent=true`.
-- Add `getTrustedFormCertUrl()` helper + short polling wait before posting lead.
-- Add targeted console logging (temporary or behind a small `debug` flag) showing:
-  - whether the TrustedForm script loaded
-  - which TrustedForm inputs exist
-  - what value (if any) was captured
+**Updated scroll useEffect in funnel pages:**
+```typescript
+// Auto-scroll behavior based on step changes
+useEffect(() => {
+  if (QUESTION_STEPS.includes(step)) {
+    // Scroll to question container for question steps
+    setTimeout(() => {
+      questionContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  } else if (step === "loading" || step === "qualified") {
+    // Scroll to top for loading and results pages
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }
+}, [step]);
+```
 
-### 2) `supabase/functions/send-lead-webhook-suppappt/index.ts`
-- Include both `trustedFormCertUrl` and `xxTrustedFormCertUrl` fields in the outgoing payload.
-- Add log line explicitly showing the received cert URL (helps confirm whether it’s missing client-side vs lost in transit).
-
-### 3) (Optional) Add a backend “test lead sender” function
-- New backend function (name TBD) that accepts JSON with:
-  - lead fields + optional `trustedFormCertUrl`
-- It posts directly to the same CRM webhook URL.
-- Purpose: you can trigger test leads without touching the UI (but again: you still need a real cert if the goal is certificate verification, not just mapping).
+The `behavior: 'instant'` ensures the scroll happens immediately without animation for the loading/qualified steps, so users see the content right away.
 
 ---
 
-## Verification steps (after implementation)
-1) Open `/suppappt` in a normal browser window (ideally incognito, no ad blockers).
-2) Inspect DOM and confirm the form contains an input like:
-   - `input[name="xxTrustedFormCertUrl"]` with a value starting `https://cert.trustedform.com/...`
-3) Submit a lead; confirm backend logs show a non-null cert.
-4) Confirm your CRM receives:
-   - `trustedFormCertUrl` and/or `xxTrustedFormCertUrl` populated.
-5) If it’s still null:
-   - Check whether a blocker is preventing `https://api.trustedform.com/trustedform.js` from loading (adblock/privacy tools)
-   - We’ll have enough logs in place to pinpoint whether the script loaded and whether it injected a different field ID than expected.
+### Files to Modify
+1. **Create**: `src/components/ScrollToTop.tsx` - New component
+2. **Edit**: `src/App.tsx` - Add ScrollToTop inside BrowserRouter
+3. **Edit**: `src/pages/MedicareSupplementAppointment.tsx` - Add scroll-to-top for loading/qualified
+4. **Edit**: `src/pages/MedicareSupplementAppointment1.tsx` - Add scroll-to-top for loading/qualified
+5. **Edit**: `src/pages/MedicareSupplementAppointmentRefund.tsx` - Add scroll-to-top for loading/qualified
 
 ---
 
-## Expected outcome
-- TrustedForm cert URL is generated reliably and captured at submission time.
-- You can send repeatable test leads (backend-triggered) for setup/mapping once you have at least one real cert URL.
+### Expected Behavior After Fix
+- Every page in the funnel starts at the top
+- Question steps smoothly scroll to the question container
+- Loading step immediately scrolls to top to show the loading animation
+- Results (qualified) step starts at the top showing the rate, then auto-scrolls to booking widget after 5 seconds
+- Works consistently across all devices (desktop, tablet, mobile)
