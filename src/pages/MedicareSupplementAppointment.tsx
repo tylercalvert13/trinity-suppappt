@@ -419,7 +419,7 @@ const MedicareSupplementAppointment = () => {
     tf.type = 'text/javascript';
     tf.async = true;
     tf.id = 'trustedform-script';
-    tf.src = 'https://api.trustedform.com/trustedform.js?field=xxTrustedFormCertUrl&use_tagged_consent=true&l=' +
+    tf.src = 'https://api.trustedform.com/trustedform.js?field=xxTrustedFormCertUrl&ping_field=xxTrustedFormPingUrl&use_tagged_consent=true&l=' +
       new Date().getTime() + Math.random();
     
     const s = document.getElementsByTagName('script')[0];
@@ -718,9 +718,41 @@ const MedicareSupplementAppointment = () => {
       // Get user's timezone from browser (IANA format for GHL)
       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
-      // Capture TrustedForm certificate URL for consent verification
-      const trustedFormCertUrl = 
-        (document.getElementById('xxTrustedFormCertUrl') as HTMLInputElement)?.value || null;
+      // Capture TrustedForm certificate URL with robust detection + polling
+      const getTrustedFormCertUrl = async (): Promise<string | null> => {
+        // Selectors TrustedForm commonly uses
+        const selectors = [
+          '#xxTrustedFormCertUrl_0',
+          '#xxTrustedFormCertUrl',
+          'input[name="xxTrustedFormCertUrl"]',
+        ];
+        
+        // Poll up to 2 seconds (20 * 100ms) for the value to be populated
+        for (let attempt = 0; attempt < 20; attempt++) {
+          for (const selector of selectors) {
+            const el = document.querySelector(selector) as HTMLInputElement | null;
+            if (el?.value && el.value.startsWith('https://cert.trustedform.com/')) {
+              console.log('[TrustedForm] Certificate captured:', el.value);
+              return el.value;
+            }
+          }
+          // Wait 100ms before next attempt
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Log diagnostics if we failed to get a cert
+        console.warn('[TrustedForm] Certificate URL not found after polling. Diagnostics:', {
+          scriptLoaded: !!document.getElementById('trustedform-script'),
+          hiddenInputsFound: selectors.map(s => ({
+            selector: s,
+            exists: !!document.querySelector(s),
+            value: (document.querySelector(s) as HTMLInputElement | null)?.value || null,
+          })),
+        });
+        return null;
+      };
+      
+      const trustedFormCertUrl = await getTrustedFormCertUrl();
       
       // Send lead to GHL webhook (suppappt-specific)
       await supabase.functions.invoke('send-lead-webhook-suppappt', {
@@ -797,11 +829,11 @@ const MedicareSupplementAppointment = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* TrustedForm hidden field - MUST be present from page load for script to populate */}
-      <input type="hidden" name="xxTrustedFormCertUrl" id="xxTrustedFormCertUrl" />
+      {/* TrustedForm noscript fallback (outside form is fine for this) */}
       <noscript>
         <img src="https://api.trustedform.com/ns.gif" height="1" width="1" style={{ display: 'none' }} alt="" />
       </noscript>
+
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white py-8 md:py-12">
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -1289,8 +1321,8 @@ const MedicareSupplementAppointment = () => {
             </div>
           )}
 
-          {/* Contact Form */}
-          {step === "contact" && (
+          {/* Contact Form - ALWAYS mounted (hidden until contact step) for TrustedForm SDK */}
+          <div className={step === "contact" ? "block" : "hidden"}>
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
@@ -1319,7 +1351,15 @@ const MedicareSupplementAppointment = () => {
                 </div>
               )}
 
-              <form onSubmit={handleContactSubmit} className="space-y-4">
+              <form 
+                onSubmit={handleContactSubmit} 
+                className="space-y-4"
+                data-tf-element-role="offer"
+              >
+                {/* TrustedForm hidden fields - MUST be inside the form */}
+                <input type="hidden" name="xxTrustedFormCertUrl" id="xxTrustedFormCertUrl_0" />
+                <input type="hidden" name="xxTrustedFormPingUrl" id="xxTrustedFormPingUrl_0" />
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name</Label>
@@ -1394,10 +1434,28 @@ const MedicareSupplementAppointment = () => {
                     <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
                   )}
                 </div>
+                
+                {/* Consent language with TrustedForm tagging */}
+                <p 
+                  className="text-xs text-muted-foreground text-center mt-4 leading-relaxed"
+                  data-tf-element-role="consent-language"
+                >
+                  By clicking "<span data-tf-element-role="submit-text">See My New Rate</span>," I consent to receive calls, text messages, and emails 
+                  from <span data-tf-element-role="consent-advertiser-name">Health Helpers</span> and its partners regarding my Medicare inquiry. I understand these 
+                  communications may be made using automated telephone dialing systems, artificial intelligence, 
+                  and/or prerecorded messages. Message frequency varies. Message and data rates may apply. 
+                  I can opt out at any time by texting STOP or calling directly. This consent is not required 
+                  to receive a quote. I agree to the{' '}
+                  <Link to="/terms-of-service" className="underline hover:text-foreground">Terms of Service</Link>
+                  {' '}and{' '}
+                  <Link to="/privacy-policy" className="underline hover:text-foreground">Privacy Policy</Link>.
+                </p>
+
                 <Button
                   type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto rounded-xl"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto rounded-xl mt-4"
                   disabled={isSubmitting || isValidating || !formData.firstName || !formData.lastName || !formData.email || !formData.phone}
+                  data-tf-element-role="submit"
                 >
                   {isValidating ? (
                     <>
@@ -1407,24 +1465,12 @@ const MedicareSupplementAppointment = () => {
                   ) : isSubmitting ? (
                     "Comparing Rates..."
                   ) : (
-                    "See My New Rate"
+                    <span data-tf-element-role="submit-text">See My New Rate</span>
                   )}
                 </Button>
               </form>
-
-              <p className="text-xs text-muted-foreground text-center mt-4 leading-relaxed">
-                By clicking "See My New Rate," I consent to receive calls, text messages, and emails 
-                from Health Helpers and its partners regarding my Medicare inquiry. I understand these 
-                communications may be made using automated telephone dialing systems, artificial intelligence, 
-                and/or prerecorded messages. Message frequency varies. Message and data rates may apply. 
-                I can opt out at any time by texting STOP or calling directly. This consent is not required 
-                to receive a quote. I agree to the{' '}
-                <Link to="/terms-of-service" className="underline hover:text-foreground">Terms of Service</Link>
-                {' '}and{' '}
-                <Link to="/privacy-policy" className="underline hover:text-foreground">Privacy Policy</Link>.
-              </p>
             </div>
-          )}
+          </div>
 
           {/* Loading Screen - Animated Progress Indicator */}
           {step === "loading" && (
