@@ -69,6 +69,8 @@ const MedicareSupplementAppointment1 = () => {
   const [error, setError] = useState<string | null>(null);
   const funnelRef = useRef<HTMLDivElement>(null);
   const questionContainerRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef<HTMLDivElement>(null);
+  const resultsHeaderRef = useRef<HTMLDivElement>(null);
   const [detectedState, setDetectedState] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   
@@ -97,9 +99,16 @@ const MedicareSupplementAppointment1 = () => {
       setTimeout(() => {
         questionContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
-    } else if (step === "loading" || step === "qualified") {
-      // Scroll to top for loading and results pages
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    } else if (step === "loading") {
+      // Scroll to loading component
+      setTimeout(() => {
+        loadingRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }, 50);
+    } else if (step === "qualified") {
+      // Scroll to results header ("Great news")
+      setTimeout(() => {
+        resultsHeaderRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }, 50);
     }
   }, [step]);
 
@@ -874,7 +883,7 @@ const MedicareSupplementAppointment1 = () => {
 
           {/* Loading Screen */}
           {step === "loading" && (
-            <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border text-center">
+            <div ref={loadingRef} className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border text-center">
               <div className="mb-6">
                 <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
               </div>
@@ -889,7 +898,7 @@ const MedicareSupplementAppointment1 = () => {
           {step === "qualified" && quoteResult && (
             <div className="space-y-6">
               {/* Success Header */}
-              <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
+              <div ref={resultsHeaderRef} className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="h-10 w-10 text-green-600" />
                 </div>
