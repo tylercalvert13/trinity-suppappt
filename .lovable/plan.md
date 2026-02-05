@@ -1,151 +1,138 @@
 
-# Implement TrustedForm on /suppappt Funnel
-
-## Overview
-TrustedForm provides independent proof of consent for lead submissions. The script generates a unique certificate URL that captures the user's session and form submission, which is then passed to your CRM (GHL) as proof of consent.
-
-## How TrustedForm Works
-
-1. **Script Loading**: The TrustedForm script runs on the page and tracks user interaction
-2. **Certificate Generation**: As the user interacts with the form, TrustedForm generates a unique certificate URL
-3. **Hidden Field Injection**: The script automatically injects the certificate URL into a hidden input field named `xxTrustedFormCertUrl`
-4. **Lead Submission**: When the form is submitted, you capture that URL and pass it along with the lead data
+## Goal
+Restore quote retrieval in the **/suppappt** funnel while keeping TrustedForm installed, and make the integration more robust so this doesn’t regress again.
 
 ---
 
-## Implementation Steps
+## What changed (and what likely didn’t)
+From the diff you shared, the only changes were:
+1) Loading the TrustedForm script on `/suppappt`
+2) Adding a hidden input + noscript pixel
+3) Reading that hidden input during **lead submission**
+4) Passing `trustedFormCertUrl` to the lead webhook function
 
-### Step 1: Load TrustedForm Script on Component Mount
+None of that should directly affect the **quote request** because quotes are requested *before* the lead webhook is called. So the most likely scenario is:
+- The quote “backend function” is failing/undeployed in the published environment, or
+- The quote call is failing due to a runtime/CORS/bundling issue that was already present and surfaced again.
 
-Add a `useEffect` hook in `MedicareSupplementAppointment.tsx` that dynamically injects the TrustedForm script when the page loads.
+That said, there is one real bug in the TrustedForm snippet we should fix anyway (details below).
 
-**File:** `src/pages/MedicareSupplementAppointment.tsx`
+---
 
-```typescript
-// Add useEffect to load TrustedForm script
-useEffect(() => {
-  // Only load once
-  if (document.getElementById('trustedform-script')) return;
-  
-  const tf = document.createElement('script');
-  tf.type = 'text/javascript';
-  tf.async = true;
-  tf.id = 'trustedform-script';
-  tf.src = 'https://api.trustedform.com/trustedform.js?field=xxTrustedFormCertUrl&use_tagged_consent=true&l=' +
-    new Date().getTime() + Math.random();
-  
-  const s = document.getElementsByTagName('script')[0];
-  s.parentNode?.insertBefore(tf, s);
-  
-  // Cleanup on unmount
-  return () => {
-    const script = document.getElementById('trustedform-script');
-    if (script) script.remove();
-  };
-}, []);
-```
+## Phase 1 — Confirm the exact failure mode (fast, diagnostic)
+1) Reproduce on the published site:
+   - Go to `/suppappt`, complete the funnel, submit contact step.
+   - Capture:
+     - Browser console error(s)
+     - Network request to the quote function (status code + response body)
 
-### Step 2: Add Hidden Input Field to Contact Form
+2) Add improved client-side logging (temporary or keep behind a debug flag):
+   - When `supabase.functions.invoke('get-medicare-quote')` returns `quoteError`, log:
+     - `quoteError.message`
+     - `quoteError.context?.status` (if present)
+     - Any `details` / response body if available
 
-Add a hidden input inside the contact form that TrustedForm will populate with the certificate URL.
+3) Check backend logs for the quote function:
+   - If there are **no logs**, it often means the function isn’t being reached (404 / not deployed / routing issue).
+   - If there **are logs**, find whether it’s:
+     - 401/403
+     - 500 internal error
+     - Timeout / upstream CSG API error
 
-**File:** `src/pages/MedicareSupplementAppointment.tsx` (inside the contact form)
+**Decision point**
+- If the quote call returns **404** → deployment/bundling issue.
+- If it returns **CORS/preflight error** → CORS header allowlist issue.
+- If it returns **500** → runtime error inside the function (CSG auth/token table/etc).
 
+---
+
+## Phase 2 — Fix the most common root cause: quote function deployment/bundling reliability
+The quote function currently imports Supabase client via:
+- `https://esm.sh/@supabase/supabase-js@2`
+
+This is a known source of intermittent bundling/deploy timeouts. The stabilization steps:
+
+1) Update the quote function import to use Deno’s `npm:` specifier:
+   - Change:
+     - `import { createClient } from "https://esm.sh/@supabase/supabase-js@2";`
+   - To:
+     - `import { createClient } from "npm:@supabase/supabase-js@2";`
+
+2) (Optional but recommended) Update CORS headers to the fuller allowlist used by modern clients:
+   - Expand `Access-Control-Allow-Headers` to include the common client runtime headers so preflight can’t fail unexpectedly.
+
+3) Redeploy the quote function and verify it responds in production.
+
+---
+
+## Phase 3 — Fix the TrustedForm hidden field so it can actually populate (important)
+Right now the hidden input is rendered as:
 ```tsx
-<form onSubmit={handleContactSubmit} className="space-y-4">
-  {/* TrustedForm hidden field - certificate URL will be injected here */}
-  <input 
-    type="hidden" 
-    name="xxTrustedFormCertUrl" 
-    id="xxTrustedFormCertUrl" 
-    value="" 
-  />
-  
-  {/* ... rest of form fields ... */}
-</form>
+<input type="hidden" id="xxTrustedFormCertUrl" name="xxTrustedFormCertUrl" value="" />
 ```
 
-### Step 3: Capture Certificate URL on Form Submission
+In React, providing `value=""` makes it a controlled field whose value is forced by React. That can prevent third-party scripts (TrustedForm) from reliably setting the value.
 
-Update `handleContactSubmit` to read the TrustedForm certificate URL from the hidden field before sending to the webhook.
+Change it to an uncontrolled field:
+- Remove `value=""` entirely, or replace with `defaultValue=""`.
 
-**File:** `src/pages/MedicareSupplementAppointment.tsx`
-
-```typescript
-const handleContactSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  // Capture TrustedForm certificate URL
-  const trustedFormCertUrl = 
-    (document.getElementById('xxTrustedFormCertUrl') as HTMLInputElement)?.value || null;
-  
-  // ... rest of validation and submission logic ...
-  
-  // Include in webhook payload
-  await supabase.functions.invoke('send-lead-webhook-suppappt', {
-    body: {
-      ...formData,
-      trustedFormCertUrl, // Add certificate URL
-      // ... other fields
-    }
-  });
-};
-```
-
-### Step 4: Update Edge Function to Pass Certificate URL to GHL
-
-Add `trustedFormCertUrl` to the webhook payload sent to GoHighLevel.
-
-**File:** `supabase/functions/send-lead-webhook-suppappt/index.ts`
-
-```typescript
-const payload = {
-  // ... existing fields ...
-  
-  // TrustedForm certificate for consent verification
-  trustedFormCertUrl: data.trustedFormCertUrl || null,
-  
-  // ... rest of payload
-};
-```
-
-### Step 5: Add Noscript Fallback (Optional but Recommended)
-
-For users with JavaScript disabled, add a noscript image tag. This can be added alongside the hidden field in the form.
-
-```tsx
-{/* Noscript fallback for TrustedForm */}
-<noscript>
-  <img src="https://api.trustedform.com/ns.gif" height="1" width="1" style={{ display: 'none' }} />
-</noscript>
-```
+This won’t fix quote retrieval, but it is required for TrustedForm to work correctly.
 
 ---
 
-## Summary of Changes
+## Phase 4 — Make /suppappt more resilient to temporary quote failures
+Once quotes are working again, harden the user experience:
 
-| File | Change |
-|------|--------|
-| `src/pages/MedicareSupplementAppointment.tsx` | Add TrustedForm script loader, hidden input field, and capture cert URL on submit |
-| `supabase/functions/send-lead-webhook-suppappt/index.ts` | Pass `trustedFormCertUrl` to GHL webhook payload |
+1) Add one safe retry for quote retrieval on transient failures:
+   - Retry once if status is 500/502/503/504 or if the error message indicates a transient network error.
+
+2) Improve user-facing messaging:
+   - If quote fails, show:
+     - “We’re having trouble retrieving rates right now. Please try again in a moment or call.”
+   - Keep the funnel state consistent (avoid losing form inputs).
+
+3) Add lightweight monitoring breadcrumbs:
+   - Log an analytics event for quote failure with:
+     - status code (if present)
+     - funnel step
+     - zip/age/plan (non-sensitive)
 
 ---
 
-## Technical Details
+## Phase 5 — End-to-end verification checklist (must-do)
+1) On the published site:
+   - Complete `/suppappt` with a valid input set.
+   - Confirm the quote returns and “qualified” state is reached.
 
-### Why Dynamic Script Loading?
-Since this is a React SPA, we load the script dynamically via `useEffect` rather than adding it to `index.html`. This:
-- Only loads the script on the /suppappt page (not site-wide)
-- Properly cleans up when navigating away
-- Follows React patterns for third-party script integration
+2) Confirm TrustedForm is populated:
+   - Inspect DOM for `#xxTrustedFormCertUrl`
+   - Ensure it contains a `cert.trustedform.com/...` style URL (or TrustedForm’s cert URL format)
 
-### TrustedForm Script Parameters
-- `field=xxTrustedFormCertUrl` - The hidden field name where the cert URL will be injected
-- `use_tagged_consent=true` - Enables tagged consent tracking for TCPA compliance
-- Timestamp + random suffix prevents caching issues
+3) Confirm lead payload contains `trustedFormCertUrl`:
+   - Verify in your CRM/webhook logs that the field arrives.
 
-### Verification
-After implementation, you can verify TrustedForm is working by:
-1. Opening browser DevTools → Elements
-2. Searching for `xxTrustedFormCertUrl` in the DOM
-3. The hidden field should contain a URL like `https://cert.trustedform.com/...`
+4) Repeat on mobile viewport (Safari iOS if possible).
+
+---
+
+## Minimal file touch list (expected)
+- `supabase/functions/get-medicare-quote/index.ts`
+  - Switch `esm.sh` import → `npm:`
+  - (Optionally) improve CORS allowlist
+  - Keep existing logic intact
+- `src/pages/MedicareSupplementAppointment.tsx`
+  - Change TrustedForm hidden input to uncontrolled (`defaultValue` or no value prop)
+  - (Optional) add better error logging around quoteError
+
+---
+
+## Rollback strategy (if needed)
+If something goes sideways, we can temporarily:
+- Remove the TrustedForm script injection (but keep the hidden field), restore quote flow, then re-add TrustedForm using the corrected uncontrolled hidden field approach.
+
+---
+
+## Why this plan is the fastest path
+- It addresses the highest-probability production blocker (quote function deploy/bundle instability).
+- It fixes a real TrustedForm correctness issue (React-controlled hidden input).
+- It adds observability so if the issue recurs, we’ll know exactly whether it’s 404 vs CORS vs 500 vs timeout.
