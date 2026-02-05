@@ -286,6 +286,8 @@ const MedicareSupplementAppointmentRefund = () => {
   const funnelRef = useRef<HTMLDivElement>(null);
   const questionContainerRef = useRef<HTMLDivElement>(null);
   const bookingWidgetRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef<HTMLDivElement>(null);
+  const resultsHeaderRef = useRef<HTMLDivElement>(null);
   const [detectedState, setDetectedState] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [autoScrollDone, setAutoScrollDone] = useState(false);
@@ -329,9 +331,16 @@ const MedicareSupplementAppointmentRefund = () => {
       setTimeout(() => {
         questionContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
-    } else if (step === "loading" || step === "qualified") {
-      // Scroll to top for loading and results pages
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    } else if (step === "loading") {
+      // Scroll to loading component
+      setTimeout(() => {
+        loadingRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }, 50);
+    } else if (step === "qualified") {
+      // Scroll to results header ("Great news")
+      setTimeout(() => {
+        resultsHeaderRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }, 50);
     }
   }, [step]);
 
@@ -1361,14 +1370,16 @@ const MedicareSupplementAppointmentRefund = () => {
 
           {/* Loading Screen - Animated Progress Indicator */}
           {step === "loading" && (
-            <QuoteLoadingProgress planType={formData.plan} />
+            <div ref={loadingRef}>
+              <QuoteLoadingProgress planType={formData.plan} />
+            </div>
           )}
 
           {/* Qualified/Results Screen - REFUND ANGLE: Savings is primary */}
           {step === "qualified" && quoteResult && (
             <div className="space-y-6">
               {/* Success Header - REFUND ANGLE: Show savings as primary */}
-              <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
+              <div ref={resultsHeaderRef} className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="h-10 w-10 text-green-600" />
                 </div>
