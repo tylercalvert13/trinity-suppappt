@@ -410,6 +410,28 @@ const MedicareSupplementAppointment = () => {
     detectLocation().finally(() => clearTimeout(timeout));
   }, []);
 
+  // Load TrustedForm script for lead consent certification
+  useEffect(() => {
+    // Only load once
+    if (document.getElementById('trustedform-script')) return;
+    
+    const tf = document.createElement('script');
+    tf.type = 'text/javascript';
+    tf.async = true;
+    tf.id = 'trustedform-script';
+    tf.src = 'https://api.trustedform.com/trustedform.js?field=xxTrustedFormCertUrl&use_tagged_consent=true&l=' +
+      new Date().getTime() + Math.random();
+    
+    const s = document.getElementsByTagName('script')[0];
+    s.parentNode?.insertBefore(tf, s);
+    
+    // Cleanup on unmount
+    return () => {
+      const script = document.getElementById('trustedform-script');
+      if (script) script.remove();
+    };
+  }, []);
+
   // SEO meta tags
   useEffect(() => {
     document.title = "Medicare Supplement Appointment | Health Helpers";
@@ -653,6 +675,10 @@ const MedicareSupplementAppointment = () => {
       // Get user's timezone from browser (IANA format for GHL)
       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
+      // Capture TrustedForm certificate URL for consent verification
+      const trustedFormCertUrl = 
+        (document.getElementById('xxTrustedFormCertUrl') as HTMLInputElement)?.value || null;
+      
       // Send lead to GHL webhook (suppappt-specific)
       await supabase.functions.invoke('send-lead-webhook-suppappt', {
         body: {
@@ -667,6 +693,7 @@ const MedicareSupplementAppointment = () => {
           sessionId,
           page: 'suppappt',
           timezone: userTimezone,
+          trustedFormCertUrl,
         }
       });
 
@@ -1245,6 +1272,17 @@ const MedicareSupplementAppointment = () => {
               )}
 
               <form onSubmit={handleContactSubmit} className="space-y-4">
+                {/* TrustedForm hidden field - certificate URL will be injected here */}
+                <input 
+                  type="hidden" 
+                  name="xxTrustedFormCertUrl" 
+                  id="xxTrustedFormCertUrl" 
+                  value="" 
+                />
+                {/* Noscript fallback for TrustedForm */}
+                <noscript>
+                  <img src="https://api.trustedform.com/ns.gif" height="1" width="1" style={{ display: 'none' }} alt="" />
+                </noscript>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name</Label>

@@ -72,6 +72,9 @@ serve(async (req) => {
       // Session tracking (if available)
       visitorId: data.visitorId,
       sessionId: data.sessionId,
+      
+      // TrustedForm certificate for consent verification
+      trustedFormCertUrl: data.trustedFormCertUrl || null,
     };
 
     console.log("Sending to GHL webhook (suppappt):", GHL_WEBHOOK_URL);
