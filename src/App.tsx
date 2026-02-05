@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { Button } from "@/components/ui/button";
 
 // Lazy load all pages with retry logic for resilience
@@ -74,6 +75,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <AppErrorBoundary>
           <Suspense fallback={<PageLoader />}>
             <Routes>
