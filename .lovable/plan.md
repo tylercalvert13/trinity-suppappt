@@ -1,88 +1,133 @@
 
-# Fix: TrustedForm Certificate URL Coming Through as Null
+## Diagnosis (why it’s still coming through as `null`)
+Based on your current implementation and the TrustedForm docs you linked, there are two high-probability blockers:
 
-## Problem Identified
-The TrustedForm certificate URL is `null` because the hidden input element is only rendered when the user reaches the "contact" step, but the TrustedForm script is loaded on component mount and immediately looks for the hidden field to inject the certificate URL.
+1) **The TrustedForm SDK expects the `<form>` to exist in the DOM before the SDK loads.**  
+   - Your app loads the TrustedForm script on component mount (`useEffect([])`), but the actual lead-gen `<form>` is only rendered later when `step === "contact"`.
+   - TrustedForm’s prerequisite explicitly says: *“The form must be present in the page before loading the TrustedForm Certify Web SDK.”*  
+   - Result: the SDK never properly attaches to your form, and no cert URL is injected.
 
-When the script loads:
-1. User is on step 1 (plan selection)
-2. The hidden input `#xxTrustedFormCertUrl` doesn't exist in the DOM yet
-3. TrustedForm script can't find it, so it never injects the certificate URL
-4. By the time the contact form renders, it's too late
+2) **You’re using `use_tagged_consent=true` but the form currently has no consent tags.**  
+   - Their Consent Tagging doc states this is required when `use_tagged_consent=true`.
+   - Missing/incorrect tags can cause the certificate to fail checks and can also prevent expected behavior depending on configuration.
 
----
-
-## Solution
-
-### Move the Hidden Input Outside of Conditional Rendering
-
-The TrustedForm hidden input must be present in the DOM from the moment the component mounts, **not** only when the contact form step is displayed.
-
-**Current (broken):**
-```tsx
-{step === "contact" && (
-  <form>
-    <input type="hidden" id="xxTrustedFormCertUrl" />  {/* Only exists on contact step */}
-    ...
-  </form>
-)}
-```
-
-**Fixed:**
-```tsx
-{/* TrustedForm hidden field - must be present from page load */}
-<input type="hidden" name="xxTrustedFormCertUrl" id="xxTrustedFormCertUrl" />
-
-{step === "contact" && (
-  <form>
-    {/* Form fields without the hidden input */}
-    ...
-  </form>
-)}
-```
-
-### File Changes
-
-| File | Change |
-|------|--------|
-| `src/pages/MedicareSupplementAppointment.tsx` | Move hidden input from inside the contact form to the component's root level (outside any conditional step rendering) |
+A secondary (but important) robustness issue:
+- TrustedForm often creates the hidden input with an ID like `xxTrustedFormCertUrl_0`. If we only read `#xxTrustedFormCertUrl`, we may miss the populated field.
 
 ---
 
-## Technical Details
+## What we will change (high-level)
+We’ll make the TrustedForm integration match TrustedForm’s documented assumptions:
 
-### Why This Fixes It
-- TrustedForm script looks for `#xxTrustedFormCertUrl` immediately after loading
-- By having it in the DOM from component mount, the script can find and populate it
-- When we later read the value on form submission, it will contain the certificate URL
+### A) Ensure the lead `<form>` exists before the TrustedForm script runs
+We will refactor `src/pages/MedicareSupplementAppointment.tsx` so the contact `<form>` is **always mounted** in the DOM, but visually hidden until the user reaches the `contact` step.
 
-### Where to Place the Hidden Input
-Place it at the top level of the component's JSX return, before any step-conditional content. For example, right after the opening container `div`:
+- Today: `{step === "contact" && <form ... />}` (form is mounted too late)
+- Target: `<form ... className={step === "contact" ? "" : "hidden"} ...>` (form exists from page load)
 
-```tsx
-return (
-  <div className="...">
-    {/* TrustedForm hidden field - always present */}
-    <input type="hidden" name="xxTrustedFormCertUrl" id="xxTrustedFormCertUrl" />
-    <noscript>
-      <img src="https://api.trustedform.com/ns.gif" ... />
-    </noscript>
-    
-    {/* Rest of component with step-based rendering */}
-    ...
-  </div>
-);
-```
+This keeps the DOM stable and satisfies TrustedForm’s prerequisite.
 
-### Verification Steps
-After the fix:
-1. Load `/suppappt` in the browser
-2. Open DevTools → Elements
-3. Search for `xxTrustedFormCertUrl`
-4. Verify it has a value like `https://cert.trustedform.com/...`
-5. Complete the funnel and check CRM logs for the certificate URL
+### B) Put TrustedForm hidden fields inside that form (not outside)
+TrustedForm is designed to append/capture hidden fields **within the form** being submitted.
+
+We will:
+- Remove the top-level hidden input you added outside the form.
+- Add the hidden input back **inside the always-mounted contact form**, using a TrustedForm-compatible ID.
+
+Planned hidden fields:
+- `<input type="hidden" name="xxTrustedFormCertUrl" id="xxTrustedFormCertUrl_0" />`
+- (Optional but recommended) `<input type="hidden" name="xxTrustedFormPingUrl" id="xxTrustedFormPingUrl_0" />`
+  - and add `ping_field=xxTrustedFormPingUrl` to the script URL
+
+### C) Implement consent tags to match `use_tagged_consent=true`
+Because your script URL includes `use_tagged_consent=true`, we’ll add the required `data-tf-element-role` attributes.
+
+Minimum viable tagging for your current UI:
+- Add `data-tf-element-role="offer"` to the `<form>`
+- Add `data-tf-element-role="submit"` to the submit `<Button>`
+- Move the consent paragraph into the `<form>` (so it’s clearly associated with the offer)
+- Add:
+  - `data-tf-element-role="consent-language"` on the paragraph container
+  - Wrap the exact submit label text (“See My New Rate”) with `data-tf-element-role="submit-text"` (must match button label)
+  - Wrap “Health Helpers” with `data-tf-element-role="consent-advertiser-name"` (since consent is being granted to one advertiser)
+
+This aligns with the ActiveProspect consent-tagging specification.
+
+### D) Make certificate capture more robust (eliminate “still null” edge cases)
+In `handleContactSubmit`, instead of reading only one ID, we’ll implement a helper that finds the cert URL in any of the common places TrustedForm uses:
+
+- `#xxTrustedFormCertUrl`
+- `#xxTrustedFormCertUrl_0`
+- Any `input[name="xxTrustedFormCertUrl"]`
+- Any `input[id^="xxTrustedFormCertUrl"]` with a value starting with `https://cert.trustedform.com/`
+
+Also, because your flow does async quote retrieval before sending the lead, we’ll add a short “wait for cert” step:
+- Poll for up to ~1500–2000ms (every 100ms) to see if TrustedForm populated the value.
+- If still empty after the wait, we send null (but we’ll log clearly so we can diagnose adblock/script failure).
+
+### E) Ensure the server-side webhook payload is easy to map
+In `supabase/functions/send-lead-webhook-suppappt/index.ts`, we will include **both** keys to reduce CRM mapping mistakes:
+- `trustedFormCertUrl` (current)
+- `xxTrustedFormCertUrl` (TrustedForm’s standard field name)
+
+This avoids “it’s in the payload but the CRM expects a different key” scenarios.
 
 ---
 
-## Implementation Summary
-This is a single-line move in the component. The hidden input and noscript tag need to be relocated from inside `{step === "contact" && ...}` to the root level of the component's return statement.
+## “Send a test lead” without using a browser (what’s possible vs not)
+TrustedForm certificates are generated by the Web SDK running in a real browser session (it captures page context, events, etc.). So:
+
+- We **cannot generate a real TrustedForm certificate URL purely server-side** (no browser).
+- We **can** send a test lead payload to your CRM via a backend call, but it would need:
+  - either a real cert URL copied from a browser run, or
+  - a dummy/sandbox value (useful for pipeline/mapping, not for true certificate verification)
+
+To support your request, we’ll do both:
+1) Add a small internal capability to **send a test lead via backend invocation** (no browser automation).  
+   - You provide an optional `trustedFormCertUrl` value.
+2) Recommend a one-time manual step (you do it once): open `/suppappt`, inspect DOM, copy the generated cert URL, then we can resend that cert server-side as many times as you want for setup/testing.
+
+(If you want, we can also add a “preview-only sandbox mode” toggle using TrustedForm’s `sandbox=true` parameter so test certificates are clearly marked as sandbox.)
+
+---
+
+## Implementation checklist (files)
+### 1) `src/pages/MedicareSupplementAppointment.tsx`
+- Refactor contact step rendering so the `<form>` is always mounted, only hidden when not on contact step.
+- Move TrustedForm hidden inputs inside the form, use `_0` IDs.
+- Add `ping_field` support (optional but recommended).
+- Add consent tags (`data-tf-element-role`) consistent with `use_tagged_consent=true`.
+- Add `getTrustedFormCertUrl()` helper + short polling wait before posting lead.
+- Add targeted console logging (temporary or behind a small `debug` flag) showing:
+  - whether the TrustedForm script loaded
+  - which TrustedForm inputs exist
+  - what value (if any) was captured
+
+### 2) `supabase/functions/send-lead-webhook-suppappt/index.ts`
+- Include both `trustedFormCertUrl` and `xxTrustedFormCertUrl` fields in the outgoing payload.
+- Add log line explicitly showing the received cert URL (helps confirm whether it’s missing client-side vs lost in transit).
+
+### 3) (Optional) Add a backend “test lead sender” function
+- New backend function (name TBD) that accepts JSON with:
+  - lead fields + optional `trustedFormCertUrl`
+- It posts directly to the same CRM webhook URL.
+- Purpose: you can trigger test leads without touching the UI (but again: you still need a real cert if the goal is certificate verification, not just mapping).
+
+---
+
+## Verification steps (after implementation)
+1) Open `/suppappt` in a normal browser window (ideally incognito, no ad blockers).
+2) Inspect DOM and confirm the form contains an input like:
+   - `input[name="xxTrustedFormCertUrl"]` with a value starting `https://cert.trustedform.com/...`
+3) Submit a lead; confirm backend logs show a non-null cert.
+4) Confirm your CRM receives:
+   - `trustedFormCertUrl` and/or `xxTrustedFormCertUrl` populated.
+5) If it’s still null:
+   - Check whether a blocker is preventing `https://api.trustedform.com/trustedform.js` from loading (adblock/privacy tools)
+   - We’ll have enough logs in place to pinpoint whether the script loaded and whether it injected a different field ID than expected.
+
+---
+
+## Expected outcome
+- TrustedForm cert URL is generated reliably and captured at submission time.
+- You can send repeatable test leads (backend-triggered) for setup/mapping once you have at least one real cert URL.
