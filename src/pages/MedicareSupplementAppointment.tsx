@@ -797,6 +797,11 @@ const MedicareSupplementAppointment = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* TrustedForm hidden field - MUST be present from page load for script to populate */}
+      <input type="hidden" name="xxTrustedFormCertUrl" id="xxTrustedFormCertUrl" />
+      <noscript>
+        <img src="https://api.trustedform.com/ns.gif" height="1" width="1" style={{ display: 'none' }} alt="" />
+      </noscript>
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white py-8 md:py-12">
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -1315,16 +1320,6 @@ const MedicareSupplementAppointment = () => {
               )}
 
               <form onSubmit={handleContactSubmit} className="space-y-4">
-                {/* TrustedForm hidden field - certificate URL will be injected here */}
-                <input 
-                  type="hidden" 
-                  name="xxTrustedFormCertUrl" 
-                  id="xxTrustedFormCertUrl" 
-                />
-                {/* Noscript fallback for TrustedForm */}
-                <noscript>
-                  <img src="https://api.trustedform.com/ns.gif" height="1" width="1" style={{ display: 'none' }} alt="" />
-                </noscript>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name</Label>
