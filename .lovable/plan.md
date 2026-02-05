@@ -1,101 +1,116 @@
 
-## Scroll-to-Top Fix for Supplement Appointment Funnel
+
+## Scroll to Specific Elements on Loading and Results Pages
 
 ### Problem
-Currently, the `/suppappt`, `/suppappt1`, and `/suppappt-refund` funnels scroll to the question container on question steps, but do NOT scroll to the top of the page when transitioning to the "loading" or "qualified" (results) steps. This can leave users mid-page or at the bottom, especially on mobile devices.
+The current implementation scrolls to the very top of the screen (`window.scrollTo({ top: 0 })`) when entering the "loading" and "qualified" steps. You want:
+1. **Loading page**: Scroll so the loading icon/progress component is at the top of the viewport
+2. **Results page**: Scroll so the "Great News" header is at the top of the viewport
 
 ### Solution
-We will implement a two-part fix:
-
-1. **Add a global ScrollToTop component** - Ensures every route change scrolls to the top (handles direct navigation, refreshes, and cross-page navigation)
-
-2. **Add scroll-to-top behavior for "loading" and "qualified" steps** - Within each funnel page, explicitly scroll to the top when entering these critical steps
+Instead of scrolling to the very top of the page, we'll use refs to scroll to the specific elements:
+- Add a ref to the loading component wrapper
+- Add a ref to the results header container
+- Use `scrollIntoView({ behavior: 'instant', block: 'start' })` to position these elements at the top of the viewport
 
 ---
 
 ### Changes
 
-#### 1. Create `src/components/ScrollToTop.tsx`
-A simple component that scrolls to the top of the page whenever the route pathname changes.
+#### 1. Update `src/pages/MedicareSupplementAppointment.tsx`
 
-```text
-+---------------+
-|  ScrollToTop  |
-+---------------+
-        |
-        v
-Listens for pathname changes via useLocation
-        |
-        v
-Calls window.scrollTo(0, 0) instantly
+**Add two new refs:**
+```typescript
+const loadingRef = useRef<HTMLDivElement>(null);
+const resultsHeaderRef = useRef<HTMLDivElement>(null);
 ```
 
-#### 2. Update `src/App.tsx`
-Import and add the `ScrollToTop` component inside the `BrowserRouter` so it can access the router context.
-
-#### 3. Update `src/pages/MedicareSupplementAppointment.tsx`
-Modify the existing scroll `useEffect` to also handle "loading" and "qualified" steps by scrolling to the top of the page:
-- When entering "loading": scroll to top immediately so users see the loading animation
-- When entering "qualified": scroll to top so users see their results from the beginning (the 5-second auto-scroll to booking widget will still happen after)
-
-#### 4. Update `src/pages/MedicareSupplementAppointment1.tsx`
-Apply the same scroll-to-top logic for "loading" and "qualified" steps.
-
-#### 5. Update `src/pages/MedicareSupplementAppointmentRefund.tsx`
-Apply the same scroll-to-top logic for "loading" and "qualified" steps.
-
----
-
-### Technical Details
-
-**ScrollToTop Component:**
+**Update the scroll useEffect:**
 ```typescript
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
-
-export const ScrollToTop = () => {
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }, [pathname]);
-
-  return null;
-};
-```
-
-**Updated scroll useEffect in funnel pages:**
-```typescript
-// Auto-scroll behavior based on step changes
 useEffect(() => {
   if (QUESTION_STEPS.includes(step)) {
     // Scroll to question container for question steps
     setTimeout(() => {
       questionContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
-  } else if (step === "loading" || step === "qualified") {
-    // Scroll to top for loading and results pages
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  } else if (step === "loading") {
+    // Scroll to loading component
+    setTimeout(() => {
+      loadingRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }, 50);
+  } else if (step === "qualified") {
+    // Scroll to results header ("Great news")
+    setTimeout(() => {
+      resultsHeaderRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }, 50);
   }
 }, [step]);
 ```
 
-The `behavior: 'instant'` ensures the scroll happens immediately without animation for the loading/qualified steps, so users see the content right away.
+**Wrap the loading component with a ref:**
+```tsx
+{step === "loading" && (
+  <div ref={loadingRef}>
+    <QuoteLoadingProgress planType={formData.plan} />
+  </div>
+)}
+```
+
+**Add ref to the results success header:**
+```tsx
+{step === "qualified" && quoteResult && (
+  <div className="space-y-6">
+    {/* Success Header */}
+    <div ref={resultsHeaderRef} className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
+      ...
+    </div>
+    ...
+  </div>
+)}
+```
+
+#### 2. Update `src/pages/MedicareSupplementAppointment1.tsx`
+
+Apply the same pattern:
+- Add `loadingRef` and `resultsHeaderRef`
+- Update the scroll useEffect to use refs
+- Wrap the loading div with `loadingRef`
+- Add `resultsHeaderRef` to the success header div
+
+#### 3. Update `src/pages/MedicareSupplementAppointmentRefund.tsx`
+
+Apply the same pattern:
+- Add `loadingRef` and `resultsHeaderRef`
+- Update the scroll useEffect to use refs
+- Wrap the QuoteLoadingProgress with `loadingRef`
+- Add `resultsHeaderRef` to the success header div
+
+---
+
+### Technical Details
+
+**Why use `scrollIntoView` with refs instead of `window.scrollTo`?**
+- `scrollIntoView({ block: 'start' })` positions the element at the top of the viewport
+- This works regardless of where the element is on the page
+- It accounts for any fixed headers or other layout considerations
+- The `behavior: 'instant'` ensures immediate scrolling without animation
+
+**Why the 50ms delay?**
+- A small delay ensures the element is rendered and measurable before scrolling
+- This prevents race conditions where the scroll happens before React has committed the DOM update
 
 ---
 
 ### Files to Modify
-1. **Create**: `src/components/ScrollToTop.tsx` - New component
-2. **Edit**: `src/App.tsx` - Add ScrollToTop inside BrowserRouter
-3. **Edit**: `src/pages/MedicareSupplementAppointment.tsx` - Add scroll-to-top for loading/qualified
-4. **Edit**: `src/pages/MedicareSupplementAppointment1.tsx` - Add scroll-to-top for loading/qualified
-5. **Edit**: `src/pages/MedicareSupplementAppointmentRefund.tsx` - Add scroll-to-top for loading/qualified
+1. `src/pages/MedicareSupplementAppointment.tsx` - Add refs and update scroll logic
+2. `src/pages/MedicareSupplementAppointment1.tsx` - Add refs and update scroll logic
+3. `src/pages/MedicareSupplementAppointmentRefund.tsx` - Add refs and update scroll logic
 
 ---
 
 ### Expected Behavior After Fix
-- Every page in the funnel starts at the top
-- Question steps smoothly scroll to the question container
-- Loading step immediately scrolls to top to show the loading animation
-- Results (qualified) step starts at the top showing the rate, then auto-scrolls to booking widget after 5 seconds
-- Works consistently across all devices (desktop, tablet, mobile)
+- **Loading step**: The loading progress indicator appears at the top of the viewport
+- **Results step**: The "Great News" header appears at the top of the viewport
+- The 5-second auto-scroll to booking widget still works as before
+- Works consistently across all devices
+
