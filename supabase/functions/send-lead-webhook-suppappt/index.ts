@@ -73,9 +73,12 @@ serve(async (req) => {
       visitorId: data.visitorId,
       sessionId: data.sessionId,
       
-      // TrustedForm certificate for consent verification
+      // TrustedForm certificate for consent verification (both keys for CRM compatibility)
       trustedFormCertUrl: data.trustedFormCertUrl || null,
+      xxTrustedFormCertUrl: data.trustedFormCertUrl || null,
     };
+    
+    console.log("TrustedForm cert URL received:", data.trustedFormCertUrl || "(null)");
 
     console.log("Sending to GHL webhook (suppappt):", GHL_WEBHOOK_URL);
     console.log("Payload:", JSON.stringify(payload));
