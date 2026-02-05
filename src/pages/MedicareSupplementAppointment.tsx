@@ -1441,7 +1441,7 @@ const MedicareSupplementAppointment = () => {
                   data-tf-element-role="consent-language"
                 >
                   By clicking "<span data-tf-element-role="submit-text">See My New Rate</span>," I consent to receive calls, text messages, and emails 
-                  from <span data-tf-element-role="consent-advertiser-name">Health Helpers</span> and its partners regarding my Medicare inquiry. I understand these 
+                  from <span data-tf-element-role="consent-advertiser-name">Health Helpers</span> regarding my Medicare inquiry. I understand these 
                   communications may be made using automated telephone dialing systems, artificial intelligence, 
                   and/or prerecorded messages. Message frequency varies. Message and data rates may apply. 
                   I can opt out at any time by texting STOP or calling directly. This consent is not required 
