@@ -16,6 +16,7 @@ interface ConversionRequest {
   event_id?: string;
   external_id?: string;
   test_event_code?: string;
+  event_time?: number; // Optional Unix timestamp for historical events
   // User data fields
   first_name?: string;
   last_name?: string;
@@ -65,6 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
       event_id, 
       external_id, 
       test_event_code,
+      event_time,
       first_name,
       last_name,
       email,
@@ -125,7 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Build the event payload
     const eventData: Record<string, any> = {
       event_name: event_name || "Lead",
-      event_time: Math.floor(Date.now() / 1000),
+      event_time: event_time || Math.floor(Date.now() / 1000),
       action_source: "website",
       event_source_url: event_source_url || "https://healthhelpers.co/suppquote",
       user_data: userData,
