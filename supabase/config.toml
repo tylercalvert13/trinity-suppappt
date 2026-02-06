@@ -32,6 +32,3 @@ verify_jwt = false
 
 [functions.send-lead-webhook-suppappt-refund]
 verify_jwt = false
-
-[functions.backfill-fb-events]
-verify_jwt = false
