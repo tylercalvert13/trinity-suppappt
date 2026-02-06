@@ -1,116 +1,126 @@
 
 
-## Scroll to Specific Elements on Loading and Results Pages
+## Backfill Failed Facebook Conversion Events
 
-### Problem
-The current implementation scrolls to the very top of the screen (`window.scrollTo({ top: 0 })`) when entering the "loading" and "qualified" steps. You want:
-1. **Loading page**: Scroll so the loading icon/progress component is at the top of the viewport
-2. **Results page**: Scroll so the "Great News" header is at the top of the viewport
+### Overview
+We have **25 submissions** from the last 6 hours (starting around 2026-02-05 19:00 UTC) where the Facebook Conversion API events failed to send because the `fb-conversion` edge function wasn't deployed.
 
-### Solution
-Instead of scrolling to the very top of the page, we'll use refs to scroll to the specific elements:
-- Add a ref to the loading component wrapper
-- Add a ref to the results header container
-- Use `scrollIntoView({ behavior: 'instant', block: 'start' })` to position these elements at the top of the viewport
+The `submissions` table contains all the data needed to backfill:
+- first_name, last_name, email, phone, zip_code
+- monthly_savings (conversion value)
+- visitor_id (external_id)
+- created_at (original event time)
 
 ---
 
-### Changes
+### Changes Required
 
-#### 1. Update `src/pages/MedicareSupplementAppointment.tsx`
+#### 1. Update `supabase/functions/fb-conversion/index.ts`
+Add support for a custom `event_time` parameter so we can send historical events with the correct timestamp.
 
-**Add two new refs:**
+**Add to interface:**
 ```typescript
-const loadingRef = useRef<HTMLDivElement>(null);
-const resultsHeaderRef = useRef<HTMLDivElement>(null);
+interface ConversionRequest {
+  // ... existing fields
+  event_time?: number; // Optional Unix timestamp for historical events
+}
 ```
 
-**Update the scroll useEffect:**
+**Update event payload:**
 ```typescript
-useEffect(() => {
-  if (QUESTION_STEPS.includes(step)) {
-    // Scroll to question container for question steps
-    setTimeout(() => {
-      questionContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  } else if (step === "loading") {
-    // Scroll to loading component
-    setTimeout(() => {
-      loadingRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
-    }, 50);
-  } else if (step === "qualified") {
-    // Scroll to results header ("Great news")
-    setTimeout(() => {
-      resultsHeaderRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
-    }, 50);
-  }
-}, [step]);
+const eventData: Record<string, any> = {
+  event_name: event_name || "Lead",
+  event_time: event_time || Math.floor(Date.now() / 1000), // Use provided time or current
+  action_source: "website",
+  // ...
+};
 ```
 
-**Wrap the loading component with a ref:**
-```tsx
-{step === "loading" && (
-  <div ref={loadingRef}>
-    <QuoteLoadingProgress planType={formData.plan} />
-  </div>
-)}
+#### 2. Create `supabase/functions/backfill-fb-events/index.ts`
+A new edge function that:
+1. Queries the `submissions` table for the missed events
+2. Loops through each submission
+3. Calls the Facebook Conversion API with the correct historical timestamp
+4. Logs success/failure for each event
+
+```text
++---------------------------+
+|  backfill-fb-events       |
++---------------------------+
+          |
+          v
+Query submissions table for
+records between 2026-02-05 19:00 and now
+          |
+          v
+For each submission:
+  - Build FB event payload
+  - Use created_at as event_time
+  - Send to Facebook Conversion API
+  - Log result
+          |
+          v
+Return summary of backfilled events
 ```
-
-**Add ref to the results success header:**
-```tsx
-{step === "qualified" && quoteResult && (
-  <div className="space-y-6">
-    {/* Success Header */}
-    <div ref={resultsHeaderRef} className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
-      ...
-    </div>
-    ...
-  </div>
-)}
-```
-
-#### 2. Update `src/pages/MedicareSupplementAppointment1.tsx`
-
-Apply the same pattern:
-- Add `loadingRef` and `resultsHeaderRef`
-- Update the scroll useEffect to use refs
-- Wrap the loading div with `loadingRef`
-- Add `resultsHeaderRef` to the success header div
-
-#### 3. Update `src/pages/MedicareSupplementAppointmentRefund.tsx`
-
-Apply the same pattern:
-- Add `loadingRef` and `resultsHeaderRef`
-- Update the scroll useEffect to use refs
-- Wrap the QuoteLoadingProgress with `loadingRef`
-- Add `resultsHeaderRef` to the success header div
 
 ---
 
 ### Technical Details
 
-**Why use `scrollIntoView` with refs instead of `window.scrollTo`?**
-- `scrollIntoView({ block: 'start' })` positions the element at the top of the viewport
-- This works regardless of where the element is on the page
-- It accounts for any fixed headers or other layout considerations
-- The `behavior: 'instant'` ensures immediate scrolling without animation
+**Submissions to backfill query:**
+```sql
+SELECT id, visitor_id, first_name, last_name, email, phone, 
+       zip_code, monthly_savings, page, created_at 
+FROM submissions 
+WHERE page IN ('suppappt', 'suppappt1', 'suppappt-refund') 
+  AND submission_type = 'success' 
+  AND created_at >= '2026-02-05 19:00:00+00'
+ORDER BY created_at ASC;
+```
 
-**Why the 50ms delay?**
-- A small delay ensures the element is rendered and measurable before scrolling
-- This prevents race conditions where the scroll happens before React has committed the DOM update
+**Event time conversion:**
+```typescript
+// Convert ISO timestamp to Unix timestamp (seconds)
+const eventTime = Math.floor(new Date(submission.created_at).getTime() / 1000);
+```
+
+**Facebook API payload per event:**
+```typescript
+{
+  event_name: "submission",
+  event_time: eventTime, // Historical timestamp
+  event_source_url: `https://healthhelpers.co/${submission.page}`,
+  external_id: submission.visitor_id,
+  first_name: submission.first_name,
+  last_name: submission.last_name,
+  email: submission.email,
+  phone: submission.phone,
+  zip_code: submission.zip_code,
+  value: submission.monthly_savings,
+  currency: "USD"
+}
+```
 
 ---
 
-### Files to Modify
-1. `src/pages/MedicareSupplementAppointment.tsx` - Add refs and update scroll logic
-2. `src/pages/MedicareSupplementAppointment1.tsx` - Add refs and update scroll logic
-3. `src/pages/MedicareSupplementAppointmentRefund.tsx` - Add refs and update scroll logic
+### Files to Modify/Create
+1. **Edit**: `supabase/functions/fb-conversion/index.ts` - Add optional `event_time` parameter
+2. **Create**: `supabase/functions/backfill-fb-events/index.ts` - New backfill function
+3. **Edit**: `supabase/config.toml` - Add config for new function
 
 ---
 
-### Expected Behavior After Fix
-- **Loading step**: The loading progress indicator appears at the top of the viewport
-- **Results step**: The "Great News" header appears at the top of the viewport
-- The 5-second auto-scroll to booking widget still works as before
-- Works consistently across all devices
+### Execution Plan
+1. Deploy the updated `fb-conversion` function with event_time support
+2. Deploy the new `backfill-fb-events` function
+3. Call `backfill-fb-events` once to send all 25 missed events to Facebook
+4. Verify in Facebook Events Manager that the events were received
+
+---
+
+### Expected Result
+- All 25 missed submissions will be sent to Facebook Conversion API
+- Events will have correct historical timestamps (from `created_at`)
+- Facebook will be able to match these conversions to the original ad clicks
+- Your FB event count should align with your CRM after the backfill
 
