@@ -1,16 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
 import { useQuoteWarmup } from '@/hooks/useQuoteWarmup';
 import { z } from 'zod';
-import { AppointmentBookingWidget } from '@/components/AppointmentBookingWidget';
 import { getStateFromZip } from '@/lib/zipToState';
 import { toast } from 'sonner';
 import { ExitIntentModal } from '@/components/ExitIntentModal';
 import { SocialProofPopup } from '@/components/SocialProofPopup';
-import { StickyBookingCTA } from '@/components/StickyBookingCTA';
 import ChatHeader from '@/components/chat/ChatHeader';
 import ChatBubble from '@/components/chat/ChatBubble';
 import ChatButtonGroup from '@/components/chat/ChatButtonGroup';
@@ -18,6 +16,7 @@ import ChatInput from '@/components/chat/ChatInput';
 import ChatContactForm from '@/components/chat/ChatContactForm';
 import TypingIndicator from '@/components/chat/TypingIndicator';
 import QuoteResultCard from '@/components/chat/QuoteResultCard';
+import BookingConfirmationCard from '@/components/chat/BookingConfirmationCard';
 
 declare global {
   interface Window {
@@ -68,10 +67,15 @@ interface QuoteResult {
   error?: string;
 }
 
+interface SlotData {
+  original: string;
+  display: string;
+}
+
 type ChatStep =
   | 'start' | 'plan' | 'payment' | 'care' | 'treatment' | 'medications'
   | 'gender' | 'tobacco' | 'spouse' | 'age' | 'zip' | 'contact'
-  | 'loading' | 'qualified';
+  | 'loading' | 'qualified' | 'pick-day' | 'pick-time' | 'booking' | 'booked';
 
 interface Message {
   id: string;
@@ -192,6 +196,90 @@ const MEDICATIONS_LIST = [
   'Biologic injections or infusions (e.g., Humira, Enbrel)',
 ];
 
+// --- Booking helpers ---
+function getNextAvailableWeekdays(count: number): Date[] {
+  const weekdays: Date[] = [];
+  const now = new Date();
+  const easternNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const isBeforeCutoff = easternNow.getHours() < 16;
+  const current = new Date();
+  current.setHours(0, 0, 0, 0);
+  const dayOfWeek = current.getDay();
+  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+  if (!isBeforeCutoff || !isWeekday) {
+    current.setDate(current.getDate() + 1);
+  }
+  while (weekdays.length < count) {
+    const day = current.getDay();
+    if (day >= 1 && day <= 5) weekdays.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+  return weekdays;
+}
+
+function formatDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatDayButtonLabel(date: Date): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dateOnly = new Date(date);
+  dateOnly.setHours(0, 0, 0, 0);
+  const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (dateOnly.getTime() === today.getTime()) return `Today - ${monthDay}`;
+  if (dateOnly.getTime() === tomorrow.getTime()) return `Tomorrow - ${monthDay}`;
+  const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+  return `${dayName} - ${monthDay}`;
+}
+
+function getDayLabelShort(date: Date): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dateOnly = new Date(date);
+  dateOnly.setHours(0, 0, 0, 0);
+  if (dateOnly.getTime() === today.getTime()) return 'Today';
+  if (dateOnly.getTime() === tomorrow.getTime()) return 'Tomorrow';
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+function convertToUserTimezone(easternIsoString: string, userTimezone: string): string {
+  try {
+    const date = new Date(easternIsoString);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: userTimezone, hour12: true });
+  } catch {
+    const date = new Date(easternIsoString);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+}
+
+function getEasternTimeDisplay(isoString: string): string {
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York', hour12: true });
+  } catch {
+    return new Date(isoString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+}
+
+function isTimezoneDifferent(userTimezone: string): boolean {
+  try {
+    const now = new Date();
+    const easternTime = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+    const userTime = now.toLocaleString('en-US', { timeZone: userTimezone });
+    return easternTime !== userTime;
+  } catch {
+    return false;
+  }
+}
+
 const MedicareSupplementChat = () => {
   const navigate = useNavigate();
   const [chatStep, setChatStep] = useState<ChatStep>('start');
@@ -204,13 +292,22 @@ const MedicareSupplementChat = () => {
   const [showButtons, setShowButtons] = useState<{ options: string[]; step: ChatStep } | null>(null);
   const [showContactForm, setShowContactForm] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [autoScrollDone, setAutoScrollDone] = useState(false);
   const [toastShown, setToastShown] = useState(false);
-  const [selectedDayLabel, setSelectedDayLabel] = useState<string | null>(null);
-  const [selectedTimeDisplay, setSelectedTimeDisplay] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const bookingWidgetRef = useRef<HTMLDivElement>(null);
-  
+
+  // Booking state
+  const [preloadedSlots, setPreloadedSlots] = useState<Map<string, SlotData[]>>(new Map());
+  const [availableDays, setAvailableDays] = useState<Date[]>([]);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [selectedDayLabel, setSelectedDayLabel] = useState<string>('');
+  const [daySlots, setDaySlots] = useState<SlotData[]>([]);
+  const [bookedSlot, setBookedSlot] = useState<SlotData | null>(null);
+  const [agentName, setAgentName] = useState<string | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const userTimezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
+  const showEasternTime = useMemo(() => isTimezoneDifferent(userTimezone), [userTimezone]);
+
   const [formData, setFormData] = useState<FormData>({
     plan: '', currentPayment: '', careOrCondition: '', recentTreatment: '',
     medicationUse: '', gender: '', tobacco: '', spouse: '', age: '', zipCode: '',
@@ -224,23 +321,11 @@ const MedicareSupplementChat = () => {
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping, showButtons, showInput, showContactForm]);
-
-  // Auto-scroll to booking widget 5 seconds after qualification
-  useEffect(() => {
-    if (chatStep === 'qualified' && quoteResult && !autoScrollDone) {
-      const timer = setTimeout(() => {
-        bookingWidgetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        setAutoScrollDone(true);
-        trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'auto_scroll' } });
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [chatStep, quoteResult, autoScrollDone, trackEvent]);
+  }, [messages, isTyping, showButtons, showInput, showContactForm, showConfirmation]);
 
   // Urgency toast 10 seconds after qualification
   useEffect(() => {
-    if (chatStep === 'qualified' && quoteResult && !toastShown) {
+    if (chatStep === 'pick-day' && !toastShown) {
       const timer = setTimeout(() => {
         toast("⏰ Your rate is reserved — pick a time to lock it in", { duration: 5000 });
         setToastShown(true);
@@ -248,7 +333,7 @@ const MedicareSupplementChat = () => {
       }, 10000);
       return () => clearTimeout(timer);
     }
-  }, [chatStep, quoteResult, toastShown, trackEvent]);
+  }, [chatStep, toastShown, trackEvent]);
 
   // TrustedForm script
   useEffect(() => {
@@ -280,12 +365,10 @@ const MedicareSupplementChat = () => {
     };
   }, []);
 
-  // Helper to add a message
   const addMessage = useCallback((msg: Omit<Message, 'id'>) => {
     setMessages(prev => [...prev, { ...msg, id: crypto.randomUUID() }]);
   }, []);
 
-  // Bot says something with typing delay
   const botSay = useCallback(async (text: string, delay = 600) => {
     setShowInput(null);
     setShowButtons(null);
@@ -307,10 +390,63 @@ const MedicareSupplementChat = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // --- Booking: preload slots when qualified ---
+  const preloadSlots = useCallback(async () => {
+    const candidateWeekdays = getNextAvailableWeekdays(10);
+    const firstDay = candidateWeekdays[0];
+    const lastDay = candidateWeekdays[candidateWeekdays.length - 1];
+    if (!firstDay || !lastDay) return;
+
+    const startDate = formatDateString(firstDay);
+    const endDate = formatDateString(lastDay);
+
+    try {
+      console.log('[Chat Booking] Preloading slots', startDate, 'to', endDate);
+      const { data, error } = await supabase.functions.invoke('ghl-calendar', {
+        body: { action: 'free-slots-batch', startDate, endDate }
+      });
+      if (error) throw error;
+
+      if (data?.slotsByDate) {
+        const newCache = new Map<string, SlotData[]>();
+        for (const [dateStr, slots] of Object.entries(data.slotsByDate)) {
+          const slotsWithDisplay: SlotData[] = (slots as string[]).map((slot: string) => ({
+            original: slot,
+            display: convertToUserTimezone(slot, userTimezone)
+          }));
+          newCache.set(dateStr, slotsWithDisplay);
+        }
+        setPreloadedSlots(newCache);
+
+        // Filter to days with availability, max 3
+        const daysWithSlots = candidateWeekdays.filter(date => {
+          const dateStr = formatDateString(date);
+          const slots = newCache.get(dateStr);
+          return slots && slots.length > 0;
+        }).slice(0, 3);
+
+        setAvailableDays(daysWithSlots);
+        console.log('[Chat Booking] Found', daysWithSlots.length, 'days with slots');
+      }
+    } catch (err) {
+      console.error('[Chat Booking] Preload error:', err);
+    }
+  }, [userTimezone]);
+
+  // --- Present day selection after quote ---
+  const presentDaySelection = useCallback(async () => {
+    if (availableDays.length === 0) {
+      await botSay("I'm having trouble finding available times right now. Please call us at (201) 298-8393 to schedule.");
+      return;
+    }
+    trackEvent({ eventType: 'booking_widget_view' });
+    setChatStep('pick-day');
+    const dayOptions = availableDays.map(d => formatDayButtonLabel(d));
+    setShowButtons({ options: dayOptions, step: 'pick-day' });
+  }, [availableDays, botSay, trackEvent]);
+
   const handleButtonSelect = useCallback(async (option: string, step: ChatStep) => {
-    // Lock buttons
     setShowButtons(null);
-    // Show user response
     addMessage({ sender: 'user', content: option, type: 'text' });
 
     switch (step) {
@@ -400,8 +536,139 @@ const MedicareSupplementChat = () => {
         await botSay("What's your current age?");
         setShowInput({ type: 'number', placeholder: 'Your age' });
         break;
+
+      // --- Booking steps ---
+      case 'pick-day': {
+        // Find matching day
+        const matchedDay = availableDays.find(d => formatDayButtonLabel(d) === option);
+        if (!matchedDay) return;
+        setSelectedDay(matchedDay);
+        const label = getDayLabelShort(matchedDay);
+        setSelectedDayLabel(label);
+        const dateStr = formatDateString(matchedDay);
+        const cached = preloadedSlots.get(dateStr);
+        trackEvent({ eventType: 'booking_day_selected', metadata: { day: dateStr, dayLabel: label, slotCount: cached?.length || 0 } });
+
+        if (cached && cached.length > 0) {
+          setDaySlots(cached);
+          setChatStep('pick-time');
+          await botSay(`Here are the available times for ${label}:`);
+          const timeOptions = cached.map(s => s.display);
+          setShowButtons({ options: timeOptions, step: 'pick-time' });
+        } else {
+          await botSay("No times available on that day. Try another:");
+          setShowButtons({ options: availableDays.map(d => formatDayButtonLabel(d)), step: 'pick-day' });
+        }
+        break;
+      }
+
+      case 'pick-time': {
+        // Find matching slot
+        const matchedSlot = daySlots.find(s => s.display === option);
+        if (!matchedSlot) return;
+        trackEvent({ eventType: 'booking_time_selected', metadata: { time: option, slotOriginal: matchedSlot.original } });
+
+        setChatStep('booking');
+        setIsTyping(true);
+
+        try {
+          // Step 1: Look up contact
+          const { data: contactData, error: contactError } = await supabase.functions.invoke('ghl-calendar', {
+            body: { action: 'search-contact', phone: formData.phone }
+          });
+          if (contactError || contactData?.error) {
+            setIsTyping(false);
+            trackEvent({ eventType: 'booking_error', metadata: { error: 'contact_lookup_failed' } });
+            await botSay("We're still setting up your account. Let me try again...");
+            // Retry once after delay
+            await new Promise(r => setTimeout(r, 2000));
+            const { data: retryData, error: retryError } = await supabase.functions.invoke('ghl-calendar', {
+              body: { action: 'search-contact', phone: formData.phone }
+            });
+            if (retryError || retryData?.error) {
+              await botSay(`Something went wrong. Please call us at ${PHONE_NUMBER} to schedule.`);
+              return;
+            }
+            // Continue with retry data
+            await bookAppointment(retryData.contactId, matchedSlot);
+            return;
+          }
+
+          await bookAppointment(contactData.contactId, matchedSlot);
+        } catch (err) {
+          console.error('Booking error:', err);
+          setIsTyping(false);
+          trackEvent({ eventType: 'booking_error', metadata: { error: 'exception' } });
+          await botSay(`Something went wrong. Please call us at ${PHONE_NUMBER} to schedule.`);
+        }
+        break;
+      }
     }
-  }, [addMessage, botSay, navigate, trackStepChange, trackQualification]);
+  }, [addMessage, botSay, navigate, trackStepChange, trackQualification, trackEvent, availableDays, preloadedSlots, daySlots, formData.phone]);
+
+  const bookAppointment = useCallback(async (contactId: string, slot: SlotData) => {
+    try {
+      trackEvent({ eventType: 'booking_confirm_clicked', metadata: { slotTime: slot.original } });
+
+      const { data: bookingData, error: bookingError } = await supabase.functions.invoke('ghl-calendar', {
+        body: {
+          action: 'book-appointment',
+          contactId,
+          startTime: slot.original,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          quotedRate: quoteResult?.rate || 0,
+          monthlySavings: quoteResult?.monthlySavings || 0,
+          planType: formData.plan,
+        }
+      });
+
+      setIsTyping(false);
+
+      if (bookingError) throw bookingError;
+
+      // Slot taken
+      if (bookingData?.error === 'slot_taken') {
+        trackEvent({ eventType: 'booking_error', metadata: { error: 'slot_taken' } });
+        await botSay("That time just got taken! Pick another:");
+        setChatStep('pick-time');
+        const timeOptions = daySlots.filter(s => s.original !== slot.original).map(s => s.display);
+        if (timeOptions.length > 0) {
+          setShowButtons({ options: timeOptions, step: 'pick-time' });
+        } else {
+          await botSay("No more times on this day. Try another day:");
+          setChatStep('pick-day');
+          setShowButtons({ options: availableDays.map(d => formatDayButtonLabel(d)), step: 'pick-day' });
+        }
+        return;
+      }
+
+      if (bookingData?.error) {
+        trackEvent({ eventType: 'booking_error', metadata: { error: 'booking_failed', message: bookingData.message } });
+        await botSay(`Something went wrong. Please call us at ${PHONE_NUMBER} to schedule.`);
+        return;
+      }
+
+      // Success!
+      setBookedSlot(slot);
+      setAgentName(bookingData?.assignedUser || null);
+      setChatStep('booked');
+
+      trackEvent({
+        eventType: 'booking_completed',
+        metadata: { appointmentId: bookingData?.id || '', agentName: bookingData?.assignedUser || '' }
+      });
+
+      await botSay(`You're all set, ${formData.firstName}! 🎉 We'll call you ${selectedDayLabel} at ${slot.display}.`);
+      setShowConfirmation(true);
+
+    } catch (err) {
+      console.error('Booking error:', err);
+      setIsTyping(false);
+      trackEvent({ eventType: 'booking_error', metadata: { error: 'exception' } });
+      await botSay(`Something went wrong. Please call us at ${PHONE_NUMBER} to schedule.`);
+    }
+  }, [formData, quoteResult, daySlots, availableDays, selectedDayLabel, botSay, trackEvent]);
 
   const handleInputSend = useCallback(async (value: string) => {
     setShowInput(null);
@@ -456,7 +723,6 @@ const MedicareSupplementChat = () => {
   const handleContactSubmit = useCallback(async (data: { firstName: string; lastName: string; email: string; phone: string }) => {
     setValidationErrors({});
 
-    // Client-side validation
     const result = contactSchema.safeParse(data);
     if (!result.success) {
       const errors: Record<string, string> = {};
@@ -465,7 +731,6 @@ const MedicareSupplementChat = () => {
       return;
     }
 
-    // Server-side validation
     setIsValidating(true);
     try {
       const { data: validationData, error: valError } = await supabase.functions.invoke('validate-contact', {
@@ -492,22 +757,21 @@ const MedicareSupplementChat = () => {
     }
     setIsValidating(false);
 
-    // Update form data
     const updatedForm = { ...formData, ...data };
     setFormData(updatedForm);
     setShowContactForm(false);
 
-    // Show user submitted message
     addMessage({ sender: 'user', content: `${data.firstName} ${data.lastName}\n${data.email}\n${data.phone}`, type: 'text' });
-    
+
     setChatStep('loading');
     setIsSubmitting(true);
     trackStepChange('loading');
-
-    // Show typing indicator during loading
     setIsTyping(true);
 
     try {
+      // Start preloading slots in parallel with quote fetch
+      const slotsPromise = preloadSlots();
+
       const fetchQuote = async (isRetry = false): Promise<{ data: any; error: any }> => {
         const quotePromise = supabase.functions.invoke('get-medicare-quote', {
           body: {
@@ -543,6 +807,10 @@ const MedicareSupplementChat = () => {
       };
 
       const { data: quoteData, error: quoteError } = await fetchQuote();
+
+      // Wait for slots to finish too
+      await slotsPromise;
+
       setIsTyping(false);
 
       if (quoteError) {
@@ -573,8 +841,6 @@ const MedicareSupplementChat = () => {
       // Success!
       setQuoteResult(quoteData);
       await saveSubmission('success', undefined, quoteData, updatedForm);
-
-      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       // Capture TrustedForm certificate
       const getTrustedFormCertUrl = async (): Promise<string | null> => {
@@ -615,6 +881,15 @@ const MedicareSupplementChat = () => {
       trackVibeCoLeadEvent();
 
       setChatStep('qualified');
+
+      // Show quote result as a chat message then present day selection
+      await botSay(`Great news, ${updatedForm.firstName}! 🎉 I found you a better rate:`, 400);
+      // QuoteResultCard will render via qualified state, then we present day selection
+      setTimeout(async () => {
+        await botSay("Let's get you on a quick call to lock this in. Pick a day: 📞", 600);
+        await presentDaySelection();
+      }, 1500);
+
     } catch (err) {
       console.error('Error getting quote:', err);
       setIsTyping(false);
@@ -624,7 +899,7 @@ const MedicareSupplementChat = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, addMessage, botSay, navigate, trackStepChange, trackQualification, trackEvent, visitorId, sessionId]);
+  }, [formData, addMessage, botSay, navigate, trackStepChange, trackQualification, trackEvent, visitorId, sessionId, preloadSlots, presentDaySelection, userTimezone]);
 
   const saveSubmission = async (
     submissionType: 'success' | 'disqualified' | 'knockout',
@@ -665,15 +940,6 @@ const MedicareSupplementChat = () => {
     }
   };
 
-  const scrollToBookingWidget = useCallback(() => {
-    bookingWidgetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, []);
-
-  const handleSlotChange = useCallback((dayLabel: string | null, timeDisplay: string | null) => {
-    setSelectedDayLabel(dayLabel);
-    setSelectedTimeDisplay(timeDisplay);
-  }, []);
-
   return (
     <div className="min-h-screen bg-[#e5e5ea] flex flex-col">
       {/* TrustedForm noscript fallback */}
@@ -702,43 +968,31 @@ const MedicareSupplementChat = () => {
         ))}
 
         {/* Quote result card */}
-        {chatStep === 'qualified' && quoteResult && (
-          <>
-            <QuoteResultCard
-              firstName={formData.firstName}
-              plan={formData.plan}
-              rate={quoteResult.rate}
-              carrier={quoteResult.carrier}
-              amBestRating={quoteResult.amBestRating}
-              monthlySavings={quoteResult.monthlySavings}
-              annualSavings={quoteResult.annualSavings}
-              currentPayment={parseFloat(formData.currentPayment)}
-            />
-            
-            {/* Bot message about booking */}
-            <ChatBubble sender="bot">
-              Pick a time below and we'll give you a quick call to lock in your rate! 📞
-            </ChatBubble>
+        {(chatStep === 'qualified' || chatStep === 'pick-day' || chatStep === 'pick-time' || chatStep === 'booking' || chatStep === 'booked') && quoteResult && (
+          <QuoteResultCard
+            firstName={formData.firstName}
+            plan={formData.plan}
+            rate={quoteResult.rate}
+            carrier={quoteResult.carrier}
+            amBestRating={quoteResult.amBestRating}
+            monthlySavings={quoteResult.monthlySavings}
+            annualSavings={quoteResult.annualSavings}
+            currentPayment={parseFloat(formData.currentPayment)}
+          />
+        )}
 
-            {/* Booking widget embedded in chat */}
-            <div className="ml-10 mb-3 max-w-[90%]">
-              <AppointmentBookingWidget
-                firstName={formData.firstName}
-                lastName={formData.lastName}
-                phone={formData.phone}
-                email={formData.email}
-                quotedPremium={quoteResult.rate}
-                monthlySavings={quoteResult.monthlySavings}
-                planType={formData.plan}
-                userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
-                userState={getStateFromZip(formData.zipCode)}
-                onTrackEvent={trackEvent}
-                autoSelectFirst={false}
-                onSlotChange={handleSlotChange}
-                widgetRef={bookingWidgetRef}
-              />
-            </div>
-          </>
+        {/* Booking confirmation card */}
+        {showConfirmation && bookedSlot && selectedDay && (
+          <BookingConfirmationCard
+            dayLabel={selectedDayLabel}
+            timeDisplay={bookedSlot.display}
+            easternTimeDisplay={showEasternTime ? getEasternTimeDisplay(bookedSlot.original) : undefined}
+            showEasternTime={showEasternTime}
+            agentName={agentName}
+            appointmentIso={bookedSlot.original}
+            firstName={formData.firstName}
+            lastName={formData.lastName}
+          />
         )}
 
         {/* Typing indicator */}
@@ -775,22 +1029,13 @@ const MedicareSupplementChat = () => {
       )}
 
       {/* Exit Intent Modal */}
-      {chatStep === 'qualified' && quoteResult && (
-        <ExitIntentModal monthlySavings={quoteResult.monthlySavings} onBookClick={scrollToBookingWidget} />
+      {(chatStep === 'pick-day' || chatStep === 'pick-time') && quoteResult && (
+        <ExitIntentModal monthlySavings={quoteResult.monthlySavings} onBookClick={() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })} />
       )}
 
       {/* Social Proof Popup */}
-      {chatStep === 'qualified' && quoteResult && (
+      {(chatStep === 'pick-day' || chatStep === 'pick-time' || chatStep === 'qualified') && quoteResult && (
         <SocialProofPopup delayMs={8000} visibleMs={4000} />
-      )}
-
-      {/* Sticky Booking CTA */}
-      {chatStep === 'qualified' && quoteResult && (
-        <StickyBookingCTA
-          targetRef={bookingWidgetRef}
-          selectedTime={selectedTimeDisplay || undefined}
-          dayLabel={selectedDayLabel || undefined}
-        />
       )}
     </div>
   );
