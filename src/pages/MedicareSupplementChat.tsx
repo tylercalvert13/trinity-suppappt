@@ -15,7 +15,7 @@ import ChatButtonGroup from '@/components/chat/ChatButtonGroup';
 import ChatInput from '@/components/chat/ChatInput';
 import ChatContactForm from '@/components/chat/ChatContactForm';
 import TypingIndicator from '@/components/chat/TypingIndicator';
-import QuoteResultCard from '@/components/chat/QuoteResultCard';
+// QuoteResultCard removed — rate is now delivered as chat bubbles
 import BookingConfirmationCard from '@/components/chat/BookingConfirmationCard';
 
 declare global {
@@ -391,11 +391,11 @@ const MedicareSupplementChat = () => {
   }, []);
 
   // --- Booking: preload slots when qualified ---
-  const preloadSlots = useCallback(async () => {
+  const preloadSlots = useCallback(async (): Promise<{ days: Date[]; slots: Map<string, SlotData[]> }> => {
     const candidateWeekdays = getNextAvailableWeekdays(10);
     const firstDay = candidateWeekdays[0];
     const lastDay = candidateWeekdays[candidateWeekdays.length - 1];
-    if (!firstDay || !lastDay) return;
+    if (!firstDay || !lastDay) return { days: [], slots: new Map() };
 
     const startDate = formatDateString(firstDay);
     const endDate = formatDateString(lastDay);
@@ -418,7 +418,6 @@ const MedicareSupplementChat = () => {
         }
         setPreloadedSlots(newCache);
 
-        // Filter to days with availability, max 3
         const daysWithSlots = candidateWeekdays.filter(date => {
           const dateStr = formatDateString(date);
           const slots = newCache.get(dateStr);
@@ -427,21 +426,24 @@ const MedicareSupplementChat = () => {
 
         setAvailableDays(daysWithSlots);
         console.log('[Chat Booking] Found', daysWithSlots.length, 'days with slots');
+        return { days: daysWithSlots, slots: newCache };
       }
     } catch (err) {
       console.error('[Chat Booking] Preload error:', err);
     }
+    return { days: [], slots: new Map() };
   }, [userTimezone]);
 
   // --- Present day selection after quote ---
-  const presentDaySelection = useCallback(async () => {
-    if (availableDays.length === 0) {
+  const presentDaySelection = useCallback(async (days?: Date[]) => {
+    const daysToUse = days || availableDays;
+    if (daysToUse.length === 0) {
       await botSay("I'm having trouble finding available times right now. Please call us at (201) 298-8393 to schedule.");
       return;
     }
     trackEvent({ eventType: 'booking_widget_view' });
     setChatStep('pick-day');
-    const dayOptions = availableDays.map(d => formatDayButtonLabel(d));
+    const dayOptions = daysToUse.map(d => formatDayButtonLabel(d));
     setShowButtons({ options: dayOptions, step: 'pick-day' });
   }, [availableDays, botSay, trackEvent]);
 
@@ -766,11 +768,26 @@ const MedicareSupplementChat = () => {
     setChatStep('loading');
     setIsSubmitting(true);
     trackStepChange('loading');
-    setIsTyping(true);
+
+    // --- Realistic loading messages ---
+    const stateName = getStateFromZip(updatedForm.zipCode.substring(0, 3)) || 'your area';
+    let quoteFinished = false;
+
+    const loadingMessages = async () => {
+      await botSay("Give me one sec, I'm pulling up your rates...", 800);
+      if (quoteFinished) return;
+      await botSay(`Checking carriers in ${stateName}...`, 2000);
+      if (quoteFinished) return;
+      await botSay(`Comparing ${updatedForm.plan} rates for you...`, 2000);
+      if (quoteFinished) return;
+      await botSay("Almost got it...", 2000);
+      if (quoteFinished) return;
+      setIsTyping(true);
+    };
 
     try {
-      // Start preloading slots in parallel with quote fetch
       const slotsPromise = preloadSlots();
+      const loadingPromise = loadingMessages();
 
       const fetchQuote = async (isRetry = false): Promise<{ data: any; error: any }> => {
         const quotePromise = supabase.functions.invoke('get-medicare-quote', {
@@ -807,9 +824,10 @@ const MedicareSupplementChat = () => {
       };
 
       const { data: quoteData, error: quoteError } = await fetchQuote();
+      quoteFinished = true;
 
-      // Wait for slots to finish too
-      await slotsPromise;
+      const slotsResult = await slotsPromise;
+      await loadingPromise;
 
       setIsTyping(false);
 
@@ -882,13 +900,13 @@ const MedicareSupplementChat = () => {
 
       setChatStep('qualified');
 
-      // Show quote result as a chat message then present day selection
-      await botSay(`Great news, ${updatedForm.firstName}! 🎉 I found you a better rate:`, 400);
-      // QuoteResultCard will render via qualified state, then we present day selection
-      setTimeout(async () => {
-        await botSay("Let's get you on a quick call to lock this in. Pick a day: 📞", 600);
-        await presentDaySelection();
-      }, 1500);
+      // --- Chat-native rate reveal (no card) ---
+      await botSay(`Great news, ${updatedForm.firstName}! I found you a lower rate.`, 400);
+      await botSay(`Your new ${updatedForm.plan} rate: $${quoteData.rate.toFixed(2)}/mo`, 600);
+      await botSay(`That's $${quoteData.monthlySavings.toFixed(2)} less per month — you'd save $${quoteData.annualSavings.toFixed(2)} a year! 💰`, 600);
+
+      await botSay("Let's get you on a quick call to lock this in. Pick a day: 📞", 600);
+      await presentDaySelection(slotsResult.days);
 
     } catch (err) {
       console.error('Error getting quote:', err);
@@ -966,20 +984,6 @@ const MedicareSupplementChat = () => {
             ))}
           </ChatBubble>
         ))}
-
-        {/* Quote result card */}
-        {(chatStep === 'qualified' || chatStep === 'pick-day' || chatStep === 'pick-time' || chatStep === 'booking' || chatStep === 'booked') && quoteResult && (
-          <QuoteResultCard
-            firstName={formData.firstName}
-            plan={formData.plan}
-            rate={quoteResult.rate}
-            carrier={quoteResult.carrier}
-            amBestRating={quoteResult.amBestRating}
-            monthlySavings={quoteResult.monthlySavings}
-            annualSavings={quoteResult.annualSavings}
-            currentPayment={parseFloat(formData.currentPayment)}
-          />
-        )}
 
         {/* Booking confirmation card */}
         {showConfirmation && bookedSlot && selectedDay && (
