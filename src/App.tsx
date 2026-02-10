@@ -33,6 +33,7 @@ const ContactCard = lazyWithRetry(() => import("./pages/ContactCard"));
 const StandaloneBooking = lazyWithRetry(() => import("./pages/StandaloneBooking"));
 const SalesTracking = lazyWithRetry(() => import("./pages/SalesTracking"));
 const AgentLeaderboard = lazyWithRetry(() => import("./pages/AgentLeaderboard"));
+const MedicareSupplementChat = lazyWithRetry(() => import("./pages/MedicareSupplementChat"));
 
 const queryClient = new QueryClient();
 
@@ -100,6 +101,7 @@ const App = () => (
               <Route path="/booking" element={<StandaloneBooking />} />
               <Route path="/salestracking" element={<SalesTracking />} />
               <Route path="/leaderboard" element={<AgentLeaderboard />} />
+              <Route path="/suppchat" element={<MedicareSupplementChat />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
