@@ -327,7 +327,7 @@ const MedicareSupplementChat = () => {
   useEffect(() => {
     if (chatStep === 'pick-day' && !toastShown) {
       const timer = setTimeout(() => {
-        toast("⏰ Your rate is reserved — pick a time to lock it in", { duration: 5000 });
+        toast("⏰ Your rate is reserved — pick a time to lock it in", { duration: 5000, position: 'top-center' });
         setToastShown(true);
         trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'urgency_toast' } });
       }, 10000);

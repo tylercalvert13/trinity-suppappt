@@ -47,19 +47,19 @@ export function SocialProofPopup({ delayMs = 8000, visibleMs = 4000 }: SocialPro
 
   return (
     <div
-      className="fixed bottom-4 left-4 z-40 max-w-xs bg-white rounded-lg shadow-lg border border-gray-200 p-4 animate-slide-in-left"
+      className="fixed top-20 left-4 z-40 max-w-xs bg-white rounded-lg shadow-lg border border-gray-200 p-4"
       style={{
-        animation: 'slideInLeft 0.3s ease-out forwards',
+        animation: 'slideInFromTop 0.3s ease-out forwards',
       }}
     >
       <style>{`
-        @keyframes slideInLeft {
+        @keyframes slideInFromTop {
           from {
-            transform: translateX(-100%);
+            transform: translateY(-100%);
             opacity: 0;
           }
           to {
-            transform: translateX(0);
+            transform: translateY(0);
             opacity: 1;
           }
         }
