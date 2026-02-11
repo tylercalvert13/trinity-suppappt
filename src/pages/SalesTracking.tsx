@@ -136,10 +136,10 @@ export default function SalesTracking() {
               </div>
               <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
                 <StatCard
-                  title="Total Premium"
-                  value={salesLoading ? null : formatCurrency(salesData?.totalPremium ?? 0)}
+                  title="Total AP"
+                  value={salesLoading ? null : formatCurrency((salesData?.totalPremium ?? 0) * 12)}
                   icon={<DollarSign className="h-5 w-5 text-green-500" />}
-                  subtitle="Approved only"
+                  subtitle="Annualized premium"
                   loading={salesLoading}
                 />
               </div>
