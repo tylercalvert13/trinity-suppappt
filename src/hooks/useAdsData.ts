@@ -57,7 +57,7 @@ function formatDateKey(dateStr: string): string {
   return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
 }
 
-export function useAdsData() {
+export function useAdsData(dateRange?: { from: Date | null; to: Date | null }) {
   const [data, setData] = useState<AdsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +79,7 @@ export function useAdsData() {
       let totalLeads = 0;
       let totalAppointments = 0;
 
-      const dailyStats: DailyAdsStats[] = rawData
+      let dailyStats: DailyAdsStats[] = rawData
         .map((row) => {
           const spend = parseNumber(row["Spend"] || row["spend"] || "0");
           const leads = parseNumber(row["Leads"] || row["leads"] || "0");
@@ -98,8 +98,21 @@ export function useAdsData() {
             leadToApptRate,
           };
         })
-        // Only include dates that have actual data (spend, leads, or appointments > 0)
         .filter(stat => stat.date && (stat.spend > 0 || stat.leads > 0 || stat.appointments > 0));
+
+      // Filter by date range if provided
+      if (dateRange?.from) {
+        const fromMonth = dateRange.from.getMonth() + 1;
+        const fromDay = dateRange.from.getDate();
+        const toDate = dateRange.to ?? dateRange.from;
+        const toMonth = toDate.getMonth() + 1;
+        const toDay = toDate.getDate();
+        dailyStats = dailyStats.filter((stat) => {
+          const [m, d] = stat.date.split("/").map(Number);
+          const val = m * 100 + d;
+          return val >= fromMonth * 100 + fromDay && val <= toMonth * 100 + toDay;
+        });
+      }
 
       // Calculate totals only from filtered data
       dailyStats.forEach(stat => {
@@ -132,7 +145,7 @@ export function useAdsData() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateRange]);
 
   useEffect(() => {
     fetchData();

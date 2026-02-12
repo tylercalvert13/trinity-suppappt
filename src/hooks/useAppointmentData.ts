@@ -57,7 +57,7 @@ function formatDateKey(dateStr: string): string {
   return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
 }
 
-export function useAppointmentData() {
+export function useAppointmentData(dateRange?: { from: Date | null; to: Date | null }) {
   const [data, setData] = useState<AppointmentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +79,7 @@ export function useAppointmentData() {
       let totalShowed = 0;
       let totalClosed = 0;
 
-      const dailyStats: DailyAppointmentStats[] = rawData
+      let dailyStats: DailyAppointmentStats[] = rawData
         .map((row) => {
           const due = parseNumber(row["Due"] || row["due"] || "0");
           const showed = parseNumber(row["Showed"] || row["showed"] || "0");
@@ -99,6 +99,20 @@ export function useAppointmentData() {
           };
         })
         .filter((stat) => stat.date && stat.due > 0);
+
+      // Filter by date range if provided
+      if (dateRange?.from) {
+        const fromMonth = dateRange.from.getMonth() + 1;
+        const fromDay = dateRange.from.getDate();
+        const toDate = dateRange.to ?? dateRange.from;
+        const toMonth = toDate.getMonth() + 1;
+        const toDay = toDate.getDate();
+        dailyStats = dailyStats.filter((stat) => {
+          const [m, d] = stat.date.split("/").map(Number);
+          const val = m * 100 + d;
+          return val >= fromMonth * 100 + fromDay && val <= toMonth * 100 + toDay;
+        });
+      }
 
       dailyStats.forEach((stat) => {
         totalDue += stat.due;
@@ -134,7 +148,7 @@ export function useAppointmentData() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateRange]);
 
   useEffect(() => {
     fetchData();

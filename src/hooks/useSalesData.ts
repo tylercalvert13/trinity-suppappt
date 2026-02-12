@@ -77,7 +77,7 @@ function formatDateKey(dateStr: string): string {
   return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
 }
 
-export function useSalesData() {
+export function useSalesData(dateRange?: { from: Date | null; to: Date | null }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,7 +97,7 @@ export function useSalesData() {
       const rawData = parseCSV(text);
 
       // Parse submissions with new fields
-      const submissions: Submission[] = rawData.map((row) => ({
+      let submissions: Submission[] = rawData.map((row) => ({
         date: row["Date"] || row["date"] || "",
         agent: row["Agent"] || row["agent"] || "",
         clientName: row["Client"] || row["Client Name"] || row["clientName"] || "",
@@ -108,6 +108,17 @@ export function useSalesData() {
         status: row["Status"] || row["status"] || "Pending",
         commission: parseNumber(row["Commission"] || row["commission"] || "0"),
       }));
+
+      // Filter by date range if provided
+      if (dateRange?.from) {
+        const fromTime = dateRange.from.getTime();
+        const toTime = dateRange.to ? dateRange.to.getTime() : fromTime;
+        submissions = submissions.filter((sub) => {
+          const d = parseDate(sub.date);
+          const t = d.getTime();
+          return t >= fromTime && t <= toTime + 86400000 - 1;
+        });
+      }
 
       // Calculate totals
       let approved = 0;
@@ -236,7 +247,7 @@ export function useSalesData() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateRange]);
 
   useEffect(() => {
     fetchData();

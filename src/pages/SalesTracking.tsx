@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,11 +13,13 @@ import { AgentTable } from "@/components/sales/AgentTable";
 import { RecentSubmissionsTable } from "@/components/sales/RecentSubmissionsTable";
 import { AdsTrackingTab } from "@/components/sales/AdsTrackingTab";
 import { AppointmentsTrackingTab } from "@/components/sales/AppointmentsTrackingTab";
+import { DateRangeFilter, type DateRangeValue } from "@/components/sales/DateRangeFilter";
 
 export default function SalesTracking() {
-  const { data: salesData, loading: salesLoading, error: salesError, lastUpdated, refetch: refetchSales } = useSalesData();
-  const { data: adsData, loading: adsLoading, error: adsError, refetch: refetchAds } = useAdsData();
-  const { data: appointmentData, loading: appointmentLoading, error: appointmentError, refetch: refetchAppointments } = useAppointmentData();
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ from: null, to: null });
+  const { data: salesData, loading: salesLoading, error: salesError, lastUpdated, refetch: refetchSales } = useSalesData(dateRange);
+  const { data: adsData, loading: adsLoading, error: adsError, refetch: refetchAds } = useAdsData(dateRange);
+  const { data: appointmentData, loading: appointmentLoading, error: appointmentError, refetch: refetchAppointments } = useAppointmentData(dateRange);
 
   const loading = salesLoading || adsLoading || appointmentLoading;
   const error = salesError || adsError || appointmentError;
@@ -56,6 +59,7 @@ export default function SalesTracking() {
             <span>
               Last updated: {lastUpdated ? lastUpdated.toLocaleString() : "—"}
             </span>
+            <DateRangeFilter value={dateRange} onChange={setDateRange} />
             <Button
               variant="outline"
               size="sm"
