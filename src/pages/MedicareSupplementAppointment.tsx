@@ -161,6 +161,38 @@ const generateEventId = (): string => {
   return `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 };
 
+// Track appointment booking event via Facebook Conversion API
+const trackFacebookAppointmentEvent = async (
+  formData: FormData,
+  quoteResult: QuoteResult | null
+) => {
+  try {
+    const { fbc, fbp } = getFacebookCookies();
+    const eventId = generateEventId();
+    
+    await supabase.functions.invoke('fb-conversion', {
+      body: {
+        event_name: 'Appointment',
+        event_source_url: window.location.href,
+        external_id: getVisitorIdForTracking(),
+        fbc,
+        fbp,
+        event_id: eventId,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        zip_code: formData.zipCode,
+        value: quoteResult?.monthlySavings || quoteResult?.rate || 0,
+        currency: 'USD',
+      }
+    });
+    console.log('Facebook Appointment conversion tracked via CAPI (suppappt)');
+  } catch (error) {
+    console.error('Error tracking Facebook Appointment event:', error);
+  }
+};
+
 // Track submission event via Facebook Conversion API
 const trackFacebookSubmissionEvent = async (
   formData: FormData,
@@ -1559,7 +1591,12 @@ const MedicareSupplementAppointment = () => {
                 planType={formData.plan}
                 userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
                 userState={getStateFromZip(formData.zipCode)}
-                onTrackEvent={trackEvent}
+                onTrackEvent={(params) => {
+                  trackEvent(params);
+                  if (params.eventType === 'booking_completed') {
+                    trackFacebookAppointmentEvent(formData, quoteResult);
+                  }
+                }}
                 autoSelectFirst={false}
                 onSlotChange={handleSlotChange}
                 widgetRef={bookingWidgetRef}
