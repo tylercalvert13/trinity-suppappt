@@ -23,6 +23,18 @@ const getReasonMessage = (reason: string | null) => {
         message: "Based on your current medications, our rate comparison tool isn't able to find savings for you at this time.",
         subtext: "We wish you the best with your Medicare coverage.",
       };
+    case 'iep':
+      return {
+        title: "Not Quite Eligible Yet",
+        message: "You need to be in your Initial Election Period (turning 65 within 3 months, or turned 65 in the last 3 months) to use this self-enrollment tool.",
+        subtext: "Contact us at (201) 426-9898 if you have questions about your eligibility.",
+      };
+    case 'medicare_card':
+      return {
+        title: "You'll Need Your Medicare Card",
+        message: "To enroll in a Medicare Advantage plan, you'll need your Medicare card or MBI (Medicare Beneficiary Identifier) number.",
+        subtext: "Contact us at (201) 426-9898 if you need help getting your Medicare card.",
+      };
     default:
       return {
         title: "Thank You",
