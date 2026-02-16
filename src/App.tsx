@@ -24,6 +24,7 @@ const MedicareSupplementLP1 = lazyWithRetry(() => import("./pages/MedicareSupple
 const MedicareSupplementQuote = lazyWithRetry(() => import("./pages/MedicareSupplementQuote"));
 const MedicareSupplementAppointment = lazyWithRetry(() => import("./pages/MedicareSupplementAppointment"));
 const MedicareSupplementAppointment1 = lazyWithRetry(() => import("./pages/MedicareSupplementAppointment1"));
+const MedicareSupplementAppointment2 = lazyWithRetry(() => import("./pages/MedicareSupplementAppointment2"));
 const MedicareSupplementAppointmentRefund = lazyWithRetry(() => import("./pages/MedicareSupplementAppointmentRefund"));
 const Disqualified = lazyWithRetry(() => import("./pages/Disqualified"));
 const GreatRate = lazyWithRetry(() => import("./pages/GreatRate"));
@@ -92,6 +93,7 @@ const App = () => (
               <Route path="/suppquote" element={<MedicareSupplementQuote />} />
               <Route path="/suppappt" element={<MedicareSupplementAppointment />} />
               <Route path="/suppappt1" element={<MedicareSupplementAppointment1 />} />
+              <Route path="/suppappt2" element={<MedicareSupplementAppointment2 />} />
               <Route path="/suppappt-refund" element={<MedicareSupplementAppointmentRefund />} />
               <Route path="/disqualified" element={<Disqualified />} />
               <Route path="/great-rate" element={<GreatRate />} />
