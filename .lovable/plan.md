@@ -1,35 +1,45 @@
 
 
-## Improve Sunfire Iframe Load Speed
+## Mobile Optimization for /advantage Funnel
 
-### Problem
-The Sunfire Matrix enrollment tool (`sunfirematrix.com`) iframe only starts loading when the user reaches the final "enroll" step, causing a noticeable delay while the external app bootstraps.
+### Current State
+The funnel already looks decent on mobile -- cards are responsive, text scales, buttons are full-width. But there are several refinements needed, especially since the target audience is seniors (65+) who benefit from larger touch targets and clearer visual hierarchy.
 
-### Solution: Multi-Layer Preloading
+### Changes (all in `src/pages/MedicareAdvantage.tsx`)
 
-**1. DNS Prefetch + Preconnect in `index.html`**
-Add `<link rel="dns-prefetch">` and `<link rel="preconnect">` tags for `www.sunfirematrix.com` so the browser resolves DNS and establishes the TLS connection early -- even before the user lands on `/advantage`.
+**1. Landing Page -- Full Viewport Height**
+- Make the hero section fill the viewport on mobile (`min-h-[100dvh]` with flex centering) so the "Get Started" button is always visible without scrolling, and the footer doesn't awkwardly peek in.
+- Use `dvh` (dynamic viewport height) to account for mobile browser chrome.
 
-**2. Hidden Iframe Preload During Video/Confirm Steps**
-Once the user passes the Medicare card question (step 2), they still have 2 steps left (video + checklist). During those steps, render the Sunfire iframe off-screen (`position: absolute; left: -9999px; width: 1px; height: 1px`) so the browser silently loads the full app in the background. When the user reaches the enroll step, swap it to visible -- it will already be loaded and interactive.
+**2. Larger Touch Targets for Senior Accessibility**
+- Increase Yes/No button padding from `py-6` to `py-7` on mobile for bigger tap areas (matching the suppappt pattern of 18-24px targets).
+- Increase checkbox label padding from `p-4` to `p-5` on the confirm step.
+- Make checkboxes themselves larger (`h-5 w-5` instead of default size).
 
-**3. Loading Skeleton on Enroll Step**
-Add a skeleton/spinner overlay on the iframe container that fades out once the iframe fires its `onLoad` event, so even if there's residual load time, the user sees a polished loading state instead of a blank white box.
+**3. Iframe Mobile Height**
+- On mobile, reduce the iframe `min-h` from `600px` to `500px` since it's within a scrollable container anyway, but ensure the container itself doesn't create an unnecessarily tall blank space with the loading spinner.
+- Add `-webkit-overflow-scrolling: touch` for smooth iOS scrolling within the iframe area.
 
-### Technical Changes
+**4. Sticky "Need Help?" Call CTA on Enroll Step**
+- On the enroll step, add a sticky bottom bar with the phone number (similar to the sticky CTA pattern in suppappt) so seniors always have a way to call for help while navigating the Sunfire tool.
 
-**`index.html`** -- Add 2 link tags in `<head>`:
-- `<link rel="dns-prefetch" href="https://www.sunfirematrix.com" />`
-- `<link rel="preconnect" href="https://www.sunfirematrix.com" crossorigin />`
+**5. Scroll Behavior Refinement**
+- On the landing-to-first-step transition, scroll to top of the page (not just to the funnel ref) so the sticky progress bar is visible.
+- Add `scroll-margin-top` to the question container to account for the sticky progress bar height.
 
-**`src/pages/MedicareAdvantage.tsx`**:
-- Add a `preloadIframe` boolean state that turns `true` when the user reaches the "video" step
-- Render a hidden iframe (off-screen, 1x1px) when `preloadIframe` is true and step is not yet "enroll"
-- On the enroll step, show the same iframe (now cached by the browser) at full size
-- Add an `iframeLoaded` state toggled by the iframe's `onLoad` event
-- Show a spinner/skeleton overlay until `iframeLoaded` is true
+**6. Text Sizing for Senior Readability**
+- Bump question card body text from `text-sm` to `text-base` on mobile for better readability.
+- Ensure the progress bar step indicator uses at least `text-sm` font.
 
-### Expected Impact
-- DNS + TLS handshake saved: ~200-500ms
-- Full app preload during video/confirm steps: the Sunfire app has 30-60+ seconds to load while the user watches the video and checks boxes, so it should be fully ready by the time they click "Proceed to Self-Enrollment"
+### Technical Details
+
+Only one file changes: `src/pages/MedicareAdvantage.tsx`
+
+- Landing: add `min-h-[100dvh] flex flex-col justify-center` to the hero section
+- Buttons: `py-7 md:py-6 text-lg` (larger on mobile, normal on desktop)
+- Checkbox labels: `p-5 md:p-4`, checkbox size `h-5 w-5`
+- Subtitle text: `text-base` instead of `text-sm`
+- Question container: `scroll-mt-20` to clear sticky progress bar
+- Enroll step: sticky bottom call bar on mobile (`fixed bottom-0 left-0 right-0 md:relative` with phone link)
+- Iframe: keep `min-h-[500px] md:min-h-[800px]`
 
