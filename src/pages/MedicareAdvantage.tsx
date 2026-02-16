@@ -37,8 +37,8 @@ const MedicareAdvantage = () => {
   // Auto-scroll on step changes
   useEffect(() => {
     if (step !== "landing") {
-      setTimeout(() => {
-        questionContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
     }
   }, [step]);
@@ -127,7 +127,7 @@ const MedicareAdvantage = () => {
   // ─── RENDER ───
 
   const renderLanding = () => (
-    <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white py-12 md:py-20">
+    <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white min-h-[100dvh] flex flex-col justify-center py-12 md:py-20">
       <div className="max-w-4xl mx-auto px-4 text-center">
         {/* Trust badge */}
         <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-6">
@@ -175,21 +175,21 @@ const MedicareAdvantage = () => {
       <h2 className="text-xl md:text-2xl font-bold text-center mb-2">
         Are you turning 65 within the next 3 months, or have you turned 65 in the last 3 months?
       </h2>
-      <p className="text-muted-foreground text-center mb-6 text-sm">
+      <p className="text-muted-foreground text-center mb-6 text-base">
         You must be in your Initial Election Period (IEP) to use this tool.
       </p>
       <div className="grid grid-cols-1 gap-3">
         <Button
           onClick={() => handleIEPAnswer("yes")}
           variant="outline"
-          className="w-full py-6 text-lg font-semibold border-2 hover:border-blue-500 hover:bg-blue-50 rounded-xl"
+          className="w-full py-7 md:py-6 text-lg font-semibold border-2 hover:border-blue-500 hover:bg-blue-50 rounded-xl"
         >
           Yes
         </Button>
         <Button
           onClick={() => handleIEPAnswer("no")}
           variant="outline"
-          className="w-full py-6 text-lg font-semibold border-2 hover:border-blue-500 hover:bg-blue-50 rounded-xl"
+          className="w-full py-7 md:py-6 text-lg font-semibold border-2 hover:border-blue-500 hover:bg-blue-50 rounded-xl"
         >
           No
         </Button>
@@ -202,21 +202,21 @@ const MedicareAdvantage = () => {
       <h2 className="text-xl md:text-2xl font-bold text-center mb-2">
         Do you have your Medicare card or know your MBI number?
       </h2>
-      <p className="text-muted-foreground text-center mb-6 text-sm">
+      <p className="text-muted-foreground text-center mb-6 text-base">
         You'll need your Medicare Beneficiary Identifier (MBI) number to enroll.
       </p>
       <div className="grid grid-cols-1 gap-3">
         <Button
           onClick={() => handleMedicareCardAnswer("yes")}
           variant="outline"
-          className="w-full py-6 text-lg font-semibold border-2 hover:border-blue-500 hover:bg-blue-50 rounded-xl"
+          className="w-full py-7 md:py-6 text-lg font-semibold border-2 hover:border-blue-500 hover:bg-blue-50 rounded-xl"
         >
           Yes, I have it ready
         </Button>
         <Button
           onClick={() => handleMedicareCardAnswer("no")}
           variant="outline"
-          className="w-full py-6 text-lg font-semibold border-2 hover:border-blue-500 hover:bg-blue-50 rounded-xl"
+          className="w-full py-7 md:py-6 text-lg font-semibold border-2 hover:border-blue-500 hover:bg-blue-50 rounded-xl"
         >
           No, I don't have it yet
         </Button>
@@ -229,7 +229,7 @@ const MedicareAdvantage = () => {
       <h2 className="text-xl md:text-2xl font-bold text-center mb-2">
         Watch This Quick Guide
       </h2>
-      <p className="text-muted-foreground text-center mb-6 text-sm">
+      <p className="text-muted-foreground text-center mb-6 text-base">
         Watch the full video to unlock the self-enrollment tool.
       </p>
 
@@ -259,34 +259,34 @@ const MedicareAdvantage = () => {
       <h2 className="text-xl md:text-2xl font-bold text-center mb-2">
         Before You Enroll, Confirm You're Ready
       </h2>
-      <p className="text-muted-foreground text-center mb-6 text-sm">
+      <p className="text-muted-foreground text-center mb-6 text-base">
         Check all boxes to proceed to self-enrollment.
       </p>
 
       <div className="space-y-4 mb-8">
-        <label className="flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
+        <label className="flex items-start gap-3 p-5 md:p-4 rounded-xl border-2 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
           <Checkbox
             checked={checklist.watchedVideo}
             onCheckedChange={(checked) => setChecklist(prev => ({ ...prev, watchedVideo: !!checked }))}
-            className="mt-0.5"
+            className="mt-0.5 h-5 w-5"
           />
           <span className="text-base font-medium">I watched the full video</span>
         </label>
 
-        <label className="flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
+        <label className="flex items-start gap-3 p-5 md:p-4 rounded-xl border-2 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
           <Checkbox
             checked={checklist.hasMedicareCard}
             onCheckedChange={(checked) => setChecklist(prev => ({ ...prev, hasMedicareCard: !!checked }))}
-            className="mt-0.5"
+            className="mt-0.5 h-5 w-5"
           />
           <span className="text-base font-medium">I have my Medicare card or MBI number ready</span>
         </label>
 
-        <label className="flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
+        <label className="flex items-start gap-3 p-5 md:p-4 rounded-xl border-2 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
           <Checkbox
             checked={checklist.understandsSelfEnroll}
             onCheckedChange={(checked) => setChecklist(prev => ({ ...prev, understandsSelfEnroll: !!checked }))}
-            className="mt-0.5"
+            className="mt-0.5 h-5 w-5"
           />
           <span className="text-base font-medium">I understand I'm enrolling myself without an agent</span>
         </label>
@@ -332,14 +332,15 @@ const MedicareAdvantage = () => {
           title="Medicare Advantage Self-Enrollment"
           width="100%"
           height="800"
-          className="border-0 w-full min-h-[600px] md:min-h-[800px]"
+          className="border-0 w-full min-h-[500px] md:min-h-[800px]"
+          style={{ WebkitOverflowScrolling: 'touch' }}
           allow="payment"
           onLoad={() => setIframeLoaded(true)}
         />
       </div>
 
-      {/* Help text */}
-      <div className="text-center mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+      {/* Help text - desktop only */}
+      <div className="hidden md:block text-center mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
         <div className="flex items-center justify-center gap-2 mb-1">
           <Phone className="h-4 w-4 text-blue-700" />
           <span className="font-semibold text-blue-900">Need help?</span>
@@ -349,6 +350,17 @@ const MedicareAdvantage = () => {
           <a href={PHONE_TEL} className="font-bold underline">{PHONE_NUMBER}</a>
         </p>
       </div>
+
+      {/* Sticky mobile call bar */}
+      <div className="fixed bottom-0 left-0 right-0 md:hidden bg-blue-900 text-white py-3 px-4 z-40 shadow-[0_-2px_10px_rgba(0,0,0,0.15)]">
+        <a href={PHONE_TEL} className="flex items-center justify-center gap-2">
+          <Phone className="h-5 w-5" />
+          <span className="font-semibold text-base">Need Help? Call {PHONE_NUMBER}</span>
+        </a>
+      </div>
+
+      {/* Spacer for sticky bar on mobile */}
+      <div className="h-14 md:hidden" />
     </div>
   );
 
@@ -402,7 +414,7 @@ const MedicareAdvantage = () => {
       {/* Question / step content */}
       {step !== "landing" && (
         <div ref={funnelRef} className="py-8 md:py-12 px-4">
-          <div ref={questionContainerRef}>
+          <div ref={questionContainerRef} className="scroll-mt-20">
             {renderCurrentStep()}
           </div>
 
