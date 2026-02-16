@@ -1,77 +1,35 @@
 
 
-## Create Medicare Advantage Self-Enrollment Funnel at /advantage
+## Improve Sunfire Iframe Load Speed
 
-### Overview
-A new funnel page at `/advantage` that guides users turning 65 through a self-enrollment flow for Medicare Advantage. It matches the visual style and UX patterns of the `/suppappt` funnels (white cards, blue accents, progress bar, large touch targets) but replaces the quote/booking flow with a video tutorial and embedded self-enrollment tool.
+### Problem
+The Sunfire Matrix enrollment tool (`sunfirematrix.com`) iframe only starts loading when the user reaches the final "enroll" step, causing a noticeable delay while the external app bootstraps.
 
-### User Flow
+### Solution: Multi-Layer Preloading
 
-```text
-Landing Page ("Enroll in the Best Medicare Advantage Plan — By Yourself")
-  |
-  v
-Step 1: "Are you turning 65 within the next 3 months, or have you turned 65 in the last 3 months?"
-  -> Yes: Continue
-  -> No: Disqualified ("You must be in your Initial Election Period")
-  |
-  v
-Step 2: "Do you have your Medicare card or know your MBI (Medicare Beneficiary Identifier) number?"
-  -> Yes: Continue
-  -> No: Disqualified ("You'll need your Medicare card or MBI number to enroll")
-  |
-  v
-Step 3: Video Step — "Watch This Quick Guide"
-  - Video placeholder (16:9 aspect ratio container with play icon)
-  - "Watch the full video to unlock self-enrollment"
-  - Track video progress; once complete (or placeholder "I've watched the video" button for now), enable the Continue button
-  |
-  v
-Step 4: Confirmation Checklist
-  - "Before you enroll, confirm you're ready:"
-  - Checkbox: "I watched the full video"
-  - Checkbox: "I have my Medicare card or MBI number ready"
-  - Checkbox: "I understand I'm enrolling myself without an agent"
-  - All must be checked to proceed
-  |
-  v
-Step 5: Self-Enrollment (Qualified)
-  - "You're Ready to Enroll!"
-  - Sunfire Matrix enrollment tool embedded in a full-width iframe
-  - URL: https://www.sunfirematrix.com/app/consumer/ember/?sfpath=int&sfagid=20273920#/
-  - Responsive iframe that fills the available width and has generous height
-  - Help text: "Need help? Call us at (201) 426-9898"
-```
+**1. DNS Prefetch + Preconnect in `index.html`**
+Add `<link rel="dns-prefetch">` and `<link rel="preconnect">` tags for `www.sunfirematrix.com` so the browser resolves DNS and establishes the TLS connection early -- even before the user lands on `/advantage`.
 
-### Technical Details
+**2. Hidden Iframe Preload During Video/Confirm Steps**
+Once the user passes the Medicare card question (step 2), they still have 2 steps left (video + checklist). During those steps, render the Sunfire iframe off-screen (`position: absolute; left: -9999px; width: 1px; height: 1px`) so the browser silently loads the full app in the background. When the user reaches the enroll step, swap it to visible -- it will already be loaded and interactive.
 
-**New file: `src/pages/MedicareAdvantage.tsx`**
-- Modeled after `/suppappt2` structure (same imports, same card styling, same progress bar pattern)
-- Simplified step type: `"landing" | "iep" | "medicare_card" | "video" | "confirm" | "enroll"`
-- No quote API, no booking widget, no exit intent modal, no social proof popup (since this is self-service)
-- Uses `useFunnelAnalytics('advantage')` for tracking
-- Disqualification navigates to `/disqualified` with appropriate reason params
-- Video step: renders an `AspectRatio` 16:9 container with a placeholder (gray box with play icon and "Video Coming Soon" text). A "I've Watched the Full Video" button below it advances the flow. When a real video is added later, this can be swapped for a video player with completion tracking.
-- Enrollment step: renders the Sunfire Matrix URL in an `<iframe>` with `width="100%"` and a tall fixed height (~800px), with `allow="payment"` and sandbox attributes as needed for functionality
-- Same Health Helpers branding, trust badges, and legal footer links
+**3. Loading Skeleton on Enroll Step**
+Add a skeleton/spinner overlay on the iframe container that fades out once the iframe fires its `onLoad` event, so even if there's residual load time, the user sees a polished loading state instead of a blank white box.
 
-**Updated: `src/App.tsx`**
-- Register `/advantage` route with lazy-loaded `MedicareAdvantage` component
+### Technical Changes
 
-**Updated: `src/hooks/useFunnelAnalytics.ts`**
-- Add `'advantage'` to the allowed page union type
+**`index.html`** -- Add 2 link tags in `<head>`:
+- `<link rel="dns-prefetch" href="https://www.sunfirematrix.com" />`
+- `<link rel="preconnect" href="https://www.sunfirematrix.com" crossorigin />`
 
-**No database changes needed** -- the existing `funnel_sessions` and `funnel_events` tables already accept any page string value.
+**`src/pages/MedicareAdvantage.tsx`**:
+- Add a `preloadIframe` boolean state that turns `true` when the user reaches the "video" step
+- Render a hidden iframe (off-screen, 1x1px) when `preloadIframe` is true and step is not yet "enroll"
+- On the enroll step, show the same iframe (now cached by the browser) at full size
+- Add an `iframeLoaded` state toggled by the iframe's `onLoad` event
+- Show a spinner/skeleton overlay until `iframeLoaded` is true
 
-### Disqualification Handling
-- IEP question "No" -> Navigate to `/disqualified?reason=iep` with a message like "You need to be in your Initial Election Period (turning 65) to use this tool"
-- Medicare card "No" -> Navigate to `/disqualified?reason=medicare_card` with a message like "You'll need your Medicare card or MBI number. Contact us if you need help getting it."
-- The existing Disqualified page will need a small update to handle these new reason codes with appropriate messaging
-
-### What's Intentionally Excluded
-- No quote fetching or rate comparison (this is Advantage, not Supplement)
-- No appointment booking widget
-- No exit intent modal, social proof popup, or sticky CTA (self-service flow, not conversion-optimized for agent calls)
-- No contact form or PII collection (user enrolls directly through Sunfire)
-- No Facebook CAPI events for now (can be added later)
+### Expected Impact
+- DNS + TLS handshake saved: ~200-500ms
+- Full app preload during video/confirm steps: the Sunfire app has 30-60+ seconds to load while the user watches the video and checks boxes, so it should be fully ready by the time they click "Proceed to Self-Enrollment"
 
