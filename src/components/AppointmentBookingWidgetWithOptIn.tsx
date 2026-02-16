@@ -39,6 +39,7 @@ interface AppointmentWidgetWithOptInProps {
   sessionId?: string;
   onTrackEvent?: (params: TrackEventParams) => void;
   onComplete?: () => void;
+  onBookingCompleted?: (contactData: { firstName: string; lastName: string; email: string; phone: string }) => void;
 }
 
 interface SlotData {
@@ -275,7 +276,8 @@ export function AppointmentBookingWidgetWithOptIn({
   visitorId,
   sessionId,
   onTrackEvent,
-  onComplete
+  onComplete,
+  onBookingCompleted
 }: AppointmentWidgetWithOptInProps) {
   // Step 1 = Pick Day, Step 2 = Pick Time, Step 3 = Contact Form, Step 4 = Success
   const [bookingStep, setBookingStep] = useState(1);
@@ -769,6 +771,12 @@ export function AppointmentBookingWidgetWithOptIn({
       });
       
       onComplete?.();
+      onBookingCompleted?.({
+        firstName: contactForm.firstName.trim(),
+        lastName: contactForm.lastName.trim(),
+        email: contactForm.email.trim(),
+        phone: phoneDigits,
+      });
 
     } catch (err) {
       console.error('Booking error:', err);
