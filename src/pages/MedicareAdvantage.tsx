@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Shield, Users, FileCheck, CheckCircle, Play, Phone } from 'lucide-react';
+import { Shield, Users, FileCheck, CheckCircle, Play, Phone, Loader2 } from 'lucide-react';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
+
+const SUNFIRE_URL = "https://www.sunfirematrix.com/app/consumer/ember/?sfpath=int&sfagid=20273920#/";
 
 const PHONE_NUMBER = "(201) 426-9898";
 const PHONE_TEL = "tel:+12014269898";
@@ -18,11 +20,17 @@ const MedicareAdvantage = () => {
   const funnelRef = useRef<HTMLDivElement>(null);
   const questionContainerRef = useRef<HTMLDivElement>(null);
 
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   const [checklist, setChecklist] = useState({
     watchedVideo: false,
     hasMedicareCard: false,
     understandsSelfEnroll: false,
   });
+
+  // Start preloading iframe once user passes medicare_card step
+  const shouldPreload = step === "video" || step === "confirm" || step === "enroll";
 
   const { trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('advantage');
 
@@ -311,14 +319,22 @@ const MedicareAdvantage = () => {
       </div>
 
       {/* Iframe */}
-      <div className="bg-white rounded-2xl shadow-xl border overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-xl border overflow-hidden relative">
+        {!iframeLoaded && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-10 gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-muted-foreground font-medium">Loading enrollment tool…</p>
+          </div>
+        )}
         <iframe
-          src="https://www.sunfirematrix.com/app/consumer/ember/?sfpath=int&sfagid=20273920#/"
+          ref={iframeRef}
+          src={SUNFIRE_URL}
           title="Medicare Advantage Self-Enrollment"
           width="100%"
           height="800"
           className="border-0 w-full min-h-[600px] md:min-h-[800px]"
           allow="payment"
+          onLoad={() => setIframeLoaded(true)}
         />
       </div>
 
@@ -389,6 +405,18 @@ const MedicareAdvantage = () => {
           <div ref={questionContainerRef}>
             {renderCurrentStep()}
           </div>
+
+          {/* Hidden iframe preload — loads Sunfire in background during video/confirm steps */}
+          {shouldPreload && step !== "enroll" && (
+            <iframe
+              src={SUNFIRE_URL}
+              title="Preload enrollment tool"
+              aria-hidden="true"
+              tabIndex={-1}
+              className="absolute -left-[9999px] w-px h-px overflow-hidden"
+              allow="payment"
+            />
+          )}
         </div>
       )}
 
