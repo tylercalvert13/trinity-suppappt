@@ -1,62 +1,77 @@
 
-## Create a No-Opt-In Version of /suppappt
 
-### Goal
-Create a new funnel page (e.g., `/suppappt2`) that is identical to `/suppappt` in every way -- same copy, same conversion optimization elements, same FB CAPI events -- except contact information is collected **after** the user selects a booking time slot, not before seeing their rate.
+## Create Medicare Advantage Self-Enrollment Funnel at /advantage
 
-### Why not just update /suppappt1?
-The existing `/suppappt1` delays contact collection but is missing most of the conversion features from `/suppappt`:
-- No Facebook CAPI tracking (Lead or Appointment events)
-- No Google Ads, Bing, or Vibe conversion events
-- No exit intent modal
-- No social proof popup
-- No sticky booking CTA
-- No urgency toast / auto-scroll to widget
-- No QuoteLoadingProgress animated component
-- No TrustedForm integration
-- No contact validation via `validate-contact` edge function
-- Simpler loading screen, larger footer spacer
+### Overview
+A new funnel page at `/advantage` that guides users turning 65 through a self-enrollment flow for Medicare Advantage. It matches the visual style and UX patterns of the `/suppappt` funnels (white cards, blue accents, progress bar, large touch targets) but replaces the quote/booking flow with a video tutorial and embedded self-enrollment tool.
 
-Rebuilding /suppappt1 to match would essentially be rewriting it. It's cleaner to create a new page based on /suppappt.
-
-### What changes
-
-**1. New page: `src/pages/MedicareSupplementAppointment2.tsx`**
-- Copy of `/suppappt` with these modifications:
-  - **Remove** the "contact" step from the funnel flow (steps go: plan -> payment -> care -> treatment -> medications -> gender -> tobacco -> spouse -> age -> zip -> loading -> qualified)
-  - **Remove** contact form fields from the main form (firstName, lastName, email, phone)
-  - After zip code, go directly to loading/quote (no contact collection)
-  - Results page header says "Great News!" (no first name, since we don't have it yet)
-  - Use `AppointmentBookingWidgetWithOptIn` instead of `AppointmentBookingWidget` so contact info is collected inside the widget after time slot selection
-  - **Keep all conversion features**: exit intent modal, social proof popup, sticky CTA, auto-scroll, urgency toast, QuoteLoadingProgress
-  - **Keep all tracking**: Facebook CAPI Lead event fires on quote display (without PII since we don't have it yet); Appointment event fires on booking completion (with PII from the widget's onComplete callback)
-  - TrustedForm certificate captured at the widget level when contact form is submitted
-  - Google Ads, Bing UET, and Vibe conversion events all fire as normal on quote display
-
-**2. Update `AppointmentBookingWidgetWithOptIn`**
-- Add an `onBookingCompleted` callback that passes the contact data (firstName, lastName, email, phone) back to the parent page so it can fire the FB Appointment CAPI event with full PII
-- Ensure the widget's existing webhook logic still fires to GHL
-
-**3. Route registration: `src/App.tsx`**
-- Add `/suppappt2` route pointing to the new page
-
-**4. Analytics tracking**
-- Use funnel name `suppappt2` for the `useFunnelAnalytics` hook
-- Submission saved to `submissions` table with `page: 'suppappt2'`
-
-### Flow comparison
+### User Flow
 
 ```text
-/suppappt (current):
-  Quiz -> Contact Info -> Loading -> Rate + Booking Widget
-
-/suppappt2 (new):
-  Quiz -> Loading -> Rate + Booking Widget (contact collected inside widget after time selection)
+Landing Page ("Enroll in the Best Medicare Advantage Plan — By Yourself")
+  |
+  v
+Step 1: "Are you turning 65 within the next 3 months, or have you turned 65 in the last 3 months?"
+  -> Yes: Continue
+  -> No: Disqualified ("You must be in your Initial Election Period")
+  |
+  v
+Step 2: "Do you have your Medicare card or know your MBI (Medicare Beneficiary Identifier) number?"
+  -> Yes: Continue
+  -> No: Disqualified ("You'll need your Medicare card or MBI number to enroll")
+  |
+  v
+Step 3: Video Step — "Watch This Quick Guide"
+  - Video placeholder (16:9 aspect ratio container with play icon)
+  - "Watch the full video to unlock self-enrollment"
+  - Track video progress; once complete (or placeholder "I've watched the video" button for now), enable the Continue button
+  |
+  v
+Step 4: Confirmation Checklist
+  - "Before you enroll, confirm you're ready:"
+  - Checkbox: "I watched the full video"
+  - Checkbox: "I have my Medicare card or MBI number ready"
+  - Checkbox: "I understand I'm enrolling myself without an agent"
+  - All must be checked to proceed
+  |
+  v
+Step 5: Self-Enrollment (Qualified)
+  - "You're Ready to Enroll!"
+  - Sunfire Matrix enrollment tool embedded in a full-width iframe
+  - URL: https://www.sunfirematrix.com/app/consumer/ember/?sfpath=int&sfagid=20273920#/
+  - Responsive iframe that fills the available width and has generous height
+  - Help text: "Need help? Call us at (201) 426-9898"
 ```
 
-### Technical details
+### Technical Details
 
-- The FB CAPI "Lead" event on quote display will send without PII (no name/email/phone) but will still include zip, visitor ID, fbc/fbp cookies, and conversion value
-- The FB CAPI "Appointment" event will include full PII passed back from the widget via callback
-- The `AppointmentBookingWidgetWithOptIn` already handles contact creation in GHL, webhook submission, and booking -- just needs the callback added to surface contact data to the parent
-- The dedicated GHL webhook URL for this funnel can use the same one as /suppappt1 or a new one (your choice -- can be configured later)
+**New file: `src/pages/MedicareAdvantage.tsx`**
+- Modeled after `/suppappt2` structure (same imports, same card styling, same progress bar pattern)
+- Simplified step type: `"landing" | "iep" | "medicare_card" | "video" | "confirm" | "enroll"`
+- No quote API, no booking widget, no exit intent modal, no social proof popup (since this is self-service)
+- Uses `useFunnelAnalytics('advantage')` for tracking
+- Disqualification navigates to `/disqualified` with appropriate reason params
+- Video step: renders an `AspectRatio` 16:9 container with a placeholder (gray box with play icon and "Video Coming Soon" text). A "I've Watched the Full Video" button below it advances the flow. When a real video is added later, this can be swapped for a video player with completion tracking.
+- Enrollment step: renders the Sunfire Matrix URL in an `<iframe>` with `width="100%"` and a tall fixed height (~800px), with `allow="payment"` and sandbox attributes as needed for functionality
+- Same Health Helpers branding, trust badges, and legal footer links
+
+**Updated: `src/App.tsx`**
+- Register `/advantage` route with lazy-loaded `MedicareAdvantage` component
+
+**Updated: `src/hooks/useFunnelAnalytics.ts`**
+- Add `'advantage'` to the allowed page union type
+
+**No database changes needed** -- the existing `funnel_sessions` and `funnel_events` tables already accept any page string value.
+
+### Disqualification Handling
+- IEP question "No" -> Navigate to `/disqualified?reason=iep` with a message like "You need to be in your Initial Election Period (turning 65) to use this tool"
+- Medicare card "No" -> Navigate to `/disqualified?reason=medicare_card` with a message like "You'll need your Medicare card or MBI number. Contact us if you need help getting it."
+- The existing Disqualified page will need a small update to handle these new reason codes with appropriate messaging
+
+### What's Intentionally Excluded
+- No quote fetching or rate comparison (this is Advantage, not Supplement)
+- No appointment booking widget
+- No exit intent modal, social proof popup, or sticky CTA (self-service flow, not conversion-optimized for agent calls)
+- No contact form or PII collection (user enrolls directly through Sunfire)
+- No Facebook CAPI events for now (can be added later)
+
