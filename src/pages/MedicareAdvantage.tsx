@@ -45,29 +45,97 @@ const MedicareAdvantage = () => {
 
   // SEO meta tags
   useEffect(() => {
-    document.title = "Medicare Advantage Self-Enrollment | Health Helpers";
+    document.title = "Medicare Advantage Self-Enrollment | Enroll Online Free | Health Helpers";
 
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', 'Enroll in the best Medicare Advantage plan by yourself. No agent needed.');
+    const setMeta = (name: string, content: string, property = false) => {
+      const attr = property ? 'property' : 'name';
+      let el = document.querySelector(`meta[${attr}="${name}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, name);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+      return el;
+    };
+
+    const pageDescription = "Turning 65? Enroll in the best Medicare Advantage plan by yourself — no agent, no phone call needed. Watch our quick guide and self-enroll in minutes. 100% free.";
+    const pageUrl = "https://healthhelpers.co/advantage";
+    const pageImage = "https://healthhelpers.co/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png";
+
+    // Basic meta
+    const descEl = setMeta('description', pageDescription);
+    const robotsEl = setMeta('robots', 'noindex, nofollow');
+
+    // Open Graph
+    const ogTitle = setMeta('og:title', 'Medicare Advantage Self-Enrollment | Health Helpers', true);
+    const ogDesc = setMeta('og:description', pageDescription, true);
+    const ogUrl = setMeta('og:url', pageUrl, true);
+    const ogImage = setMeta('og:image', pageImage, true);
+    const ogType = setMeta('og:type', 'website', true);
+
+    // Twitter
+    const twTitle = setMeta('twitter:title', 'Medicare Advantage Self-Enrollment | Health Helpers');
+    const twDesc = setMeta('twitter:description', pageDescription);
+
+    // Canonical
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+    const origCanonical = canonical?.getAttribute('href');
+    if (canonical) {
+      canonical.setAttribute('href', pageUrl);
     }
 
-    let robotsMeta = document.querySelector('meta[name="robots"]');
-    if (!robotsMeta) {
-      robotsMeta = document.createElement('meta');
-      robotsMeta.setAttribute('name', 'robots');
-      document.head.appendChild(robotsMeta);
-    }
-    robotsMeta.setAttribute('content', 'noindex, nofollow');
+    // JSON-LD structured data
+    const jsonLd = document.createElement('script');
+    jsonLd.type = 'application/ld+json';
+    jsonLd.id = 'advantage-jsonld';
+    jsonLd.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Medicare Advantage Self-Enrollment",
+      "description": pageDescription,
+      "url": pageUrl,
+      "provider": {
+        "@type": "InsuranceAgency",
+        "name": "Health Helpers",
+        "url": "https://healthhelpers.co",
+        "telephone": "+1-201-426-9898"
+      },
+      "mainEntity": {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can I enroll in Medicare Advantage by myself?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. If you are in your Initial Election Period (turning 65 within 3 months or turned 65 in the last 3 months), you can self-enroll in a Medicare Advantage plan online using our free tool — no agent required."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What do I need to enroll in Medicare Advantage?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You need your Medicare card or Medicare Beneficiary Identifier (MBI) number. Our guided enrollment tool walks you through the rest of the process step by step."
+            }
+          }
+        ]
+      }
+    });
+    document.head.appendChild(jsonLd);
 
     return () => {
       document.title = "Medicare Self-Enrollment Online | Health Helpers";
-      if (metaDescription) {
-        metaDescription.setAttribute('content', 'Enroll in Medicare plans online by yourself.');
-      }
-      if (robotsMeta) {
-        robotsMeta.setAttribute('content', 'index, follow');
-      }
+      if (descEl) descEl.setAttribute('content', 'Enroll in Medicare plans online by yourself.');
+      if (robotsEl) robotsEl.setAttribute('content', 'index, follow');
+      if (canonical && origCanonical) canonical.setAttribute('href', origCanonical);
+      // Remove page-specific OG/Twitter overrides
+      [ogTitle, ogDesc, ogUrl, ogImage, ogType, twTitle, twDesc].forEach(el => {
+        if (el && !document.querySelector(`[content="${el.getAttribute('content')}"]`)) return;
+        el?.remove();
+      });
+      document.getElementById('advantage-jsonld')?.remove();
     };
   }, []);
 
