@@ -1,65 +1,87 @@
 
 
-## Fix /suppappt Analytics: Query Limits and Missing Data
+## Fix Facebook Pixel Advanced Matching and Verify CAPI
 
-### Problem 1: 1,000-Row Query Cap (Critical)
-The data fetch in `Analytics.tsx` does not override the default query limit of 1,000 rows. In the last 7 days alone, /suppappt has:
-- **8,160 sessions** (only ~1,000 fetched = 12%)
-- **30,558 events** (only ~1,000 fetched = 3%)
-- **1,240 submissions** (only ~1,000 fetched = 80%)
+### Problem Summary
+The browser pixel fires PageView with zero user identifiers. Facebook needs BOTH the pixel (browser-side) AND CAPI (server-side) to send user data for maximum match quality. Currently only CAPI sends PII, and even that may not be firing reliably.
 
-All KPIs, funnel charts, and booking widget conversion numbers are severely undercounted.
+### Changes
 
-### Problem 2: Disqualified Sessions Invisible in Funnel
-When a user gets disqualified, `last_step` is set to `"disqualified"`. But the funnel step order array doesn't include `"disqualified"`, so `stepOrder.indexOf("disqualified")` returns `-1`. These sessions (454 in the last 7 days) are excluded from every funnel step count, making drop-off numbers inaccurate.
+**1. Add Advanced Matching to Pixel (Browser-Side)**
 
----
+In the funnel pages (`MedicareSupplementAppointment.tsx`, `MedicareSupplementAppointmentRefund.tsx`, `MedicareSupplementAppointment2.tsx`), after the user submits their contact info, call `fbq('init')` again with Advanced Matching parameters. This re-initializes the pixel with user data so all subsequent events are matched.
 
-### Fix for Problem 1: Paginated Fetching
+```
+fbq('init', '731657259428655', {
+  em: 'user@email.com',    // unhashed - fbq hashes automatically
+  fn: 'john',
+  ln: 'doe', 
+  ph: '12015551234',
+  zp: '07030',
+  country: 'us'
+});
+```
 
-Since we can't fetch 30K+ rows in one call, we'll use a pagination helper that loops through results in batches of 1,000 until all rows are fetched. This will be applied to all three queries (sessions, events, submissions).
+This will be called right after the contact form step completes (when we have first_name, last_name, email, phone, zip_code).
 
-**File: `src/pages/Analytics.tsx`**
+**2. Add Browser-Side Pixel Events (for deduplication with CAPI)**
 
-Add a `fetchAllRows` helper function that paginates using `.range(offset, offset + 999)` until fewer than 1,000 rows are returned. Replace the three `supabase.from(...)` calls with this helper.
+Currently NO `fbq('track', ...)` calls exist in React code. We need to fire matching browser pixel events alongside the CAPI calls, using the SAME `event_id` for deduplication:
 
-### Fix for Problem 2: Include "disqualified" in Step Order
+- `fbq('track', 'Lead', { value, currency: 'USD' }, { eventID: eventId })` -- when quote is shown
+- `fbq('track', 'Schedule', { value, currency: 'USD' }, { eventID: eventId })` -- when appointment is booked
 
-**File: `src/pages/Analytics.tsx`**
+This gives Facebook two signals (browser + server) for each conversion, maximizing match rate while deduplicating via event_id.
 
-Add `"disqualified"` to the `funnelSteps` array (after `"contact"` and before `"loading"`), so sessions with `last_step === "disqualified"` are correctly counted as having reached at least the step before disqualification. The label can be "Disqualified" and it represents users who answered health screening questions but didn't pass.
+**3. Verify CAPI Is Actually Firing**
 
-Actually, a more accurate approach: since disqualified users could have been DQ'd at different steps (care, treatment, or medications), we should treat "disqualified" as equivalent to reaching at least the step where disqualification happens. The simplest correct fix is to insert "disqualified" into the step order right after the last health screening step ("medications"), so DQ'd users are counted as reaching at least that far. This slightly overcounts for users DQ'd at "care" (step 4) but ensures they're not invisible.
+Add a quick console.log before and after the `supabase.functions.invoke('fb-conversion')` calls to confirm the function is being reached. Also check the edge function deployment status.
+
+### Files to Change
+
+- `src/pages/MedicareSupplementAppointment.tsx` -- Add Advanced Matching init + browser pixel events
+- `src/pages/MedicareSupplementAppointmentRefund.tsx` -- Same changes
+- `src/pages/MedicareSupplementAppointment2.tsx` -- Same changes  
+- `src/pages/MedicareSupplementLP.tsx` -- Add browser pixel event for the InboundCall tracking
 
 ### Technical Details
 
-**`src/pages/Analytics.tsx` changes:**
+**Advanced Matching placement**: Called once after the contact step, inside the existing `trackFacebookSubmissionEvent` function, before the CAPI call. The `fbq('init', ...)` with user data is idempotent -- calling it again just updates the matched user info.
 
-1. Add paginated fetch helper:
+**Browser pixel event format with dedup**:
 ```typescript
-const fetchAllRows = async (query) => {
-  let allData = [];
-  let offset = 0;
-  const batchSize = 1000;
-  while (true) {
-    const { data, error } = await query.range(offset, offset + batchSize - 1);
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    allData = [...allData, ...data];
-    if (data.length < batchSize) break;
-    offset += batchSize;
-  }
-  return allData;
-};
+// Same eventId used for both browser + CAPI
+const eventId = generateEventId();
+
+// Browser pixel (unhashed - Facebook SDK hashes automatically)
+if (typeof window.fbq === 'function') {
+  window.fbq('init', '731657259428655', {
+    em: formData.email,
+    fn: formData.firstName,
+    ln: formData.lastName,
+    ph: formData.phone.replace(/\D/g, ''),
+    zp: formData.zipCode?.substring(0, 5),
+    country: 'us',
+  });
+  window.fbq('track', 'Lead', { value, currency: 'USD' }, { eventID: eventId });
+}
+
+// CAPI (hashed server-side)
+await supabase.functions.invoke('fb-conversion', {
+  body: { event_name: 'Lead', event_id: eventId, ... }
+});
 ```
 
-2. Refactor `fetchData` to use paginated queries for sessions, events, and submissions.
+**Why this fixes the "unknown" segment**: Facebook currently sees events from CAPI with hashed PII but has no browser-side match to pair them with. By adding Advanced Matching to the pixel init, Facebook can cross-reference the browser cookie identity with the hashed PII, dramatically improving match quality from "unknown" to identified users.
 
-3. Update `funnelSteps` array to include `{ step: 'disqualified', label: 'Disqualified' }` after "medications" so that DQ'd sessions appear in the funnel chart.
+### What This Will NOT Fix
+- Campaign budget allocation (that's a Meta Ads Manager decision)
+- Special Ad Category targeting restrictions (that's a policy constraint)
+- iOS 14.5+ App Tracking Transparency (CAPI already mitigates this, and these are web users not app users)
 
-### Impact
-- All KPI cards will show accurate totals instead of capped-at-1000 counts
-- Funnel drop-off chart will correctly represent all visitors including disqualified ones
-- Booking widget conversion funnel will show correct numbers
-- Average savings calculations will be based on complete data
+### Expected Impact
+- User match rate should go from ~0% to 60-80%+
+- Custom Audience building will start working
+- Lookalike audiences become viable
+- Conversion optimization improves (Meta can see who converts)
 
