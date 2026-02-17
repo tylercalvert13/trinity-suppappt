@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Clock, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
+import { getVariant } from '@/lib/abTest';
 import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
 import { useQuoteWarmup } from '@/hooks/useQuoteWarmup';
 import { z } from 'zod';
@@ -329,6 +330,7 @@ const trackVibeCoLeadEvent = () => {
 
 const MedicareSupplementAppointment = () => {
   const navigate = useNavigate();
+  const [variant] = useState(() => getVariant('suppappt_hero_v1'));
   const [step, setStep] = useState<FunnelStep>("landing");
   const [disqualReason, setDisqualReason] = useState<DisqualReason | null>(null);
   const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
@@ -368,7 +370,7 @@ const MedicareSupplementAppointment = () => {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isValidating, setIsValidating] = useState(false);
 
-  const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt');
+  const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt', variant);
   
   // Warmup the calendar edge function early to prevent cold starts
   useCalendarWarmup();
@@ -916,9 +918,17 @@ const MedicareSupplementAppointment = () => {
             Your benefits are <span className="font-bold text-white">federally standardized</span> — the only difference is the price.
           </p>
           
-          <p className="text-base text-blue-200 mb-8 max-w-xl mx-auto">
+          <p className="text-base text-blue-200 mb-4 max-w-xl mx-auto">
             See your personalized rate in under 2 minutes. No obligation. No pressure.
           </p>
+
+          {variant === 'B' && (
+            <p className="text-base text-blue-100 mb-8 max-w-xl mx-auto font-medium">
+              Answer a few quick questions about your current plan and we'll pull your personalized rate — it takes less than 2 minutes.
+            </p>
+          )}
+
+          {variant === 'A' && <div className="mb-8" />}
 
           {step === "landing" && (
             <>
@@ -927,7 +937,7 @@ const MedicareSupplementAppointment = () => {
                 size="lg"
                 className="bg-green-500 hover:bg-green-600 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
               >
-                Check If You Qualify
+                {variant === 'B' ? 'See How Much You\'ll Save' : 'Check If You Qualify'}
               </Button>
               <div className="mt-6 text-sm text-blue-200">
                 <span>By continuing, you agree to our </span>

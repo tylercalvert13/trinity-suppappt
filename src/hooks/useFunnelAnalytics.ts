@@ -55,7 +55,7 @@ const getDeviceType = (): string => {
   return 'desktop';
 };
 
-export const useFunnelAnalytics = (page: 'supp' | 'supp1' | 'suppquote' | 'suppappt' | 'suppappt1' | 'suppappt2' | 'suppappt-refund' | 'suppchat' | 'advantage') => {
+export const useFunnelAnalytics = (page: 'supp' | 'supp1' | 'suppquote' | 'suppappt' | 'suppappt1' | 'suppappt2' | 'suppappt-refund' | 'suppchat' | 'advantage', variant?: string) => {
   const visitorId = useRef(getVisitorId());
   const sessionId = useRef(getSessionId(page));
   const sessionCreated = useRef(false);
@@ -83,7 +83,8 @@ export const useFunnelAnalytics = (page: 'supp' | 'supp1' | 'suppquote' | 'suppa
           user_agent: navigator.userAgent,
           device_type: getDeviceType(),
           last_step: 'start',
-        }]);
+          ...(variant ? { variant } : {}),
+        }] as any);
 
         // Track page view event
         await supabase.from('funnel_events').insert([{
@@ -94,7 +95,7 @@ export const useFunnelAnalytics = (page: 'supp' | 'supp1' | 'suppquote' | 'suppa
           step: 'start',
           answer: null,
           outcome: null,
-          metadata: null,
+          metadata: variant ? { variant } : null,
         }]);
       } catch (error) {
         console.error('Error creating analytics session:', error);
