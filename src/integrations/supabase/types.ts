@@ -115,6 +115,7 @@ export type Database = {
           utm_medium: string | null
           utm_source: string | null
           utm_term: string | null
+          variant: string | null
           visitor_id: string
         }
         Insert: {
@@ -133,6 +134,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          variant?: string | null
           visitor_id: string
         }
         Update: {
@@ -151,6 +153,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          variant?: string | null
           visitor_id?: string
         }
         Relationships: []

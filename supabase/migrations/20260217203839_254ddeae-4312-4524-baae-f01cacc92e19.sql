@@ -1,0 +1,1 @@
+ALTER TABLE public.funnel_sessions ADD COLUMN variant text;
