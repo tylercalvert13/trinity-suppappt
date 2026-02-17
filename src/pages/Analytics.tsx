@@ -149,7 +149,7 @@ const Analytics = () => {
           supabase
             .from('submissions')
             .select('*')
-            .in('page', ['suppquote', 'suppappt', 'suppappt1'])
+            .in('page', ['suppquote', 'suppappt', 'suppappt1', 'suppappt2'])
             .gte('created_at', startDate)
             .lte('created_at', endDate)
             .order('created_at', { ascending: false })
@@ -350,7 +350,6 @@ const Analytics = () => {
     { step: 'care', label: 'Health Condition' },
     { step: 'treatment', label: 'Recent Treatment' },
     { step: 'medications', label: 'Medications' },
-    { step: 'disqualified', label: 'Disqualified' },
     { step: 'gender', label: 'Gender' },
     { step: 'tobacco', label: 'Tobacco Use' },
     { step: 'spouse', label: 'Spouse Coverage' },
@@ -361,29 +360,33 @@ const Analytics = () => {
     { step: 'qualified', label: 'Quote Displayed' },
   ];
 
-  const stepOrder = funnelSteps.map(f => f.step);
-  
+  // Helper: count unique sessions that reached a given step using events
+  const countSessionsAtStep = (pageEvents: Event[], pageSessions: Session[], step: string): number => {
+    if (step === 'start') {
+      // "start" = page_view events
+      return new Set(pageEvents.filter(e => e.event_type === 'page_view').map(e => e.session_id)).size;
+    }
+    if (step === 'qualified') {
+      // "qualified" = qualification events with step=qualified
+      return new Set(pageEvents.filter(e => e.event_type === 'qualification' && e.step === 'qualified').map(e => e.session_id)).size;
+    }
+    // All other steps = step_change events
+    return new Set(pageEvents.filter(e => e.event_type === 'step_change' && e.step === step).map(e => e.session_id)).size;
+  };
+
   const suppquoteDropoffData = funnelSteps.map((funnelStep, index) => {
-    const stepIndex = stepOrder.indexOf(funnelStep.step);
-    const reachedThisStep = suppquoteSessions.filter(s => {
-      const sessionStepIndex = stepOrder.indexOf(s.last_step);
-      return sessionStepIndex >= stepIndex;
-    }).length;
-    
+    const count = countSessionsAtStep(suppquoteEvents, suppquoteSessions, funnelStep.step);
     const previousCount = index > 0 
-      ? suppquoteSessions.filter(s => {
-          const sessionStepIndex = stepOrder.indexOf(s.last_step);
-          return sessionStepIndex >= stepOrder.indexOf(funnelSteps[index - 1].step);
-        }).length
+      ? countSessionsAtStep(suppquoteEvents, suppquoteSessions, funnelSteps[index - 1].step)
       : suppquoteSessions.length;
     
-    const dropoff = previousCount > 0 ? ((previousCount - reachedThisStep) / previousCount) * 100 : 0;
+    const dropoff = previousCount > 0 ? ((previousCount - count) / previousCount) * 100 : 0;
     
     return {
       step: funnelStep.step,
       label: funnelStep.label,
-      count: reachedThisStep,
-      percentage: suppquoteSessions.length > 0 ? (reachedThisStep / suppquoteSessions.length) * 100 : 0,
+      count,
+      percentage: suppquoteSessions.length > 0 ? (count / suppquoteSessions.length) * 100 : 0,
       dropoff: index === 0 ? 0 : dropoff,
     };
   });
@@ -653,7 +656,7 @@ const Analytics = () => {
     const pageSubmissions = submissions.filter(s => s.page === page);
     
     const qualifiedCount = pageSessions.filter(s => s.completed).length;
-    const disqualifiedCount = pageSessions.filter(s => s.last_step === 'disqualified').length;
+    const disqualifiedCount = pageEvents.filter(e => e.event_type === 'qualification' && e.step !== 'qualified').length;
     
     // Booking events
     const bookingWidgetViews = pageEvents.filter(e => e.event_type === 'booking_widget_view').length;
@@ -674,28 +677,20 @@ const Analytics = () => {
       e.event_type === 'booking_completed' && e.created_at.startsWith(today)
     ).length;
     
-    // 12-step funnel dropoff
+    // Event-based funnel dropoff (uses step_change events for accurate counting)
     const dropoffData = funnelSteps.map((funnelStep, index) => {
-      const stepIndex = stepOrder.indexOf(funnelStep.step);
-      const reachedThisStep = pageSessions.filter(s => {
-        const sessionStepIndex = stepOrder.indexOf(s.last_step);
-        return sessionStepIndex >= stepIndex;
-      }).length;
-      
+      const count = countSessionsAtStep(pageEvents, pageSessions, funnelStep.step);
       const previousCount = index > 0 
-        ? pageSessions.filter(s => {
-            const sessionStepIndex = stepOrder.indexOf(s.last_step);
-            return sessionStepIndex >= stepOrder.indexOf(funnelSteps[index - 1].step);
-          }).length
+        ? countSessionsAtStep(pageEvents, pageSessions, funnelSteps[index - 1].step)
         : pageSessions.length;
       
-      const dropoff = previousCount > 0 ? ((previousCount - reachedThisStep) / previousCount) * 100 : 0;
+      const dropoff = previousCount > 0 ? ((previousCount - count) / previousCount) * 100 : 0;
       
       return {
         step: funnelStep.step,
         label: funnelStep.label,
-        count: reachedThisStep,
-        percentage: pageSessions.length > 0 ? (reachedThisStep / pageSessions.length) * 100 : 0,
+        count,
+        percentage: pageSessions.length > 0 ? (count / pageSessions.length) * 100 : 0,
         dropoff: index === 0 ? 0 : dropoff,
       };
     });
