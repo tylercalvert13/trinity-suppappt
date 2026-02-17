@@ -18,6 +18,7 @@ import { ExitIntentModalRefund } from '@/components/ExitIntentModalRefund';
 import { SocialProofPopup } from '@/components/SocialProofPopup';
 import { StickyBookingCTARefund } from '@/components/StickyBookingCTARefund';
 import { QuoteLoadingProgress } from '@/components/QuoteLoadingProgress';
+import { initAdvancedMatching, trackPixelEvent } from '@/lib/facebookPixel';
 
 // TypeScript declarations for tracking pixels
 declare global {
@@ -161,7 +162,7 @@ const generateEventId = (): string => {
   return `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 };
 
-// Track submission event via Facebook Conversion API
+// Track submission event via Facebook Conversion API + Browser Pixel
 const trackFacebookSubmissionEvent = async (
   formData: FormData,
   quoteResult: QuoteResult | null
@@ -169,7 +170,22 @@ const trackFacebookSubmissionEvent = async (
   try {
     const { fbc, fbp } = getFacebookCookies();
     const eventId = generateEventId();
+    const conversionValue = quoteResult?.monthlySavings || quoteResult?.rate || 0;
     
+    // Initialize Advanced Matching with user data
+    initAdvancedMatching({
+      email: formData.email,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      phone: formData.phone,
+      zipCode: formData.zipCode,
+    });
+    
+    // Browser-side pixel event (deduplicates with CAPI via eventID)
+    trackPixelEvent('Lead', eventId, conversionValue);
+    
+    // CAPI server-side event
+    console.log('[FB CAPI] Sending submission event (suppappt-refund)...');
     await supabase.functions.invoke('fb-conversion', {
       body: {
         event_name: 'submission',
@@ -178,24 +194,59 @@ const trackFacebookSubmissionEvent = async (
         fbc,
         fbp,
         event_id: eventId,
-        // Lead data for improved match quality
         first_name: formData.firstName,
         last_name: formData.lastName,
         email: formData.email,
         phone: formData.phone,
         zip_code: formData.zipCode,
-        // Conversion value for optimization
-        value: quoteResult?.monthlySavings || quoteResult?.rate || 0,
+        value: conversionValue,
         currency: 'USD',
       }
     });
-    console.log('Facebook submission conversion tracked with lead data (suppappt-refund)');
+    console.log('[FB CAPI] Submission conversion tracked (suppappt-refund)');
   } catch (error) {
     console.error('Error tracking Facebook submission event:', error);
   }
 };
 
-// Normalize email for Bing UET enhanced conversions per Microsoft spec
+// Track appointment booking event via Facebook Conversion API + Browser Pixel
+const trackFacebookAppointmentEvent = async (
+  formData: FormData,
+  quoteResult: QuoteResult | null
+) => {
+  try {
+    const { fbc, fbp } = getFacebookCookies();
+    const eventId = generateEventId();
+    const conversionValue = quoteResult?.monthlySavings || quoteResult?.rate || 0;
+    
+    // Browser-side pixel event
+    trackPixelEvent('Schedule', eventId, conversionValue);
+    
+    // CAPI server-side event
+    console.log('[FB CAPI] Sending Appointment event (suppappt-refund)...');
+    await supabase.functions.invoke('fb-conversion', {
+      body: {
+        event_name: 'Appointment',
+        event_source_url: window.location.href,
+        external_id: getVisitorIdForTracking(),
+        fbc,
+        fbp,
+        event_id: eventId,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        zip_code: formData.zipCode,
+        value: conversionValue,
+        currency: 'USD',
+      }
+    });
+    console.log('[FB CAPI] Appointment conversion tracked (suppappt-refund)');
+  } catch (error) {
+    console.error('Error tracking Facebook Appointment event:', error);
+  }
+};
+
 const normalizeEmailForBing = (email: string): string => {
   let normalized = email.trim().toLowerCase();
   // Remove +alias (name+alias@domain.com → name@domain.com)
@@ -1447,7 +1498,12 @@ const MedicareSupplementAppointmentRefund = () => {
                 planType={formData.plan}
                 userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
                 userState={getStateFromZip(formData.zipCode)}
-                onTrackEvent={trackEvent}
+                onTrackEvent={(params) => {
+                  trackEvent(params);
+                  if (params.eventType === 'booking_completed') {
+                    trackFacebookAppointmentEvent(formData, quoteResult);
+                  }
+                }}
                 autoSelectFirst={false}
                 onSlotChange={handleSlotChange}
                 widgetRef={bookingWidgetRef}

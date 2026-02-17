@@ -8,12 +8,12 @@ import { Progress } from "@/components/ui/progress";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useFunnelAnalytics } from "@/hooks/useFunnelAnalytics";
+import { trackPixelEvent } from '@/lib/facebookPixel';
 
 // Taboola pixel type declaration
 declare global {
   interface Window {
     _tfa?: Array<{ notify: string; name: string; id: number }>;
-    fbq?: (...args: any[]) => void;
   }
 }
 
@@ -66,14 +66,18 @@ const generateEventId = (): string => {
   return crypto.randomUUID();
 };
 
-// Track Facebook Conversion API event
+// Track Facebook Conversion API event + Browser Pixel
 const trackFacebookConversion = async () => {
   try {
     const { fbc, fbp } = getFacebookCookies();
     const event_id = generateEventId();
     const external_id = getVisitorId();
     
+    // Browser-side pixel event (deduplicates with CAPI via eventID)
+    trackPixelEvent('InboundCall', event_id);
+    
     // Send server-side event via Edge Function
+    console.log('[FB CAPI] Sending InboundCall event (supp)...');
     const { error } = await supabase.functions.invoke('fb-conversion', {
       body: {
         event_name: 'InboundCall',
@@ -87,6 +91,8 @@ const trackFacebookConversion = async () => {
 
     if (error) {
       console.error('Facebook Conversion API error:', error);
+    } else {
+      console.log('[FB CAPI] InboundCall conversion tracked (supp)');
     }
   } catch (err) {
     console.error('Failed to track Facebook conversion:', err);
