@@ -17,6 +17,7 @@ import { ExitIntentModal } from '@/components/ExitIntentModal';
 import { SocialProofPopup } from '@/components/SocialProofPopup';
 import { StickyBookingCTA } from '@/components/StickyBookingCTA';
 import { QuoteLoadingProgress } from '@/components/QuoteLoadingProgress';
+import { initAdvancedMatching, trackPixelEvent } from '@/lib/facebookPixel';
 
 // TypeScript declarations for tracking pixels
 declare global {
@@ -128,7 +129,7 @@ const generateEventId = (): string => {
   return `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 };
 
-// Track appointment booking event via Facebook Conversion API (with PII from widget callback)
+// Track appointment booking event via Facebook Conversion API + Browser Pixel (with PII from widget callback)
 const trackFacebookAppointmentEvent = async (
   contactData: { firstName: string; lastName: string; email: string; phone: string },
   zipCode: string,
@@ -137,7 +138,22 @@ const trackFacebookAppointmentEvent = async (
   try {
     const { fbc, fbp } = getFacebookCookies();
     const eventId = generateEventId();
+    const conversionValue = quoteResult?.monthlySavings || quoteResult?.rate || 0;
     
+    // Initialize Advanced Matching with PII from booking widget
+    initAdvancedMatching({
+      email: contactData.email,
+      firstName: contactData.firstName,
+      lastName: contactData.lastName,
+      phone: contactData.phone,
+      zipCode,
+    });
+    
+    // Browser-side pixel event
+    trackPixelEvent('Schedule', eventId, conversionValue);
+    
+    // CAPI server-side event
+    console.log('[FB CAPI] Sending Appointment event (suppappt2)...');
     await supabase.functions.invoke('fb-conversion', {
       body: {
         event_name: 'Appointment',
@@ -151,17 +167,17 @@ const trackFacebookAppointmentEvent = async (
         email: contactData.email,
         phone: contactData.phone,
         zip_code: zipCode,
-        value: quoteResult?.monthlySavings || quoteResult?.rate || 0,
+        value: conversionValue,
         currency: 'USD',
       }
     });
-    console.log('Facebook Appointment conversion tracked via CAPI (suppappt2)');
+    console.log('[FB CAPI] Appointment conversion tracked (suppappt2)');
   } catch (error) {
     console.error('Error tracking Facebook Appointment event:', error);
   }
 };
 
-// Track Lead event via Facebook Conversion API (WITHOUT PII since we don't have it yet)
+// Track Lead event via Facebook Conversion API + Browser Pixel (WITHOUT PII since we don't have it yet)
 const trackFacebookLeadEvent = async (
   zipCode: string,
   quoteResult: QuoteResult | null
@@ -169,7 +185,13 @@ const trackFacebookLeadEvent = async (
   try {
     const { fbc, fbp } = getFacebookCookies();
     const eventId = generateEventId();
+    const conversionValue = quoteResult?.monthlySavings || quoteResult?.rate || 0;
     
+    // Browser-side pixel event (no Advanced Matching here — no PII yet)
+    trackPixelEvent('Lead', eventId, conversionValue);
+    
+    // CAPI server-side event
+    console.log('[FB CAPI] Sending submission (Lead) event (suppappt2)...');
     await supabase.functions.invoke('fb-conversion', {
       body: {
         event_name: 'submission',
@@ -178,13 +200,12 @@ const trackFacebookLeadEvent = async (
         fbc,
         fbp,
         event_id: eventId,
-        // No PII available at this point
         zip_code: zipCode,
-        value: quoteResult?.monthlySavings || quoteResult?.rate || 0,
+        value: conversionValue,
         currency: 'USD',
       }
     });
-    console.log('Facebook submission (Lead) conversion tracked without PII (suppappt2)');
+    console.log('[FB CAPI] Submission (Lead) tracked (suppappt2)');
   } catch (error) {
     console.error('Error tracking Facebook submission event:', error);
   }
