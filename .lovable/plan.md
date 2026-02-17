@@ -1,45 +1,65 @@
 
 
-## Mobile Optimization for /advantage Funnel
+## Fix /suppappt Analytics: Query Limits and Missing Data
 
-### Current State
-The funnel already looks decent on mobile -- cards are responsive, text scales, buttons are full-width. But there are several refinements needed, especially since the target audience is seniors (65+) who benefit from larger touch targets and clearer visual hierarchy.
+### Problem 1: 1,000-Row Query Cap (Critical)
+The data fetch in `Analytics.tsx` does not override the default query limit of 1,000 rows. In the last 7 days alone, /suppappt has:
+- **8,160 sessions** (only ~1,000 fetched = 12%)
+- **30,558 events** (only ~1,000 fetched = 3%)
+- **1,240 submissions** (only ~1,000 fetched = 80%)
 
-### Changes (all in `src/pages/MedicareAdvantage.tsx`)
+All KPIs, funnel charts, and booking widget conversion numbers are severely undercounted.
 
-**1. Landing Page -- Full Viewport Height**
-- Make the hero section fill the viewport on mobile (`min-h-[100dvh]` with flex centering) so the "Get Started" button is always visible without scrolling, and the footer doesn't awkwardly peek in.
-- Use `dvh` (dynamic viewport height) to account for mobile browser chrome.
+### Problem 2: Disqualified Sessions Invisible in Funnel
+When a user gets disqualified, `last_step` is set to `"disqualified"`. But the funnel step order array doesn't include `"disqualified"`, so `stepOrder.indexOf("disqualified")` returns `-1`. These sessions (454 in the last 7 days) are excluded from every funnel step count, making drop-off numbers inaccurate.
 
-**2. Larger Touch Targets for Senior Accessibility**
-- Increase Yes/No button padding from `py-6` to `py-7` on mobile for bigger tap areas (matching the suppappt pattern of 18-24px targets).
-- Increase checkbox label padding from `p-4` to `p-5` on the confirm step.
-- Make checkboxes themselves larger (`h-5 w-5` instead of default size).
+---
 
-**3. Iframe Mobile Height**
-- On mobile, reduce the iframe `min-h` from `600px` to `500px` since it's within a scrollable container anyway, but ensure the container itself doesn't create an unnecessarily tall blank space with the loading spinner.
-- Add `-webkit-overflow-scrolling: touch` for smooth iOS scrolling within the iframe area.
+### Fix for Problem 1: Paginated Fetching
 
-**4. Sticky "Need Help?" Call CTA on Enroll Step**
-- On the enroll step, add a sticky bottom bar with the phone number (similar to the sticky CTA pattern in suppappt) so seniors always have a way to call for help while navigating the Sunfire tool.
+Since we can't fetch 30K+ rows in one call, we'll use a pagination helper that loops through results in batches of 1,000 until all rows are fetched. This will be applied to all three queries (sessions, events, submissions).
 
-**5. Scroll Behavior Refinement**
-- On the landing-to-first-step transition, scroll to top of the page (not just to the funnel ref) so the sticky progress bar is visible.
-- Add `scroll-margin-top` to the question container to account for the sticky progress bar height.
+**File: `src/pages/Analytics.tsx`**
 
-**6. Text Sizing for Senior Readability**
-- Bump question card body text from `text-sm` to `text-base` on mobile for better readability.
-- Ensure the progress bar step indicator uses at least `text-sm` font.
+Add a `fetchAllRows` helper function that paginates using `.range(offset, offset + 999)` until fewer than 1,000 rows are returned. Replace the three `supabase.from(...)` calls with this helper.
+
+### Fix for Problem 2: Include "disqualified" in Step Order
+
+**File: `src/pages/Analytics.tsx`**
+
+Add `"disqualified"` to the `funnelSteps` array (after `"contact"` and before `"loading"`), so sessions with `last_step === "disqualified"` are correctly counted as having reached at least the step before disqualification. The label can be "Disqualified" and it represents users who answered health screening questions but didn't pass.
+
+Actually, a more accurate approach: since disqualified users could have been DQ'd at different steps (care, treatment, or medications), we should treat "disqualified" as equivalent to reaching at least the step where disqualification happens. The simplest correct fix is to insert "disqualified" into the step order right after the last health screening step ("medications"), so DQ'd users are counted as reaching at least that far. This slightly overcounts for users DQ'd at "care" (step 4) but ensures they're not invisible.
 
 ### Technical Details
 
-Only one file changes: `src/pages/MedicareAdvantage.tsx`
+**`src/pages/Analytics.tsx` changes:**
 
-- Landing: add `min-h-[100dvh] flex flex-col justify-center` to the hero section
-- Buttons: `py-7 md:py-6 text-lg` (larger on mobile, normal on desktop)
-- Checkbox labels: `p-5 md:p-4`, checkbox size `h-5 w-5`
-- Subtitle text: `text-base` instead of `text-sm`
-- Question container: `scroll-mt-20` to clear sticky progress bar
-- Enroll step: sticky bottom call bar on mobile (`fixed bottom-0 left-0 right-0 md:relative` with phone link)
-- Iframe: keep `min-h-[500px] md:min-h-[800px]`
+1. Add paginated fetch helper:
+```typescript
+const fetchAllRows = async (query) => {
+  let allData = [];
+  let offset = 0;
+  const batchSize = 1000;
+  while (true) {
+    const { data, error } = await query.range(offset, offset + batchSize - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    allData = [...allData, ...data];
+    if (data.length < batchSize) break;
+    offset += batchSize;
+  }
+  return allData;
+};
+```
+
+2. Refactor `fetchData` to use paginated queries for sessions, events, and submissions.
+
+3. Update `funnelSteps` array to include `{ step: 'disqualified', label: 'Disqualified' }` after "medications" so that DQ'd sessions appear in the funnel chart.
+
+### Impact
+- All KPI cards will show accurate totals instead of capped-at-1000 counts
+- Funnel drop-off chart will correctly represent all visitors including disqualified ones
+- Booking widget conversion funnel will show correct numbers
+- Average savings calculations will be based on complete data
 
