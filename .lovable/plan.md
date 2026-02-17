@@ -1,87 +1,55 @@
 
 
-## Fix Facebook Pixel Advanced Matching and Verify CAPI
+## Fix Appointment Funnel Analytics: Overcounting and Missing Data
 
-### Problem Summary
-The browser pixel fires PageView with zero user identifiers. Facebook needs BOTH the pixel (browser-side) AND CAPI (server-side) to send user data for maximum match quality. Currently only CAPI sends PII, and even that may not be firing reliably.
+### Problem 1: Funnel Overcounting (Major - ~20% inflation at key steps)
 
-### Changes
+The funnel drop-off chart uses `last_step` from sessions to determine how far each user got. But ALL disqualified users have `last_step = "disqualified"` (at index 6 in the step order, after "medications"), regardless of WHERE they were actually disqualified. This inflates counts for steps they never reached.
 
-**1. Add Advanced Matching to Pixel (Browser-Side)**
+Real data from the last 7 days shows the magnitude:
+- 118 users were disqualified at "care" (step 3) but counted as reaching treatment, medications
+- 237 users were disqualified at "treatment" (step 4) but counted as reaching medications
+- The funnel shows 1,786 reaching "Medications" when only 1,485 actually did (20% overcount)
+- Steps after medications (gender through contact) are also inflated by ~58 users
 
-In the funnel pages (`MedicareSupplementAppointment.tsx`, `MedicareSupplementAppointmentRefund.tsx`, `MedicareSupplementAppointment2.tsx`), after the user submits their contact info, call `fbq('init')` again with Advanced Matching parameters. This re-initializes the pixel with user data so all subsequent events are matched.
+### Problem 2: Submissions Not Fetched for All Pages
 
-```
-fbq('init', '731657259428655', {
-  em: 'user@email.com',    // unhashed - fbq hashes automatically
-  fn: 'john',
-  ln: 'doe', 
-  ph: '12015551234',
-  zp: '07030',
-  country: 'us'
-});
-```
+The submissions query (line 152) only fetches pages `suppquote`, `suppappt`, `suppappt1` -- missing `suppappt2`. This means if a suppappt2 tab is ever added, its submission-based metrics (avg savings, carriers) would show zero.
 
-This will be called right after the contact form step completes (when we have first_name, last_name, email, phone, zip_code).
+### The Fix
 
-**2. Add Browser-Side Pixel Events (for deduplication with CAPI)**
+**Switch from `last_step`-based counting to event-based counting for the funnel chart.** The `step_change` events in `funnel_events` accurately record every step a user actually visited. Using event counts gives us the ground truth:
 
-Currently NO `fbq('track', ...)` calls exist in React code. We need to fire matching browser pixel events alongside the CAPI calls, using the SAME `event_id` for deduplication:
-
-- `fbq('track', 'Lead', { value, currency: 'USD' }, { eventID: eventId })` -- when quote is shown
-- `fbq('track', 'Schedule', { value, currency: 'USD' }, { eventID: eventId })` -- when appointment is booked
-
-This gives Facebook two signals (browser + server) for each conversion, maximizing match rate while deduplicating via event_id.
-
-**3. Verify CAPI Is Actually Firing**
-
-Add a quick console.log before and after the `supabase.functions.invoke('fb-conversion')` calls to confirm the function is being reached. Also check the edge function deployment status.
-
-### Files to Change
-
-- `src/pages/MedicareSupplementAppointment.tsx` -- Add Advanced Matching init + browser pixel events
-- `src/pages/MedicareSupplementAppointmentRefund.tsx` -- Same changes
-- `src/pages/MedicareSupplementAppointment2.tsx` -- Same changes  
-- `src/pages/MedicareSupplementLP.tsx` -- Add browser pixel event for the InboundCall tracking
+| Step | Current (last_step) | Correct (events) |
+|------|---------------------|-------------------|
+| Plan | 2,695 | 2,690 |
+| Payment | 2,324 | 2,325 |
+| Care | 1,819 | 1,821 |
+| Treatment | 1,793 | 1,699 |
+| Medications | 1,786 | 1,485 |
+| Gender | 1,343 | 1,285 |
+| Loading | 638 | 634 |
 
 ### Technical Details
 
-**Advanced Matching placement**: Called once after the contact step, inside the existing `trackFacebookSubmissionEvent` function, before the CAPI call. The `fbq('init', ...)` with user data is idempotent -- calling it again just updates the matched user info.
+**File: `src/pages/Analytics.tsx`**
 
-**Browser pixel event format with dedup**:
-```typescript
-// Same eventId used for both browser + CAPI
-const eventId = generateEventId();
+1. Refactor `createAppointmentFunnelData` to count funnel steps using `step_change` events instead of `last_step` session positions:
+   - For each funnel step, count unique sessions that have a `step_change` event with that step name
+   - "start" step uses `page_view` events instead
+   - "qualified" step uses `qualification` events with `step=qualified`
+   - Remove "disqualified" from the funnel step sequence entirely (it's a terminal outcome, not a step users pass through)
+   - Instead, the disqualified KPI card already shows the correct count
 
-// Browser pixel (unhashed - Facebook SDK hashes automatically)
-if (typeof window.fbq === 'function') {
-  window.fbq('init', '731657259428655', {
-    em: formData.email,
-    fn: formData.firstName,
-    ln: formData.lastName,
-    ph: formData.phone.replace(/\D/g, ''),
-    zp: formData.zipCode?.substring(0, 5),
-    country: 'us',
-  });
-  window.fbq('track', 'Lead', { value, currency: 'USD' }, { eventID: eventId });
-}
+2. Same refactoring applied to `suppquoteDropoffData` (the shared quote funnel) for consistency.
 
-// CAPI (hashed server-side)
-await supabase.functions.invoke('fb-conversion', {
-  body: { event_name: 'Lead', event_id: eventId, ... }
-});
-```
+3. Update the submissions fetch query to include `suppappt2` in the page filter.
 
-**Why this fixes the "unknown" segment**: Facebook currently sees events from CAPI with hashed PII but has no browser-side match to pair them with. By adding Advanced Matching to the pixel init, Facebook can cross-reference the browser cookie identity with the hashed PII, dramatically improving match quality from "unknown" to identified users.
+4. Update the funnel step list used by appointment funnels to remove the "disqualified" entry (keep it only as a KPI card metric).
 
-### What This Will NOT Fix
-- Campaign budget allocation (that's a Meta Ads Manager decision)
-- Special Ad Category targeting restrictions (that's a policy constraint)
-- iOS 14.5+ App Tracking Transparency (CAPI already mitigates this, and these are web users not app users)
-
-### Expected Impact
-- User match rate should go from ~0% to 60-80%+
-- Custom Audience building will start working
-- Lookalike audiences become viable
-- Conversion optimization improves (Meta can see who converts)
+### Impact
+- Funnel drop-off percentages will accurately reflect where users actually abandon
+- Treatment/medications step counts drop by ~5-20% to their true values
+- Disqualified count remains visible as a KPI card (unchanged)
+- No changes to booking widget funnel (already uses events correctly)
 
