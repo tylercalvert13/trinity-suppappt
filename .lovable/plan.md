@@ -1,55 +1,59 @@
 
 
-## Fix Appointment Funnel Analytics: Overcounting and Missing Data
+## A/B Split Test: CTA Button + Expectation-Setting Copy on /suppappt
 
-### Problem 1: Funnel Overcounting (Major - ~20% inflation at key steps)
+### What We're Testing
 
-The funnel drop-off chart uses `last_step` from sessions to determine how far each user got. But ALL disqualified users have `last_step = "disqualified"` (at index 6 in the step order, after "medications"), regardless of WHERE they were actually disqualified. This inflates counts for steps they never reached.
+**Variant A (Control):** Current page -- no changes.
 
-Real data from the last 7 days shows the magnitude:
-- 118 users were disqualified at "care" (step 3) but counted as reaching treatment, medications
-- 237 users were disqualified at "treatment" (step 4) but counted as reaching medications
-- The funnel shows 1,786 reaching "Medications" when only 1,485 actually did (20% overcount)
-- Steps after medications (gender through contact) are also inflated by ~58 users
+**Variant B (Challenger):** Two targeted changes:
 
-### Problem 2: Submissions Not Fetched for All Pages
+1. **Hero CTA button:** "Check If You Qualify" --> "See How Much You'll Save"
+2. **New sub-headline** added below the existing sub-headline to set expectations about the process: something like *"Answer a few quick questions about your current coverage, and we'll show you a personalized rate comparison."* This primes visitors to expect they'll need to share some details, reducing surprise/friction at the contact form.
 
-The submissions query (line 152) only fetches pages `suppquote`, `suppappt`, `suppappt1` -- missing `suppappt2`. This means if a suppappt2 tab is ever added, its submission-based metrics (avg savings, carriers) would show zero.
+The contact form submit button ("See My New Rate") stays the same for both variants -- we're only changing what they see *before* they start the quiz.
 
-### The Fix
+### How It Works
 
-**Switch from `last_step`-based counting to event-based counting for the funnel chart.** The `step_change` events in `funnel_events` accurately record every step a user actually visited. Using event counts gives us the ground truth:
+- When a visitor lands on `/suppappt`, they're randomly assigned A or B (50/50 split), stored in `sessionStorage` so they see the same version all session
+- The variant is tracked in analytics (stored in `funnel_sessions` metadata and event metadata) so you can query conversion rates per variant
+- Everything else (quiz steps, contact form, booking widget, all tracking pixels) stays identical
 
-| Step | Current (last_step) | Correct (events) |
-|------|---------------------|-------------------|
-| Plan | 2,695 | 2,690 |
-| Payment | 2,324 | 2,325 |
-| Care | 1,819 | 1,821 |
-| Treatment | 1,793 | 1,699 |
-| Medications | 1,786 | 1,485 |
-| Gender | 1,343 | 1,285 |
-| Loading | 638 | 634 |
+### What Gets Built
 
-### Technical Details
+**New file: `src/lib/abTest.ts`**
+- Utility to assign and persist a variant per test name
+- Returns "A" or "B" consistently for the session
 
-**File: `src/pages/Analytics.tsx`**
+**Modified: `src/pages/MedicareSupplementAppointment.tsx`**
+- Import variant utility
+- Render hero CTA button text based on variant ("Check If You Qualify" vs "See How Much You'll Save")
+- Add expectation-setting sub-headline for Variant B below the existing "See your personalized rate..." line
+- Pass variant to analytics
 
-1. Refactor `createAppointmentFunnelData` to count funnel steps using `step_change` events instead of `last_step` session positions:
-   - For each funnel step, count unique sessions that have a `step_change` event with that step name
-   - "start" step uses `page_view` events instead
-   - "qualified" step uses `qualification` events with `step=qualified`
-   - Remove "disqualified" from the funnel step sequence entirely (it's a terminal outcome, not a step users pass through)
-   - Instead, the disqualified KPI card already shows the correct count
+**Modified: `src/hooks/useFunnelAnalytics.ts`**
+- Accept optional `variant` parameter
+- Include variant in `funnel_sessions` insert and `page_view` event metadata
 
-2. Same refactoring applied to `suppquoteDropoffData` (the shared quote funnel) for consistency.
+**Database migration:**
+- Add `variant` text column (nullable) to `funnel_sessions` for clean querying
 
-3. Update the submissions fetch query to include `suppappt2` in the page filter.
+### Proposed Variant B Copy
 
-4. Update the funnel step list used by appointment funnels to remove the "disqualified" entry (keep it only as a KPI card metric).
+- **Badge:** Same (no change)
+- **Headline:** Same -- "Seniors on Plan G, F, or N Are Overpaying by $100-200/Month"
+- **Sub-headline 1:** Same -- "Your benefits are federally standardized -- the only difference is the price."
+- **Sub-headline 2 (NEW):** "Answer a few quick questions about your current plan and we'll pull your personalized rate -- it takes less than 2 minutes."
+- **CTA Button:** "See How Much You'll Save"
 
-### Impact
-- Funnel drop-off percentages will accurately reflect where users actually abandon
-- Treatment/medications step counts drop by ~5-20% to their true values
-- Disqualified count remains visible as a KPI card (unchanged)
-- No changes to booking widget funnel (already uses events correctly)
+### How You'll Measure
+
+Once live, you can ask me to pull results like:
+
+```text
+Variant A: 3,000 visitors --> 1,000 started quiz (33%) --> 170 qualified (5.7%)
+Variant B: 3,000 visitors --> 1,350 started quiz (45%) --> 230 qualified (7.7%)
+```
+
+The key metric is **visitor-to-quiz-start rate** (engagement), with secondary metrics being visitor-to-qualified and visitor-to-booked.
 
