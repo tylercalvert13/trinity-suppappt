@@ -101,6 +101,24 @@ const Analytics = () => {
     fetchData();
   }, [navigate, dateRange]);
 
+  // Paginated fetch helper to bypass 1,000-row default limit
+  const fetchAllRows = async <T,>(
+    buildQuery: (offset: number, limit: number) => ReturnType<ReturnType<typeof supabase.from>['select']>
+  ): Promise<T[]> => {
+    const batchSize = 1000;
+    let allData: T[] = [];
+    let offset = 0;
+    while (true) {
+      const { data, error } = await buildQuery(offset, offset + batchSize - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      allData = [...allData, ...(data as T[])];
+      if (data.length < batchSize) break;
+      offset += batchSize;
+    }
+    return allData;
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     const daysAgo = parseInt(dateRange);
@@ -108,43 +126,48 @@ const Analytics = () => {
     const endDate = endOfDay(new Date()).toISOString();
 
     try {
-      const [sessionsRes, eventsRes, submissionsRes] = await Promise.all([
-        supabase
-          .from('funnel_sessions')
-          .select('*')
-          .gte('started_at', startDate)
-          .lte('started_at', endDate)
-          .order('started_at', { ascending: false }),
-        supabase
-          .from('funnel_events')
-          .select('*')
-          .gte('created_at', startDate)
-          .lte('created_at', endDate)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('submissions')
-          .select('*')
-          .in('page', ['suppquote', 'suppappt', 'suppappt1'])
-          .gte('created_at', startDate)
-          .lte('created_at', endDate)
-          .order('created_at', { ascending: false }),
+      const [allSessions, allEvents, allSubmissions] = await Promise.all([
+        fetchAllRows<Session>((from, to) =>
+          supabase
+            .from('funnel_sessions')
+            .select('*')
+            .gte('started_at', startDate)
+            .lte('started_at', endDate)
+            .order('started_at', { ascending: false })
+            .range(from, to)
+        ),
+        fetchAllRows<Event>((from, to) =>
+          supabase
+            .from('funnel_events')
+            .select('*')
+            .gte('created_at', startDate)
+            .lte('created_at', endDate)
+            .order('created_at', { ascending: false })
+            .range(from, to)
+        ),
+        fetchAllRows<Submission>((from, to) =>
+          supabase
+            .from('submissions')
+            .select('*')
+            .in('page', ['suppquote', 'suppappt', 'suppappt1'])
+            .gte('created_at', startDate)
+            .lte('created_at', endDate)
+            .order('created_at', { ascending: false })
+            .range(from, to)
+        ),
       ]);
 
       // Filter out "an" source (Facebook Audience Network) - low quality traffic
-      const filteredSessions = sessionsRes.data 
-        ? sessionsRes.data.filter(s => s.utm_source !== 'an')
-        : [];
+      const filteredSessions = allSessions.filter(s => s.utm_source !== 'an');
       
       // Get session IDs to filter related events
       const validSessionIds = new Set(filteredSessions.map(s => s.session_id));
       
-      const filteredEvents = eventsRes.data
-        ? eventsRes.data.filter(e => validSessionIds.has(e.session_id))
-        : [];
+      const filteredEvents = allEvents.filter(e => validSessionIds.has(e.session_id));
 
       setSessions(filteredSessions);
       setEvents(filteredEvents);
-      if (submissionsRes.data) setSubmissions(filterInternalSubmissions(submissionsRes.data));
+      setSubmissions(filterInternalSubmissions(allSubmissions));
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -327,6 +350,7 @@ const Analytics = () => {
     { step: 'care', label: 'Health Condition' },
     { step: 'treatment', label: 'Recent Treatment' },
     { step: 'medications', label: 'Medications' },
+    { step: 'disqualified', label: 'Disqualified' },
     { step: 'gender', label: 'Gender' },
     { step: 'tobacco', label: 'Tobacco Use' },
     { step: 'spouse', label: 'Spouse Coverage' },
