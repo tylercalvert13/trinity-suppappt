@@ -407,7 +407,6 @@ const trackTikTokLeadEventServer = async (formData: FormData, quoteResult: Quote
         content_id: 'suppappt',
         content_type: 'product',
         content_name: `Medicare Supplement ${formData.plan}`,
-        test_event_code: 'TEST56720',
       }
     });
     console.log('[TikTok CAPI] Lead conversion tracked (suppappt)');
@@ -458,7 +457,6 @@ const trackTikTokScheduleEventServer = async (formData: FormData, quoteResult: Q
         content_id: 'suppappt',
         content_type: 'product',
         content_name: `Medicare Supplement ${formData.plan}`,
-        test_event_code: 'TEST56720',
       }
     });
     console.log('[TikTok CAPI] Schedule conversion tracked (suppappt)');
