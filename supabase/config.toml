@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.tiktok-conversion]
 verify_jwt = false
+
+[functions.crm-quote-webhook]
+verify_jwt = false
