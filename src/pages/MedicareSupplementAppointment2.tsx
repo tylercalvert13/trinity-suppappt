@@ -150,7 +150,7 @@ const trackFacebookAppointmentEvent = async (
     });
     
     // Browser-side pixel event
-    trackPixelEvent('Schedule', eventId, conversionValue);
+    trackPixelEvent('Appointment', eventId, conversionValue);
     
     // CAPI server-side event
     console.log('[FB CAPI] Sending Appointment event (suppappt2)...');
