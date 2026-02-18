@@ -17,6 +17,8 @@
     <link rel="dns-prefetch" href="https://s.vibe.co" />
     <link rel="preconnect" href="https://www.sunfirematrix.com" crossorigin />
     <link rel="dns-prefetch" href="https://www.sunfirematrix.com" />
+    <link rel="preconnect" href="https://analytics.tiktok.com" crossorigin />
+    <link rel="dns-prefetch" href="https://analytics.tiktok.com" />
     
     <link rel="icon" href="/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -192,6 +194,15 @@
         !function(v,i,b,e,c,o){if(!v[c]){var s=v[c]=function(){s.process?s.process.apply(s,arguments):s.queue.push(arguments)};s.queue=[],s.b=1*new Date;var t=i.createElement(b);t.async=!0,t.src=e;var n=i.getElementsByTagName(b)[0];n.parentNode.insertBefore(t,n)}}(window,document,"script","https://s.vibe.co/vbpx.js","vbpx");
         vbpx('init','FW7mXo');
         vbpx('event', 'page_view');
+        
+        // TikTok Pixel - deferred
+        !function (w, d, t) {
+          w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
+          var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
+          ;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+          ttq.load('D6ATAMJC77U6DR98LSLG');
+          ttq.page();
+        }(window, document, 'ttq');
       });
     </script>
     
