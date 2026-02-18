@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.send-lead-webhook-suppappt-refund]
 verify_jwt = false
+
+[functions.tiktok-conversion]
+verify_jwt = false

@@ -148,6 +148,18 @@ const getFacebookCookies = () => {
   return { fbc: cookies._fbc, fbp: cookies._fbp };
 };
 
+// Get TikTok tracking params (ttclid from URL, _ttp from cookie)
+const getTikTokCookies = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const ttclid = urlParams.get('ttclid') || '';
+  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key] = value;
+    return acc;
+  }, {} as Record<string, string>);
+  return { ttclid, ttp: cookies._ttp || '' };
+};
+
 // Get persistent visitor ID for Facebook external_id matching
 const getVisitorIdForTracking = (): string => {
   const storageKey = 'funnel_visitor_id';
@@ -374,6 +386,35 @@ const trackTikTokLeadEvent = async (formData: FormData, quoteResult: QuoteResult
   }
 };
 
+// Track lead submission via TikTok Events API (server-side, dedup with browser pixel)
+const trackTikTokLeadEventServer = async (formData: FormData, quoteResult: QuoteResult | null, eventId: string) => {
+  try {
+    const { ttclid, ttp } = getTikTokCookies();
+    const conversionValue = quoteResult?.monthlySavings || quoteResult?.rate || 0;
+    console.log('[TikTok CAPI] Sending Lead event (suppappt)...');
+    await supabase.functions.invoke('tiktok-conversion', {
+      body: {
+        event: 'Lead',
+        event_id: eventId,
+        event_source_url: window.location.href,
+        email: formData.email,
+        phone: formData.phone,
+        external_id: getVisitorIdForTracking(),
+        ttclid,
+        ttp,
+        value: conversionValue,
+        currency: 'USD',
+        content_id: 'suppappt',
+        content_type: 'product',
+        content_name: `Medicare Supplement ${formData.plan}`,
+      }
+    });
+    console.log('[TikTok CAPI] Lead conversion tracked (suppappt)');
+  } catch (error) {
+    console.error('Error tracking TikTok Lead server event:', error);
+  }
+};
+
 // Track appointment booking via TikTok pixel (with hashed PII)
 const trackTikTokScheduleEvent = async (formData: FormData, quoteResult: QuoteResult | null) => {
   try {
@@ -392,6 +433,35 @@ const trackTikTokScheduleEvent = async (formData: FormData, quoteResult: QuoteRe
     console.log('TikTok Schedule event tracked (suppappt)');
   } catch (error) {
     console.error('Error tracking TikTok Schedule event:', error);
+  }
+};
+
+// Track appointment booking via TikTok Events API (server-side, dedup with browser pixel)
+const trackTikTokScheduleEventServer = async (formData: FormData, quoteResult: QuoteResult | null, eventId: string) => {
+  try {
+    const { ttclid, ttp } = getTikTokCookies();
+    const conversionValue = quoteResult?.monthlySavings || quoteResult?.rate || 0;
+    console.log('[TikTok CAPI] Sending Schedule event (suppappt)...');
+    await supabase.functions.invoke('tiktok-conversion', {
+      body: {
+        event: 'Schedule',
+        event_id: eventId,
+        event_source_url: window.location.href,
+        email: formData.email,
+        phone: formData.phone,
+        external_id: getVisitorIdForTracking(),
+        ttclid,
+        ttp,
+        value: conversionValue,
+        currency: 'USD',
+        content_id: 'suppappt',
+        content_type: 'product',
+        content_name: `Medicare Supplement ${formData.plan}`,
+      }
+    });
+    console.log('[TikTok CAPI] Schedule conversion tracked (suppappt)');
+  } catch (error) {
+    console.error('Error tracking TikTok Schedule server event:', error);
   }
 };
 
@@ -923,6 +993,8 @@ const MedicareSupplementAppointment = () => {
       trackGoogleAdsConversion();
       trackVibeCoLeadEvent();
       trackTikTokLeadEvent(formData, data);
+      const tiktokLeadEventId = generateEventId();
+      trackTikTokLeadEventServer(formData, data, tiktokLeadEventId);
       
       setStep("qualified");
 
@@ -1781,6 +1853,8 @@ const MedicareSupplementAppointment = () => {
                   if (params.eventType === 'booking_completed') {
                     trackFacebookAppointmentEvent(formData, quoteResult);
                     trackTikTokScheduleEvent(formData, quoteResult);
+                    const tiktokScheduleEventId = generateEventId();
+                    trackTikTokScheduleEventServer(formData, quoteResult, tiktokScheduleEventId);
                   }
                 }}
                 autoSelectFirst={false}
