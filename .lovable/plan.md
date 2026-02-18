@@ -1,69 +1,76 @@
 
-## Fix: Analytics Dashboard "Today" Filter and Timezone Handling
 
-### Problem
-Two bugs inflate the "Today" appointment count:
-1. Selecting "Today" (`dateRange = "1"`) computes `subDays(new Date(), 1)` which fetches from the start of **yesterday**, not today -- pulling in ~2 days of data
-2. The "today" string used for KPI sub-labels (`+X today`) is based on browser local time but compared against UTC timestamps in the database
+## Reduce Loading Screen Abandonment and Build Trust Throughout the Funnel
 
-### Changes
+Based on the data: 29% of users abandon at the loading screen, and most leave within the first few seconds (commitment hesitation, not slow load times). Here's a two-part plan.
 
-**File: `src/pages/Analytics.tsx`**
+---
 
-1. **Fix the "Today" date range calculation**
-   - Change the logic so `dateRange = "1"` means "today only" (0 days ago), not "1 day ago"
-   - Rename the value from `"1"` to `"0"` internally, OR adjust the math: `const daysAgo = dateRange === "1" ? 0 : parseInt(dateRange)`
-   - This ensures selecting "Today" fetches from `startOfDay(new Date())` to `endOfDay(new Date())`
+### Part 1: Loading Screen Improvements
 
-2. **Fix the "today" timezone comparison**
-   - Currently: `const today = format(new Date(), 'yyyy-MM-dd')` then `e.created_at.startsWith(today)` -- this compares ET local date against UTC timestamps
-   - Fix: Convert each event's `created_at` to Eastern time before comparing, OR compute today's start/end boundaries in UTC offset by -5 hours and filter with those boundaries instead of string matching
-   - Simplest approach: define `todayStartUTC` and `todayEndUTC` based on Eastern midnight, then filter events with `created_at >= todayStartUTC && created_at < todayEndUTC`
+The current loading screen is functional but purely technical ("Connecting to carriers..."). It doesn't reinforce *why* the user should wait. Changes:
 
-3. **Use unique session counts for booking KPIs**
-   - Change `bookingCompleted` from `.length` (total events) to counting unique `session_id`s to prevent any double-counting from page refreshes
-   - Same for `todayBookedEvents`
+**A. Add a testimonial/social proof rotation below the progress steps**
+- Show 2-3 rotating mini-testimonials during the wait (e.g., "Patricia from FL saved $127/mo" with a star rating)
+- These rotate every 3 seconds, giving the user something to read and reinforcing that real people save money
 
-### Impact
-- Only the Analytics dashboard display logic changes
-- No changes to event tracking, funnels, booking widget, webhooks, or quote API
-- All other pages and functionality remain untouched
+**B. Add a "Did You Know?" fact rotation**
+- Between the progress steps and the testimonials, show rotating educational facts:
+  - "Did you know? Your Plan G benefits are identical no matter which company you choose."
+  - "The average senior saves $1,200/year by switching carriers."
+- This keeps users engaged and reinforces the value proposition
 
-### Technical Detail
+**C. Personalize the header with their name**
+- Change "Finding your best rate..." to "Finding your best rate, [FirstName]..."
+- Small touch that increases commitment (they've already invested their info)
 
-Current problematic code (line 124-126):
-```text
-const daysAgo = parseInt(dateRange);
-const startDate = startOfDay(subDays(new Date(), daysAgo)).toISOString();
-```
+**D. Add a "Don't leave!" back-button intercept**
+- Use `beforeunload` event on the loading step to warn users they'll lose their quote progress
 
-Fixed:
-```text
-const daysAgo = dateRange === "1" ? 0 : parseInt(dateRange);
-const startDate = startOfDay(subDays(new Date(), daysAgo)).toISOString();
-```
+---
 
-Current timezone issue (lines 192, 676-678):
-```text
-const today = format(new Date(), 'yyyy-MM-dd');
-const todayBookedEvents = pageEvents.filter(e =>
-  e.event_type === 'booking_completed' && e.created_at.startsWith(today)
-).length;
-```
+### Part 2: Trust Signals Throughout the Funnel
 
-Fixed approach -- use ET-aware boundaries:
-```text
-const todayET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-const todayStart = new Date(todayET.getFullYear(), todayET.getMonth(), todayET.getDate()).toISOString();
-const todayEnd = new Date(todayET.getFullYear(), todayET.getMonth(), todayET.getDate() + 1).toISOString();
+Currently, trust elements only appear on the hero (3 badges) and after qualification (4 checkmarks). The middle of the funnel (steps 1-11) has zero trust reinforcement. Changes:
 
-// Then filter with date range comparison instead of string matching
-const todayBookedEvents = new Set(
-  pageEvents.filter(e =>
-    e.event_type === 'booking_completed' &&
-    e.created_at >= todayStart && e.created_at < todayEnd
-  ).map(e => e.session_id)
-).size;
-```
+**A. Add a persistent trust bar below the progress indicator on every question step**
+- A subtle, compact bar showing: a lock icon + "Your info is secure" | shield icon + "Licensed agents" | star icon + "A+ Rated carriers"
+- This sits just below the step counter on every question card, taking minimal space
 
-All "today" metric calculations across the file (overview, quote funnel, appointment funnel tabs) will use this same fix for consistency.
+**B. Add a mini-testimonial below the contact form**
+- Before the submit button, show a single testimonial: "I was nervous to share my info, but they called me right on time and saved me $89/month. - Robert, TX"
+- Directly addresses the friction point of giving personal info
+
+**C. Social proof popup earlier in the funnel**
+- Currently only shows after qualification. Move it to trigger at step 5+ (after health questions are done) so users see "Sarah from Florida just booked" while they're still filling out details
+- This creates urgency during the data-entry phase, not just after
+
+**D. Add "Trusted by 10,000+ seniors" counter below the payment input**
+- On the "How much do you pay?" step, add a subtle note: "Join 10,000+ seniors who've compared rates for free"
+
+---
+
+### Technical Details
+
+**Files modified:**
+
+1. **`src/components/QuoteLoadingProgress.tsx`**
+   - Add `firstName` prop
+   - Add testimonial rotation array with `useState` + `useEffect` timer
+   - Add "Did you know?" facts rotation
+   - Add `beforeunload` event listener during loading
+   - Render testimonials below the step list in a styled card
+
+2. **`src/pages/MedicareSupplementAppointment.tsx`**
+   - Pass `firstName={formData.firstName}` to `QuoteLoadingProgress`
+   - Create a `TrustBar` inline component (lock + shield + star, ~3 lines of icons/text)
+   - Add `TrustBar` inside each question step card, below the progress bar
+   - Add testimonial text above the contact form submit button
+   - Move `SocialProofPopup` to render when step is past "medications" (not just "qualified")
+   - Add "Join 10,000+ seniors" note to payment step
+
+3. **`src/components/SocialProofPopup.tsx`**
+   - No structural changes needed; the parent just mounts it earlier
+
+**No database, edge function, or API changes required.**
+
