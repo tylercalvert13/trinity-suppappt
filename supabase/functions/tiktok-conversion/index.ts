@@ -26,6 +26,7 @@ interface ConversionRequest {
   content_id?: string;
   content_type?: string;
   content_name?: string;
+  test_event_code?: string;
 }
 
 async function hashSHA256(value: string): Promise<string> {
@@ -69,6 +70,7 @@ const handler = async (req: Request): Promise<Response> => {
       content_id,
       content_type,
       content_name,
+      test_event_code,
     }: ConversionRequest = await req.json();
 
     // Capture IP and UA from request headers
@@ -117,11 +119,15 @@ const handler = async (req: Request): Promise<Response> => {
       eventData.event_id = event_id;
     }
 
-    const payload = {
+    const payload: Record<string, any> = {
       event_source: "web",
       event_source_id: TIKTOK_PIXEL_ID,
       data: [eventData],
     };
+
+    if (test_event_code) {
+      payload.test_event_code = test_event_code;
+    }
 
     console.log("Sending TikTok Events API event:", JSON.stringify({
       event: eventData.event,
