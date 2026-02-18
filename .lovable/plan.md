@@ -1,59 +1,69 @@
 
+## Fix: Analytics Dashboard "Today" Filter and Timezone Handling
 
-## A/B Split Test: CTA Button + Expectation-Setting Copy on /suppappt
+### Problem
+Two bugs inflate the "Today" appointment count:
+1. Selecting "Today" (`dateRange = "1"`) computes `subDays(new Date(), 1)` which fetches from the start of **yesterday**, not today -- pulling in ~2 days of data
+2. The "today" string used for KPI sub-labels (`+X today`) is based on browser local time but compared against UTC timestamps in the database
 
-### What We're Testing
+### Changes
 
-**Variant A (Control):** Current page -- no changes.
+**File: `src/pages/Analytics.tsx`**
 
-**Variant B (Challenger):** Two targeted changes:
+1. **Fix the "Today" date range calculation**
+   - Change the logic so `dateRange = "1"` means "today only" (0 days ago), not "1 day ago"
+   - Rename the value from `"1"` to `"0"` internally, OR adjust the math: `const daysAgo = dateRange === "1" ? 0 : parseInt(dateRange)`
+   - This ensures selecting "Today" fetches from `startOfDay(new Date())` to `endOfDay(new Date())`
 
-1. **Hero CTA button:** "Check If You Qualify" --> "See How Much You'll Save"
-2. **New sub-headline** added below the existing sub-headline to set expectations about the process: something like *"Answer a few quick questions about your current coverage, and we'll show you a personalized rate comparison."* This primes visitors to expect they'll need to share some details, reducing surprise/friction at the contact form.
+2. **Fix the "today" timezone comparison**
+   - Currently: `const today = format(new Date(), 'yyyy-MM-dd')` then `e.created_at.startsWith(today)` -- this compares ET local date against UTC timestamps
+   - Fix: Convert each event's `created_at` to Eastern time before comparing, OR compute today's start/end boundaries in UTC offset by -5 hours and filter with those boundaries instead of string matching
+   - Simplest approach: define `todayStartUTC` and `todayEndUTC` based on Eastern midnight, then filter events with `created_at >= todayStartUTC && created_at < todayEndUTC`
 
-The contact form submit button ("See My New Rate") stays the same for both variants -- we're only changing what they see *before* they start the quiz.
+3. **Use unique session counts for booking KPIs**
+   - Change `bookingCompleted` from `.length` (total events) to counting unique `session_id`s to prevent any double-counting from page refreshes
+   - Same for `todayBookedEvents`
 
-### How It Works
+### Impact
+- Only the Analytics dashboard display logic changes
+- No changes to event tracking, funnels, booking widget, webhooks, or quote API
+- All other pages and functionality remain untouched
 
-- When a visitor lands on `/suppappt`, they're randomly assigned A or B (50/50 split), stored in `sessionStorage` so they see the same version all session
-- The variant is tracked in analytics (stored in `funnel_sessions` metadata and event metadata) so you can query conversion rates per variant
-- Everything else (quiz steps, contact form, booking widget, all tracking pixels) stays identical
+### Technical Detail
 
-### What Gets Built
-
-**New file: `src/lib/abTest.ts`**
-- Utility to assign and persist a variant per test name
-- Returns "A" or "B" consistently for the session
-
-**Modified: `src/pages/MedicareSupplementAppointment.tsx`**
-- Import variant utility
-- Render hero CTA button text based on variant ("Check If You Qualify" vs "See How Much You'll Save")
-- Add expectation-setting sub-headline for Variant B below the existing "See your personalized rate..." line
-- Pass variant to analytics
-
-**Modified: `src/hooks/useFunnelAnalytics.ts`**
-- Accept optional `variant` parameter
-- Include variant in `funnel_sessions` insert and `page_view` event metadata
-
-**Database migration:**
-- Add `variant` text column (nullable) to `funnel_sessions` for clean querying
-
-### Proposed Variant B Copy
-
-- **Badge:** Same (no change)
-- **Headline:** Same -- "Seniors on Plan G, F, or N Are Overpaying by $100-200/Month"
-- **Sub-headline 1:** Same -- "Your benefits are federally standardized -- the only difference is the price."
-- **Sub-headline 2 (NEW):** "Answer a few quick questions about your current plan and we'll pull your personalized rate -- it takes less than 2 minutes."
-- **CTA Button:** "See How Much You'll Save"
-
-### How You'll Measure
-
-Once live, you can ask me to pull results like:
-
+Current problematic code (line 124-126):
 ```text
-Variant A: 3,000 visitors --> 1,000 started quiz (33%) --> 170 qualified (5.7%)
-Variant B: 3,000 visitors --> 1,350 started quiz (45%) --> 230 qualified (7.7%)
+const daysAgo = parseInt(dateRange);
+const startDate = startOfDay(subDays(new Date(), daysAgo)).toISOString();
 ```
 
-The key metric is **visitor-to-quiz-start rate** (engagement), with secondary metrics being visitor-to-qualified and visitor-to-booked.
+Fixed:
+```text
+const daysAgo = dateRange === "1" ? 0 : parseInt(dateRange);
+const startDate = startOfDay(subDays(new Date(), daysAgo)).toISOString();
+```
 
+Current timezone issue (lines 192, 676-678):
+```text
+const today = format(new Date(), 'yyyy-MM-dd');
+const todayBookedEvents = pageEvents.filter(e =>
+  e.event_type === 'booking_completed' && e.created_at.startsWith(today)
+).length;
+```
+
+Fixed approach -- use ET-aware boundaries:
+```text
+const todayET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+const todayStart = new Date(todayET.getFullYear(), todayET.getMonth(), todayET.getDate()).toISOString();
+const todayEnd = new Date(todayET.getFullYear(), todayET.getMonth(), todayET.getDate() + 1).toISOString();
+
+// Then filter with date range comparison instead of string matching
+const todayBookedEvents = new Set(
+  pageEvents.filter(e =>
+    e.event_type === 'booking_completed' &&
+    e.created_at >= todayStart && e.created_at < todayEnd
+  ).map(e => e.session_id)
+).size;
+```
+
+All "today" metric calculations across the file (overview, quote funnel, appointment funnel tabs) will use this same fix for consistency.
