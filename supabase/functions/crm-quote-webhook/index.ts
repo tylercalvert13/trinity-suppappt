@@ -123,7 +123,7 @@ serve(async (req) => {
 
     const plan = mapPlanToApi(currentType);
     const hasSpouse = spouse?.toLowerCase() === 'yes';
-    const currentPremiumNum = parseFloat(currentPremium);
+    const currentPremiumNum = parseFloat(String(currentPremium).replace(/[$,]/g, ''));
 
     if (isNaN(currentPremiumNum) || currentPremiumNum <= 0) {
       // Can't calculate savings without a valid premium
