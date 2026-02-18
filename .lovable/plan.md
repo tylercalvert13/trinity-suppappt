@@ -1,20 +1,17 @@
 
 
-## Align Browser Pixel Event Name to "Appointment"
+## Add TikTok Pixel Site-Wide
 
-Currently the browser pixel fires `'Schedule'` while CAPI fires `'Appointment'` for booking events. This mismatch prevents Facebook from deduplicating the two signals. The fix: change the browser pixel event name from `'Schedule'` to `'Appointment'` in all 3 funnel pages.
+Add the TikTok pixel (ID: `D6ATAMJC77U6DR98LSLG`) to `index.html` using the same deferred loading strategy as the existing Facebook, Taboola, Bing, Google, and Vibe.co pixels.
 
 ### Changes
 
-**1. `src/pages/MedicareSupplementAppointment.tsx`** (line 177)
-- Change `trackPixelEvent('Schedule', ...)` to `trackPixelEvent('Appointment', ...)`
+**`index.html`**
+- Add a `<link rel="preconnect">` and `<link rel="dns-prefetch">` for `analytics.tiktok.com` alongside the existing resource hints
+- Add the TikTok pixel initialization inside the existing `window.addEventListener('load', ...)` block, after the Vibe.co pixel code
+- This keeps all tracking scripts deferred so they don't slow down initial page load
 
-**2. `src/pages/MedicareSupplementAppointment2.tsx`** (line 153)
-- Change `trackPixelEvent('Schedule', ...)` to `trackPixelEvent('Appointment', ...)`
+### Technical Detail
 
-**3. `src/pages/MedicareSupplementAppointmentRefund.tsx`** (line 223)
-- Change `trackPixelEvent('Schedule', ...)` to `trackPixelEvent('Appointment', ...)`
-
-### Result
-Both browser pixel and CAPI will send `'Appointment'` with the same `event_id`, enabling proper deduplication. No backend or edge function changes needed.
+The pixel code will be wrapped inside the existing `load` event listener to match the deferred pattern. The `ttq.page()` call fires automatically on load, and since TikTok's SDK handles SPA page tracking via its own methods, no additional router integration is needed for page views.
 
