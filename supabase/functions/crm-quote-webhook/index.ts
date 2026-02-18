@@ -127,12 +127,7 @@ serve(async (req) => {
 
     if (isNaN(currentPremiumNum) || currentPremiumNum <= 0) {
       // Can't calculate savings without a valid premium
-      const noQuotePayload = {
-        id, name, email, phone, plan: currentType, status: "no_quotes",
-        quotedRate: null, quotedCarrier: null, amBestRating: null,
-        monthlySavings: null, annualSavings: null, savingsPercent: null,
-      };
-      await postToWebhook(noQuotePayload);
+      console.log("Skipping webhook — invalid premium, no savings to report");
       return new Response(JSON.stringify({ success: true, status: "no_quotes" }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
@@ -166,16 +161,14 @@ serve(async (req) => {
     const basePayload = { id, name, email, phone, plan: currentType };
 
     if (!quotesResponse || !Array.isArray(quotesResponse) || quotesResponse.length === 0) {
-      const payload = { ...basePayload, status: "no_quotes", quotedRate: null, quotedCarrier: null, amBestRating: null, monthlySavings: null, annualSavings: null, savingsPercent: null };
-      await postToWebhook(payload);
+      console.log("Skipping webhook — no quotes returned from API");
       return new Response(JSON.stringify({ success: true, status: "no_quotes" }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const filtered = filterQuotes(quotesResponse, hasSpouse);
     if (filtered.length === 0) {
-      const payload = { ...basePayload, status: "no_quotes", quotedRate: null, quotedCarrier: null, amBestRating: null, monthlySavings: null, annualSavings: null, savingsPercent: null };
-      await postToWebhook(payload);
+      console.log("Skipping webhook — no quotes after filtering");
       return new Response(JSON.stringify({ success: true, status: "no_quotes" }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
@@ -197,8 +190,7 @@ serve(async (req) => {
     console.log(`Best: $${best.rate} from ${best.carrier}, savings: ${savingsPercent.toFixed(1)}%`);
 
     if (savingsPercent < 5) {
-      const payload = { ...basePayload, status: "no_savings", quotedRate: best.rate, quotedCarrier: best.carrier, amBestRating: best.amBestRating, monthlySavings: parseFloat(monthlySavings.toFixed(2)), annualSavings: parseFloat(annualSavings.toFixed(2)), savingsPercent: parseFloat(savingsPercent.toFixed(1)) };
-      await postToWebhook(payload);
+      console.log(`Skipping webhook — savings too low (${savingsPercent.toFixed(1)}%)`);
       return new Response(JSON.stringify({ success: true, status: "no_savings" }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
