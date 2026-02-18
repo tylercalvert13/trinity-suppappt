@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Clock, ChevronDown } from 'lucide-react';
+import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Clock, ChevronDown, Lock, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 import { getVariant } from '@/lib/abTest';
@@ -980,6 +980,13 @@ const MedicareSupplementAppointment = () => {
                 </div>
                 <Progress value={getProgress()} className="h-2" />
               </div>
+              
+              {/* Trust Bar */}
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
+                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
+              </div>
 
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
                 Which Medicare Supplement plan are you paying for today?
@@ -1010,6 +1017,12 @@ const MedicareSupplementAppointment = () => {
                 </div>
                 <Progress value={getProgress()} className="h-2" />
               </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
+                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
+              </div>
 
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
                 How much does your insurance company charge you each month?
@@ -1035,6 +1048,9 @@ const MedicareSupplementAppointment = () => {
                 >
                   Continue
                 </Button>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Join 10,000+ seniors who've compared rates for free
+                </p>
               </div>
             </div>
           )}
@@ -1048,6 +1064,12 @@ const MedicareSupplementAppointment = () => {
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
+              </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
+                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
               </div>
 
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
@@ -1113,6 +1135,12 @@ const MedicareSupplementAppointment = () => {
                 </div>
                 <Progress value={getProgress()} className="h-2" />
               </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
+                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
+              </div>
 
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
                 Recent Medical History
@@ -1173,6 +1201,12 @@ const MedicareSupplementAppointment = () => {
                 </div>
                 <Progress value={getProgress()} className="h-2" />
               </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
+                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
+              </div>
 
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
                 Current Medications
@@ -1229,6 +1263,12 @@ const MedicareSupplementAppointment = () => {
                 </div>
                 <Progress value={getProgress()} className="h-2" />
               </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
+                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
+              </div>
 
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
                 What is your gender?
@@ -1263,6 +1303,12 @@ const MedicareSupplementAppointment = () => {
                 </div>
                 <Progress value={getProgress()} className="h-2" />
               </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
+                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
+              </div>
 
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
                 Have you used tobacco products in the last 12 months?
@@ -1296,6 +1342,12 @@ const MedicareSupplementAppointment = () => {
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
+              </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
+                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
               </div>
 
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
@@ -1335,6 +1387,12 @@ const MedicareSupplementAppointment = () => {
                 </div>
                 <Progress value={getProgress()} className="h-2" />
               </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
+                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
+              </div>
 
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
                 What is your current age?
@@ -1371,6 +1429,12 @@ const MedicareSupplementAppointment = () => {
                 </div>
                 <Progress value={getProgress()} className="h-2" />
               </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
+                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
+              </div>
 
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
                 What is your ZIP code?
@@ -1405,6 +1469,12 @@ const MedicareSupplementAppointment = () => {
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
+              </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
+                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
               </div>
 
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
@@ -1526,6 +1596,13 @@ const MedicareSupplementAppointment = () => {
                   <Link to="/privacy-policy" className="underline hover:text-foreground">Privacy Policy</Link>.
                 </p>
 
+                {/* Mini testimonial above submit */}
+                <div className="bg-green-50 border border-green-100 rounded-lg p-3 mt-4">
+                  <p className="text-xs text-green-800 italic">
+                    "I was nervous to share my info, but they called me right on time and saved me $89/month." — Robert, TX
+                  </p>
+                </div>
+
                 <Button
                   type="submit"
                   className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto rounded-xl mt-4"
@@ -1550,7 +1627,7 @@ const MedicareSupplementAppointment = () => {
           {/* Loading Screen - Animated Progress Indicator */}
           {step === "loading" && (
             <div ref={loadingRef}>
-              <QuoteLoadingProgress planType={formData.plan} />
+              <QuoteLoadingProgress planType={formData.plan} firstName={formData.firstName} />
             </div>
           )}
 
@@ -1699,9 +1776,9 @@ const MedicareSupplementAppointment = () => {
         />
       )}
 
-      {/* Social Proof Popup - only show when qualified */}
-      {step === "qualified" && quoteResult && (
-        <SocialProofPopup delayMs={8000} visibleMs={4000} />
+      {/* Social Proof Popup - show after health questions (step 5+) */}
+      {['gender', 'tobacco', 'spouse', 'age', 'zip', 'contact', 'loading', 'qualified'].includes(step) && (
+        <SocialProofPopup delayMs={5000} visibleMs={4000} />
       )}
 
       {/* Sticky Floating CTA - mobile only, when qualified */}
