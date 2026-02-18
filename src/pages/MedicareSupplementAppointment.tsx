@@ -27,6 +27,7 @@ declare global {
     uetq?: any[];
     gtag?: (...args: any[]) => void;
     vbpx?: (...args: any[]) => void;
+    ttq?: { identify: (data: any) => void; track: (event: string, params?: any) => void; };
   }
 }
 
@@ -328,6 +329,72 @@ const trackVibeCoLeadEvent = () => {
   }
 };
 
+// SHA-256 hashing utility for TikTok Advanced Matching
+const hashSHA256 = async (value: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(value.trim().toLowerCase());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+// Track funnel button clicks via TikTok pixel (no PII needed)
+const trackTikTokClickButton = (stepName: string) => {
+  try {
+    if (!window.ttq) return;
+    window.ttq.track('ClickButton', {
+      contents: [{ content_id: 'suppappt', content_type: 'product',
+        content_name: `Medicare Supplement - ${stepName}` }],
+      value: 0, currency: 'USD',
+    });
+    console.log(`TikTok ClickButton tracked (suppappt - ${stepName})`);
+  } catch (error) {
+    console.error('Error tracking TikTok ClickButton:', error);
+  }
+};
+
+// Track lead submission via TikTok pixel (with hashed PII)
+const trackTikTokLeadEvent = async (formData: FormData, quoteResult: QuoteResult | null) => {
+  try {
+    if (!window.ttq) return;
+    window.ttq.identify({
+      email: await hashSHA256(formData.email),
+      phone_number: await hashSHA256(formData.phone.replace(/\D/g, '')),
+      external_id: await hashSHA256(getVisitorIdForTracking()),
+    });
+    window.ttq.track('Lead', {
+      contents: [{ content_id: 'suppappt', content_type: 'product',
+        content_name: `Medicare Supplement ${formData.plan}` }],
+      value: quoteResult?.monthlySavings || quoteResult?.rate || 0,
+      currency: 'USD',
+    });
+    console.log('TikTok Lead event tracked (suppappt)');
+  } catch (error) {
+    console.error('Error tracking TikTok Lead event:', error);
+  }
+};
+
+// Track appointment booking via TikTok pixel (with hashed PII)
+const trackTikTokScheduleEvent = async (formData: FormData, quoteResult: QuoteResult | null) => {
+  try {
+    if (!window.ttq) return;
+    window.ttq.identify({
+      email: await hashSHA256(formData.email),
+      phone_number: await hashSHA256(formData.phone.replace(/\D/g, '')),
+      external_id: await hashSHA256(getVisitorIdForTracking()),
+    });
+    window.ttq.track('Schedule', {
+      contents: [{ content_id: 'suppappt', content_type: 'product',
+        content_name: `Medicare Supplement ${formData.plan}` }],
+      value: quoteResult?.monthlySavings || quoteResult?.rate || 0,
+      currency: 'USD',
+    });
+    console.log('TikTok Schedule event tracked (suppappt)');
+  } catch (error) {
+    console.error('Error tracking TikTok Schedule event:', error);
+  }
+};
+
 const MedicareSupplementAppointment = () => {
   const navigate = useNavigate();
   const [variant] = useState(() => getVariant('suppappt_hero_v1'));
@@ -551,16 +618,19 @@ const MedicareSupplementAppointment = () => {
     setFormData(prev => ({ ...prev, plan }));
     setStep("payment");
     trackStepChange("payment", plan);
+    trackTikTokClickButton('plan');
   };
 
   const handlePaymentSubmit = () => {
     if (!formData.currentPayment || parseFloat(formData.currentPayment) <= 0) return;
     setStep("care");
     trackStepChange("care", formData.currentPayment);
+    trackTikTokClickButton('payment');
   };
 
   const handleCareAnswer = (answer: string) => {
     setFormData(prev => ({ ...prev, careOrCondition: answer }));
+    trackTikTokClickButton('care');
     if (answer === "yes") {
       setDisqualReason("care");
       trackQualification("disqualified", "care_or_condition");
@@ -574,6 +644,7 @@ const MedicareSupplementAppointment = () => {
 
   const handleTreatmentAnswer = (answer: string) => {
     setFormData(prev => ({ ...prev, recentTreatment: answer }));
+    trackTikTokClickButton('treatment');
     if (answer === "yes") {
       setDisqualReason("treatment");
       trackQualification("disqualified", "recent_treatment");
@@ -587,6 +658,7 @@ const MedicareSupplementAppointment = () => {
 
   const handleMedicationsAnswer = (answer: string) => {
     setFormData(prev => ({ ...prev, medicationUse: answer }));
+    trackTikTokClickButton('medications');
     if (answer === "yes") {
       setDisqualReason("medications");
       trackQualification("disqualified", "medication_use");
@@ -602,18 +674,21 @@ const MedicareSupplementAppointment = () => {
     setFormData(prev => ({ ...prev, gender }));
     setStep("tobacco");
     trackStepChange("tobacco", gender);
+    trackTikTokClickButton('gender');
   };
 
   const handleTobaccoAnswer = (answer: string) => {
     setFormData(prev => ({ ...prev, tobacco: answer }));
     setStep("spouse");
     trackStepChange("spouse", answer);
+    trackTikTokClickButton('tobacco');
   };
 
   const handleSpouseAnswer = (answer: string) => {
     setFormData(prev => ({ ...prev, spouse: answer }));
     setStep("age");
     trackStepChange("age", answer);
+    trackTikTokClickButton('spouse');
   };
 
   const handleAgeSubmit = () => {
@@ -621,12 +696,14 @@ const MedicareSupplementAppointment = () => {
     if (isNaN(age) || age < 65 || age > 120) return;
     setStep("zip");
     trackStepChange("zip", formData.age);
+    trackTikTokClickButton('age');
   };
 
   const handleZipSubmit = () => {
     if (!/^\d{5}$/.test(formData.zipCode)) return;
     setStep("contact");
     trackStepChange("contact", formData.zipCode);
+    trackTikTokClickButton('zip');
   };
 
   const handleContactSubmit = async (e: React.FormEvent) => {
@@ -845,6 +922,7 @@ const MedicareSupplementAppointment = () => {
       trackBingSubmissionEvent(formData);
       trackGoogleAdsConversion();
       trackVibeCoLeadEvent();
+      trackTikTokLeadEvent(formData, data);
       
       setStep("qualified");
 
@@ -1702,6 +1780,7 @@ const MedicareSupplementAppointment = () => {
                   trackEvent(params);
                   if (params.eventType === 'booking_completed') {
                     trackFacebookAppointmentEvent(formData, quoteResult);
+                    trackTikTokScheduleEvent(formData, quoteResult);
                   }
                 }}
                 autoSelectFirst={false}
