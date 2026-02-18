@@ -1731,6 +1731,26 @@ const MedicareSupplementAppointment = () => {
                 </div>
               </div>
 
+              {/* Testimonials */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground text-center uppercase tracking-wide">What Others Are Saying</h3>
+                {[
+                  { name: 'Patricia M.', state: 'FL', text: "Scheduled my call in 30 seconds. The agent was friendly, no pressure, and I\u2019m saving $127/month on the same Plan G coverage.", savings: 127 },
+                  { name: 'Robert K.', state: 'TX', text: "I was skeptical but the whole thing took 2 minutes. Booked a call, spoke to a licensed agent, and cut my premium by $89/month.", savings: 89 },
+                  { name: 'Mary S.', state: 'OH', text: "So easy! I picked a time that worked for me, got a quick call, and now I\u2019m paying $156 less every month for the exact same benefits.", savings: 156 },
+                ].map((t, i) => (
+                  <div key={i} className="bg-white rounded-xl p-4 border">
+                    <div className="flex items-center gap-1 mb-2">
+                      {Array.from({ length: 5 }).map((_, j) => (
+                        <Star key={j} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                    <p className="text-sm text-foreground italic mb-2">"{t.text}"</p>
+                    <p className="text-xs text-muted-foreground font-medium">— {t.name}, {t.state} · Saved ${t.savings}/mo</p>
+                  </div>
+                ))}
+              </div>
+
               {/* Disclaimer */}
               <p className="text-xs text-muted-foreground text-center">
                 This is a free rate comparison service. Quoted rates are estimates and subject to underwriting approval.
