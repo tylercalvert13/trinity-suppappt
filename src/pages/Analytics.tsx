@@ -121,7 +121,7 @@ const Analytics = () => {
 
   const fetchData = async () => {
     setIsLoading(true);
-    const daysAgo = parseInt(dateRange);
+    const daysAgo = dateRange === "1" ? 0 : parseInt(dateRange);
     const startDate = startOfDay(subDays(new Date(), daysAgo)).toISOString();
     const endDate = endOfDay(new Date()).toISOString();
 
@@ -188,9 +188,11 @@ const Analytics = () => {
   const conversionRate = totalVisitors > 0 ? (totalCalls / totalVisitors) * 100 : 0;
   const qualifiedRate = totalVisitors > 0 ? (qualifiedSessions / totalVisitors) * 100 : 0;
 
-  // Today's metrics
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const todaySessions = sessions.filter(s => s.started_at.startsWith(today));
+  // Today's metrics — use Eastern Time boundaries for accurate "today" filtering
+  const todayET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const todayStartISO = new Date(Date.UTC(todayET.getFullYear(), todayET.getMonth(), todayET.getDate()) + 5 * 60 * 60 * 1000).toISOString();
+  const todayEndISO = new Date(Date.UTC(todayET.getFullYear(), todayET.getMonth(), todayET.getDate() + 1) + 5 * 60 * 60 * 1000).toISOString();
+  const todaySessions = sessions.filter(s => s.started_at >= todayStartISO && s.started_at < todayEndISO);
   const todayVisitors = todaySessions.length;
   const todayCalls = todaySessions.filter(s => s.called).length;
 
@@ -338,8 +340,8 @@ const Analytics = () => {
     : 0;
 
   // Today's suppquote metrics
-  const todaySuppquoteSessions = suppquoteSessions.filter(s => s.started_at.startsWith(today));
-  const todaySuppquoteSubmissions = suppquoteSubmissions.filter(s => s.created_at.startsWith(today));
+  const todaySuppquoteSessions = suppquoteSessions.filter(s => s.started_at >= todayStartISO && s.started_at < todayEndISO);
+  const todaySuppquoteSubmissions = suppquoteSubmissions.filter(s => s.created_at >= todayStartISO && s.created_at < todayEndISO);
   const todayQuotes = todaySuppquoteSubmissions.filter(s => s.submission_type === 'success').length;
 
   // 12-step funnel drop-off for suppquote
@@ -658,12 +660,12 @@ const Analytics = () => {
     const qualifiedCount = pageSessions.filter(s => s.completed).length;
     const disqualifiedCount = pageEvents.filter(e => e.event_type === 'qualification' && e.step !== 'qualified').length;
     
-    // Booking events
-    const bookingWidgetViews = pageEvents.filter(e => e.event_type === 'booking_widget_view').length;
-    const bookingDaySelected = pageEvents.filter(e => e.event_type === 'booking_day_selected').length;
-    const bookingTimeSelected = pageEvents.filter(e => e.event_type === 'booking_time_selected').length;
-    const bookingConfirmClicked = pageEvents.filter(e => e.event_type === 'booking_confirm_clicked').length;
-    const bookingCompleted = pageEvents.filter(e => e.event_type === 'booking_completed').length;
+    // Booking events — use unique session counts to prevent double-counting
+    const bookingWidgetViews = new Set(pageEvents.filter(e => e.event_type === 'booking_widget_view').map(e => e.session_id)).size;
+    const bookingDaySelected = new Set(pageEvents.filter(e => e.event_type === 'booking_day_selected').map(e => e.session_id)).size;
+    const bookingTimeSelected = new Set(pageEvents.filter(e => e.event_type === 'booking_time_selected').map(e => e.session_id)).size;
+    const bookingConfirmClicked = new Set(pageEvents.filter(e => e.event_type === 'booking_confirm_clicked').map(e => e.session_id)).size;
+    const bookingCompleted = new Set(pageEvents.filter(e => e.event_type === 'booking_completed').map(e => e.session_id)).size;
     
     // Average savings from successful quotes
     const successSubs = pageSubmissions.filter(s => s.submission_type === 'success' && (s.monthly_savings || 0) > 0);
@@ -671,11 +673,13 @@ const Analytics = () => {
       ? successSubs.reduce((sum, s) => sum + (s.monthly_savings || 0), 0) / successSubs.length
       : 0;
     
-    // Today's metrics
-    const todayPageSessions = pageSessions.filter(s => s.started_at.startsWith(today));
-    const todayBookedEvents = pageEvents.filter(e => 
-      e.event_type === 'booking_completed' && e.created_at.startsWith(today)
-    ).length;
+    // Today's metrics — ET-aware boundaries + unique sessions
+    const todayPageSessions = pageSessions.filter(s => s.started_at >= todayStartISO && s.started_at < todayEndISO);
+    const todayBookedEvents = new Set(
+      pageEvents.filter(e => 
+        e.event_type === 'booking_completed' && e.created_at >= todayStartISO && e.created_at < todayEndISO
+      ).map(e => e.session_id)
+    ).size;
     
     // Event-based funnel dropoff (uses step_change events for accurate counting)
     const dropoffData = funnelSteps.map((funnelStep, index) => {
