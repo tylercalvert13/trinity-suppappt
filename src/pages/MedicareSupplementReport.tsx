@@ -1171,11 +1171,23 @@ const MedicareSupplementReport = () => {
         )}
       </section>
 
-      {/* Minimal Footer */}
-      <footer className="bg-stone-100 border-t border-stone-200 py-6 text-center text-sm text-stone-400">
-        <div className="max-w-xl mx-auto px-4">
+      {/* Mobile spacer to keep form at top of screen */}
+      <div className="h-[50vh]" />
+
+      {/* Footer with Medicare Disclaimer */}
+      <footer className="bg-stone-100 border-t border-stone-200 py-8 text-center text-xs text-stone-400 leading-relaxed">
+        <div className="max-w-xl mx-auto px-4 space-y-4">
+          <p>
+            This is a free rate comparison service. We are paid a commission by insurance carriers when a policy is sold.
+          </p>
+          <p>
+            Health Helpers is not connected with or endorsed by the U.S. government or the federal Medicare program. Medicare Supplement insurance is sold by private insurance companies.
+          </p>
+          <p>
+            Quoted rates are estimates based on information provided and may vary. Final rates are determined by the insurance carrier based on underwriting.
+          </p>
           <p>&copy; {new Date().getFullYear()} Health Helpers. All rights reserved.</p>
-          <div className="mt-2 space-x-4">
+          <div className="space-x-4 text-stone-500">
             <Link to="/privacy-policy" className="underline hover:text-stone-600">Privacy Policy</Link>
             <Link to="/terms-of-service" className="underline hover:text-stone-600">Terms of Service</Link>
           </div>
