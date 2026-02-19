@@ -850,7 +850,7 @@ const MedicareSupplementReport = () => {
           {step === "spouse" && (
             <StepCard stepNumber={getStepNumber()} totalSteps={10} progress={getProgress()}>
               <h2 className="text-2xl font-serif font-bold text-stone-800 mb-6">
-                Do you have a spouse on the same plan?
+                Do you have a spouse or roommate that's on Medicare?
               </h2>
               <BinaryChoice
                 onYes={() => handleSpouseAnswer("yes")}
