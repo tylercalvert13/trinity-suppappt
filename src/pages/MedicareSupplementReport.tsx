@@ -228,10 +228,10 @@ const MedicareSupplementReport = () => {
 
   // SEO meta
   useEffect(() => {
-    document.title = "Free Medicare Supplement Rate Report | Health Helpers";
+    document.title = "Free Medigap Savings Report | Health Helpers";
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
-      metaDescription.setAttribute('content', 'Get your free Medicare Supplement rate report. Find out if you\'re overpaying for the same coverage.');
+      metaDescription.setAttribute('content', 'Get your free Medigap Savings Report. Find out if you\'re overpaying for the same coverage.');
     }
     let robotsMeta = document.querySelector('meta[name="robots"]');
     if (!robotsMeta) {
@@ -544,7 +544,7 @@ const MedicareSupplementReport = () => {
       <section className="bg-stone-900 text-stone-100 py-12 md:py-20">
         <div className="max-w-xl mx-auto px-4 text-center">
           <p className="text-sm tracking-widest uppercase text-stone-400 mb-6 font-sans">
-            Free Rate Report · No Obligation
+            Free Medigap Savings Report · No Obligation
           </p>
 
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold leading-tight mb-6 text-white">
@@ -556,7 +556,7 @@ const MedicareSupplementReport = () => {
           </p>
           
           <p className="text-base text-stone-400 mb-8 max-w-md mx-auto">
-            Request your free, personalized Rate Report and find out if you could be paying less for the exact same coverage.
+            Request your free, personalized Medigap Savings Report and find out if you could be paying less for the exact same coverage.
           </p>
 
           {step === "landing" && (
@@ -566,7 +566,7 @@ const MedicareSupplementReport = () => {
                 size="lg"
                 className="bg-amber-600 hover:bg-amber-700 text-white text-lg md:text-xl py-7 px-10 h-auto rounded-lg shadow-lg transition-all font-serif"
               >
-                Get My Free Rate Report
+                Get My Free Savings Report
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <div className="mt-6 text-xs text-stone-500">
@@ -795,7 +795,7 @@ const MedicareSupplementReport = () => {
               <h2 className="text-2xl font-serif font-bold text-stone-800 mb-2">
                 What's your first name?
               </h2>
-              <p className="text-stone-500 mb-6">We'll personalize your rate report.</p>
+              <p className="text-stone-500 mb-6">We'll personalize your savings report.</p>
               <div className="space-y-4">
                 <Input
                   type="text"
@@ -829,7 +829,7 @@ const MedicareSupplementReport = () => {
               <h2 className="text-2xl font-serif font-bold text-stone-800 mb-2">
                 Where should we send your report, {formData.firstName}?
               </h2>
-              <p className="text-stone-500 mb-6">Enter your phone number and we'll prepare your personalized rate report.</p>
+              <p className="text-stone-500 mb-6">Enter your phone number and we'll prepare your personalized savings report.</p>
               
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-red-700 text-sm">
@@ -864,7 +864,7 @@ const MedicareSupplementReport = () => {
                     </>
                   ) : (
                     <>
-                      Get My Free Rate Report
+                      Get My Free Savings Report
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </>
                   )}
@@ -872,7 +872,7 @@ const MedicareSupplementReport = () => {
               </div>
 
               <p className="text-xs text-stone-400 text-center mt-6 leading-relaxed" data-tf-element-role="consent-language">
-                By clicking "Get My Free Rate Report," I consent to receive calls, text messages, and emails 
+                By clicking "Get My Free Savings Report," I consent to receive calls, text messages, and emails 
                 from Health Helpers regarding my Medicare inquiry. I understand these 
                 communications may be made using automated telephone dialing systems, artificial intelligence, 
                 and/or prerecorded messages. Message frequency varies. Message and data rates may apply. 
@@ -908,7 +908,7 @@ const MedicareSupplementReport = () => {
                   <div className="flex items-center gap-3 mb-4">
                     <FileText className="h-8 w-8 text-amber-400" />
                     <div>
-                      <h1 className="text-xl md:text-2xl font-serif font-bold">Medicare Supplement Rate Report</h1>
+                      <h1 className="text-xl md:text-2xl font-serif font-bold">Medigap Savings Report</h1>
                       <p className="text-stone-300 text-sm">Confidential · Prepared {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                     </div>
                   </div>
