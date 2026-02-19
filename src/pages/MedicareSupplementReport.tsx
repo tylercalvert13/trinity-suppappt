@@ -149,6 +149,39 @@ const trackFacebookAppointmentEvent = async (formData: FormData, quoteResult: Qu
     console.error('Error tracking Facebook Appointment event:', error);
   }
 };
+// Extracted outside component to prevent unmount/remount on re-renders
+interface StepCardProps {
+  children: React.ReactNode;
+  stepNumber: number;
+  totalSteps: number;
+  progress: number;
+}
+
+const StepCard = ({ children, stepNumber, totalSteps, progress }: StepCardProps) => (
+  <div className="bg-white border border-stone-200 rounded-lg shadow-sm p-6 md:p-10 max-w-xl mx-auto">
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm text-stone-500 font-serif">Question {stepNumber} of {totalSteps}</span>
+        <span className="text-sm text-stone-400">{progress}%</span>
+      </div>
+      <Progress value={progress} className="h-1.5" />
+    </div>
+    {children}
+  </div>
+);
+
+const BinaryChoice = ({ onYes, onNo }: { onYes: () => void; onNo: () => void }) => (
+  <RadioGroup className="space-y-3">
+    <div onClick={onYes} className="flex items-center space-x-4 p-5 border border-stone-200 rounded-lg cursor-pointer hover:border-stone-400 hover:bg-stone-50 transition-all">
+      <RadioGroupItem value="yes" id="yes" className="h-6 w-6" />
+      <Label htmlFor="yes" className="text-lg font-serif cursor-pointer flex-1">Yes</Label>
+    </div>
+    <div onClick={onNo} className="flex items-center space-x-4 p-5 border border-stone-200 rounded-lg cursor-pointer hover:border-stone-400 hover:bg-stone-50 transition-all">
+      <RadioGroupItem value="no" id="no" className="h-6 w-6" />
+      <Label htmlFor="no" className="text-lg font-serif cursor-pointer flex-1">No</Label>
+    </div>
+  </RadioGroup>
+);
 
 const MedicareSupplementReport = () => {
   const navigate = useNavigate();
@@ -501,33 +534,8 @@ const MedicareSupplementReport = () => {
     trackEvent({ eventType: 'booking_completed_report' });
   }, [formData, quoteResult, trackEvent]);
 
-  // Common card wrapper for Agora editorial style
-  const StepCard = ({ children }: { children: React.ReactNode }) => (
-    <div className="bg-white border border-stone-200 rounded-lg shadow-sm p-6 md:p-10 max-w-xl mx-auto">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-stone-500 font-serif">Question {getStepNumber()} of 10</span>
-          <span className="text-sm text-stone-400">{getProgress()}%</span>
-        </div>
-        <Progress value={getProgress()} className="h-1.5" />
-      </div>
-      {children}
-    </div>
-  );
-
-  // Binary choice (Yes/No) UI
-  const BinaryChoice = ({ onYes, onNo }: { onYes: () => void; onNo: () => void }) => (
-    <RadioGroup className="space-y-3">
-      <div onClick={onYes} className="flex items-center space-x-4 p-5 border border-stone-200 rounded-lg cursor-pointer hover:border-stone-400 hover:bg-stone-50 transition-all">
-        <RadioGroupItem value="yes" id="yes" className="h-6 w-6" />
-        <Label htmlFor="yes" className="text-lg font-serif cursor-pointer flex-1">Yes</Label>
-      </div>
-      <div onClick={onNo} className="flex items-center space-x-4 p-5 border border-stone-200 rounded-lg cursor-pointer hover:border-stone-400 hover:bg-stone-50 transition-all">
-        <RadioGroupItem value="no" id="no" className="h-6 w-6" />
-        <Label htmlFor="no" className="text-lg font-serif cursor-pointer flex-1">No</Label>
-      </div>
-    </RadioGroup>
-  );
+  // StepCard and BinaryChoice are defined outside the component (above) to prevent
+  // unmount/remount on every keystroke.
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -592,7 +600,7 @@ const MedicareSupplementReport = () => {
           
           {/* Plan Selection */}
           {step === "plan" && (
-            <StepCard>
+            <StepCard stepNumber={getStepNumber()} totalSteps={10} progress={getProgress()}>
               <h2 className="text-2xl font-serif font-bold text-stone-800 mb-2">
                 Which plan do you currently have?
               </h2>
@@ -614,7 +622,7 @@ const MedicareSupplementReport = () => {
 
           {/* Payment */}
           {step === "payment" && (
-            <StepCard>
+            <StepCard stepNumber={getStepNumber()} totalSteps={10} progress={getProgress()}>
               <h2 className="text-2xl font-serif font-bold text-stone-800 mb-2">
                 How much do you pay each month?
               </h2>
@@ -645,7 +653,7 @@ const MedicareSupplementReport = () => {
 
           {/* Health Screen (single combined question) */}
           {step === "health" && (
-            <StepCard>
+            <StepCard stepNumber={getStepNumber()} totalSteps={10} progress={getProgress()}>
               <h2 className="text-2xl font-serif font-bold text-stone-800 mb-3">
                 Quick Health Check
               </h2>
@@ -679,7 +687,7 @@ const MedicareSupplementReport = () => {
 
           {/* Gender */}
           {step === "gender" && (
-            <StepCard>
+            <StepCard stepNumber={getStepNumber()} totalSteps={10} progress={getProgress()}>
               <h2 className="text-2xl font-serif font-bold text-stone-800 mb-6">
                 What is your gender?
               </h2>
@@ -700,7 +708,7 @@ const MedicareSupplementReport = () => {
 
           {/* Tobacco */}
           {step === "tobacco" && (
-            <StepCard>
+            <StepCard stepNumber={getStepNumber()} totalSteps={10} progress={getProgress()}>
               <h2 className="text-2xl font-serif font-bold text-stone-800 mb-6">
                 Have you used tobacco in the last 12 months?
               </h2>
@@ -713,7 +721,7 @@ const MedicareSupplementReport = () => {
 
           {/* Spouse */}
           {step === "spouse" && (
-            <StepCard>
+            <StepCard stepNumber={getStepNumber()} totalSteps={10} progress={getProgress()}>
               <h2 className="text-2xl font-serif font-bold text-stone-800 mb-6">
                 Do you have a spouse on the same plan?
               </h2>
@@ -726,7 +734,7 @@ const MedicareSupplementReport = () => {
 
           {/* Age */}
           {step === "age" && (
-            <StepCard>
+            <StepCard stepNumber={getStepNumber()} totalSteps={10} progress={getProgress()}>
               <h2 className="text-2xl font-serif font-bold text-stone-800 mb-2">
                 What is your current age?
               </h2>
@@ -754,7 +762,7 @@ const MedicareSupplementReport = () => {
 
           {/* Zip */}
           {step === "zip" && (
-            <StepCard>
+            <StepCard stepNumber={getStepNumber()} totalSteps={10} progress={getProgress()}>
               <h2 className="text-2xl font-serif font-bold text-stone-800 mb-2">
                 What is your ZIP code?
               </h2>
