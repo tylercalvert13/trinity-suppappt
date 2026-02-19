@@ -1,74 +1,74 @@
 
-# New Lead Form Funnel at /form
 
-## Overview
-A streamlined, Facebook-lead-form-style multi-step funnel that collects lead info, quotes behind the scenes using the existing `crm-quote-webhook` edge function, and shows either a "good rate" redirect or a "we'll be in touch" confirmation. No rate is revealed on screen.
+# Redesign /form to Look Like a Facebook Instant Form
 
-## Funnel Steps (8 total)
-1. **Plan** -- "Which Medicare Supplement plan do you currently have?" (Plan G / Plan N / Plan F)
-2. **Gender** -- "What is your gender?" (Male / Female)
-3. **Spouse** -- "Do you have a spouse or roommate that's on Medicare?" (Yes / No)
-4. **Health** -- Single combined health question (same as /report funnel -- oxygen/wheelchair, daily care, dementia/Parkinson's, cancer/heart attack/stroke in past 2 years). Yes = disqualified, redirect to `/disqualified?reason=health`
-5. **Age** -- "What is your current age?" (65+ required)
-6. **Payment** -- "How much do you pay each month?" (dollar input)
-7. **ZIP Code** -- "What is your ZIP code?"
-8. **Contact** -- Full name (first + last), phone number, TCPA consent, and Submit button
+## What's Changing
 
-## On Submit
-- Validate phone via `validate-contact` edge function
-- Call the existing `crm-quote-webhook` edge function with the collected data (plan, age, gender, spouse, zip, currentPremium)
-- The `crm-quote-webhook` already handles quoting + posting to GHL when savings are found
-- If response is `"no_savings"` or `"no_quotes"` -- redirect to `/great-rate`
-- If response is `"quoted"` (savings found) -- show a simple thank-you/confirmation screen: "We found savings! A licensed agent will call/text you shortly."
-- Save submission to `submissions` table (page: "form")
-- Track funnel analytics via `useFunnelAnalytics('form')` (need to add 'form' to the union type)
+The current `/form` page uses the editorial stone/serif styling from the /report funnel (dark hero banner, serif fonts, "Question X of Y" labels). It needs to be restyled to match the look and feel of a Facebook/Meta Instant Form -- clean, compact, and modern.
 
-## What Gets Built
+## Facebook Instant Form Design Characteristics
 
-### 1. New page: `src/pages/MedicareLeadForm.tsx`
-- Mirrors the `/report` page structure (StepCard, BinaryChoice, progress bar)
-- Same stone/serif editorial styling
-- TrustedForm script loaded
-- TCPA consent on the contact step (full name + phone + consent text)
-- Mobile spacer + Medicare disclaimer footer (matching /report)
-- No rate shown anywhere -- just "We found potential savings" confirmation
-- Facebook pixel submission tracking (reuse existing `trackFacebookSubmissionEvent` pattern)
+- **No dark hero section** -- the form starts immediately on a light gray background
+- **Single white card** that contains everything -- progress bar, question, and action buttons
+- **Blue accent color** (#1877F2 Facebook blue) for buttons and progress bar
+- **Sans-serif font throughout** (system font stack, no serif)
+- **Thin progress bar at the very top** of the card -- no "Question X of Y" text, no percentage
+- **Compact spacing** -- less padding, tighter layout
+- **Radio options** styled as simple tappable rows with subtle borders
+- **"Next" button** in blue at the bottom of each card
+- **Clean, minimal footer** with small disclaimer text
 
-### 2. Update `src/App.tsx`
-- Add route: `/form` pointing to the new lazy-loaded page
+## Visual Changes (all in `src/pages/MedicareLeadForm.tsx`)
 
-### 3. Update `src/hooks/useFunnelAnalytics.ts`
-- Add `'form'` to the page union type
+### 1. Remove the dark hero section
+Replace the `bg-stone-900` hero banner with a simple, compact header inside or above the card. Add a small logo/brand line and a one-line headline -- no big splash.
 
-### 4. Edge function: `supabase/functions/send-lead-webhook-form/index.ts`
-- New dedicated webhook function for this funnel (uses `GHL_WEBHOOK_URL` -- the same base webhook)
-- Sends contact info + quote data + TrustedForm cert to GHL
-- Source labeled as "Health Helpers Lead Form Funnel", page: "form"
+### 2. Restyle the StepCard component
+- Remove "Question X of Y" and percentage labels
+- Keep only a thin blue progress bar at the top of the card (2px, Facebook blue)
+- Use `rounded-xl` with a subtle shadow
+- Switch all fonts from `font-serif` to system sans-serif (just remove `font-serif` classes)
 
-Alternatively, we can reuse the existing `crm-quote-webhook` directly and create a simpler webhook for just the lead data. Since `crm-quote-webhook` already quotes AND posts to GHL, the frontend flow would be:
-1. Collect all data
-2. Call `crm-quote-webhook` with `{ name, email, phone, age, currentPremium, currentType, zip, gender, spouse }`
-3. Based on response status, show confirmation or redirect to `/great-rate`
-4. No separate lead webhook needed since `crm-quote-webhook` handles the GHL post
+### 3. Update color scheme
+- Buttons: `bg-[#1877F2] hover:bg-[#166FE5]` (Facebook blue) instead of stone/amber
+- Progress bar indicator: Facebook blue
+- Radio option hover: light blue tint instead of stone
+- Keep white card background on `bg-gray-100` page background
 
-This is the cleaner approach -- one edge function call does both quoting and CRM posting.
+### 4. Restyle radio options (plan, gender, spouse, health)
+- Simpler rows: lighter borders, blue highlight on hover/selected
+- Remove the oversized `h-6 w-6` radio buttons -- use standard size
+- Tighter padding (p-4 instead of p-5)
 
-## Confirmation Screen (shown after successful quote)
-- Green checkmark icon
-- "Thank You, [First Name]!"
-- "We found potential savings on your Medicare Supplement. A licensed agent will reach out by phone and text shortly to walk you through your options -- at no cost to you."
-- Trust badges (Licensed Agents, 100% Free, No Obligation)
-- Medicare disclaimer footer
+### 5. Restyle input steps (age, payment, ZIP)
+- Inputs keep clean styling but with blue focus ring instead of stone
+- "Continue" buttons become Facebook blue
+
+### 6. Restyle contact step
+- Same compact card style
+- Submit button in Facebook blue
+- TCPA consent text stays the same (required)
+
+### 7. Confirmation screen
+- Keep the green checkmark success state
+- Update button/text colors to match the new blue theme
+
+### 8. Loading screen
+- Update progress bar color to blue
+- Remove serif fonts
+
+### 9. Landing state
+- Replace the big dark hero with a compact intro card on gray background
+- Small headline: "Free Medicare Supplement Rate Check"
+- One-liner: "Find out if you're overpaying -- takes 60 seconds"
+- Blue "Get Started" button
+- Trust badges below in muted gray text
 
 ## Technical Details
 
-### File changes:
-- **New**: `src/pages/MedicareLeadForm.tsx` -- ~600 lines, modeled after MedicareSupplementReport.tsx but simplified (no results display, no booking widget)
-- **Edit**: `src/App.tsx` -- add lazy import + route for `/form`
-- **Edit**: `src/hooks/useFunnelAnalytics.ts` -- add `'form'` to page type union
+### Files modified:
+- **`src/pages/MedicareLeadForm.tsx`** -- Complete visual restyling (all within the same file, no logic changes). The funnel steps, data flow, submission logic, analytics, TrustedForm, and TCPA consent all stay identical. Only CSS classes and layout structure change.
 
-### No new secrets needed
-The `crm-quote-webhook` already has `GHL_WEBHOOK_URL_CRM_QUOTE` and `CSG_API_KEY` configured.
+### No other files need to change
+The logic, routing, analytics hooks, and edge function calls remain untouched.
 
-### No database changes needed
-Existing `submissions`, `funnel_sessions`, and `funnel_events` tables support this with the `page` field set to `"form"`.
