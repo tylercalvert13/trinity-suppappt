@@ -15,6 +15,11 @@ interface TrackEventParams {
   metadata?: Record<string, string | number | boolean>;
 }
 
+interface PrefilledContact {
+  firstName: string;
+  phone: string;
+}
+
 interface AppointmentWidgetWithOptInProps {
   // Quote data (no contact info - collected in widget)
   quotedPremium?: number;
@@ -33,6 +38,9 @@ interface AppointmentWidgetWithOptInProps {
   // Timezone & location
   userTimezone: string;
   userState?: string;
+  
+  // Optional prefilled contact (skips step 3 when provided)
+  prefilledContact?: PrefilledContact;
   
   // Analytics
   visitorId?: string;
@@ -273,6 +281,7 @@ export function AppointmentBookingWidgetWithOptIn({
   savingsPercent,
   userTimezone,
   userState = '',
+  prefilledContact,
   visitorId,
   sessionId,
   onTrackEvent,
@@ -536,14 +545,120 @@ export function AppointmentBookingWidgetWithOptIn({
     fetchSlots(date, dayLabel);
   };
 
-  const handleSlotSelect = (slot: SlotData) => {
+  const handleSlotSelect = async (slot: SlotData) => {
     setSelectedSlot(slot);
     onTrackEvent?.({ 
       eventType: 'booking_time_selected', 
       metadata: { time: slot.display, slotOriginal: slot.original }
     });
-    // Move to contact form step
-    setBookingStep(3);
+    
+    // If prefilled contact, skip step 3 and book directly
+    if (prefilledContact) {
+      await bookWithPrefilledContact(slot);
+    } else {
+      // Move to contact form step
+      setBookingStep(3);
+    }
+  };
+
+  // Book directly using prefilled contact data (skips step 3)
+  const bookWithPrefilledContact = async (slot: SlotData) => {
+    if (!selectedDate && !slot) return;
+    
+    const slotToBook = slot.original;
+    setIsLoading(true);
+    setError(null);
+    
+    onTrackEvent?.({ 
+      eventType: 'booking_confirm_clicked', 
+      metadata: { slotTime: slotToBook, prefilled: true }
+    });
+
+    try {
+      const phoneDigits = prefilledContact!.phone.replace(/\D/g, '');
+      
+      // Create contact in GHL (firstName + phone only)
+      console.log('Creating contact with prefilled data...');
+      const { data: contactData, error: contactError } = await supabase.functions.invoke('ghl-calendar', {
+        body: { 
+          action: 'create-contact',
+          firstName: prefilledContact!.firstName,
+          lastName: '',
+          email: '',
+          phone: phoneDigits,
+        }
+      });
+
+      if (contactError || contactData?.error) {
+        const errorMsg = contactData?.message || "Failed to create your profile. Please try again or call us at (201) 298-8393.";
+        setError(errorMsg);
+        setIsLoading(false);
+        return;
+      }
+
+      const contactId = contactData.contactId;
+
+      // Book the appointment
+      console.log('Booking appointment at:', slotToBook);
+      const { data: bookingData, error: bookingError } = await supabase.functions.invoke('ghl-calendar', {
+        body: {
+          action: 'book-appointment',
+          contactId,
+          startTime: slotToBook,
+          firstName: prefilledContact!.firstName,
+          lastName: '',
+          quotedRate: quotedPremium,
+          monthlySavings,
+          planType
+        }
+      });
+
+      if (bookingError) throw bookingError;
+
+      if (bookingData?.error === 'slot_taken') {
+        setError(bookingData.message);
+        if (selectedDate) {
+          const dayLabel = formatDateLabel(selectedDate, 0).primary;
+          await fetchSlots(selectedDate, dayLabel);
+        }
+        setBookingStep(2);
+        setIsLoading(false);
+        return;
+      }
+
+      if (bookingData?.error) {
+        setError(bookingData.message || 'Something went wrong. Please try again or call us at (201) 298-8393.');
+        setIsLoading(false);
+        return;
+      }
+
+      setAgentName(bookingData?.assignedUser || null);
+      setConfirmedTime(slotToBook);
+      setBookingStep(4);
+      
+      onTrackEvent?.({ 
+        eventType: 'booking_completed', 
+        metadata: { 
+          appointmentId: bookingData?.id || '', 
+          agentName: bookingData?.assignedUser || '',
+          prefilled: true,
+        }
+      });
+      
+      onComplete?.();
+      onBookingCompleted?.({
+        firstName: prefilledContact!.firstName,
+        lastName: '',
+        email: '',
+        phone: phoneDigits,
+      });
+
+    } catch (err) {
+      console.error('Booking error:', err);
+      setError('Something went wrong. Please try again or call us at (201) 298-8393.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBack = () => {
