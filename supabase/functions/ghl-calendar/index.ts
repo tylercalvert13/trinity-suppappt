@@ -33,8 +33,8 @@ interface SearchContactRequest {
 interface CreateContactRequest {
   action: 'create-contact';
   firstName: string;
-  lastName: string;
-  email: string;
+  lastName?: string;
+  email?: string;
   phone: string;
 }
 
@@ -384,7 +384,7 @@ serve(async (req) => {
     if (body.action === 'create-contact') {
       const { firstName, lastName, email, phone } = body as CreateContactRequest;
       const normalizedPhone = normalizePhone(phone);
-      console.log('Creating/finding contact:', { firstName, lastName, email, phone: normalizedPhone });
+      console.log('Creating/finding contact:', { firstName, lastName: lastName || '', email: email || '', phone: normalizedPhone });
 
       // First check if contact already exists by phone
       const encodedPhone = encodeURIComponent(normalizedPhone);
@@ -425,11 +425,11 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           locationId: LOCATION_ID,
-          firstName,
-          lastName,
-          email,
+          firstName: firstName || '',
+          lastName: lastName || '',
+          email: email || '',
           phone: normalizedPhone,
-          source: 'Standalone Booking Page',
+          source: 'Health Helpers Booking',
         }),
       });
 
