@@ -364,7 +364,7 @@ const MedicareSupplementReport = () => {
       const timer = setTimeout(() => {
         bookingWidgetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         setAutoScrollDone(true);
-      }, 12000);
+      }, 25000);
       return () => clearTimeout(timer);
     }
   }, [step, quoteResult, autoScrollDone]);
@@ -1059,9 +1059,9 @@ const MedicareSupplementReport = () => {
                     <h2 className="text-lg font-serif font-bold text-stone-800 mb-2">Key Finding</h2>
                     <p className="text-stone-700 font-serif leading-relaxed">
                       Based on our analysis, you may be overpaying by{' '}
-                      <span className="font-bold text-amber-700">${quoteResult.monthlySavings.toFixed(2)}/month</span>{' '}
+                      <span className="font-bold text-amber-700">${Math.round(quoteResult.monthlySavings)}/month</span>{' '}
                       for the exact same {formData.plan} coverage. That's{' '}
-                      <span className="font-bold text-amber-700">${quoteResult.annualSavings.toFixed(2)} per year</span>{' '}
+                      <span className="font-bold text-amber-700">${Math.round(quoteResult.annualSavings)} per year</span>{' '}
                       you could keep in your pocket.
                     </p>
                   </div>
@@ -1111,34 +1111,15 @@ const MedicareSupplementReport = () => {
                 </div>
               </div>
 
-              {/* CTA Section */}
-              <div className="mt-8 text-center">
-                <h2 className="text-2xl md:text-3xl font-serif font-bold text-stone-800 mb-3">
-                  Ready to Lock In Your Savings?
-                </h2>
-                <p className="text-stone-500 mb-6 font-serif max-w-md mx-auto">
-                  Speak with a licensed agent who can confirm your rate and handle everything for you — at no cost.
-                </p>
-                
-                {/* Direct call CTA */}
-                <a 
-                  href={PHONE_TEL}
-                  onClick={() => {
-                    trackEvent({ eventType: 'call_click', step: 'report_results' });
-                  }}
-                  className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-8 py-4 rounded-lg text-xl font-serif font-semibold transition-colors shadow-lg mb-4"
-                >
-                  <Phone className="h-5 w-5" />
-                  Call Now: {PHONE_NUMBER}
-                </a>
-                <p className="text-stone-400 text-sm mb-8">Available Mon–Fri, 9am–5pm ET</p>
-              </div>
-
               {/* Booking Widget */}
-              <div ref={bookingWidgetRef} className="scroll-mt-4">
+              <div ref={bookingWidgetRef} className="scroll-mt-4 mt-8">
                 <div className="text-center mb-4">
-                  <p className="text-stone-500 font-serif text-lg">Prefer to schedule a time?</p>
-                  <p className="text-stone-400 text-sm mt-1">Pick a day and time that works for you.</p>
+                  <h2 className="text-2xl md:text-3xl font-serif font-bold text-stone-800 mb-3">
+                    Ready to Lock In Your Savings?
+                  </h2>
+                  <p className="text-stone-500 font-serif max-w-md mx-auto">
+                    Pick a time and a licensed agent will confirm your rate and walk you through everything — at no cost.
+                  </p>
                 </div>
                 <AppointmentBookingWidgetWithOptIn
                   quotedPremium={quoteResult.rate}
