@@ -1,16 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CheckCircle, Loader2, FileText, Phone, ArrowRight, Shield } from 'lucide-react';
+import { CheckCircle, Loader2, FileText, Phone, ArrowRight, Shield, Star, Clock, Circle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
 import { useQuoteWarmup } from '@/hooks/useQuoteWarmup';
-import { QuoteLoadingProgress } from '@/components/QuoteLoadingProgress';
+
 import { AppointmentBookingWidgetWithOptIn } from '@/components/AppointmentBookingWidgetWithOptIn';
 import { initAdvancedMatching, trackPixelEvent } from '@/lib/facebookPixel';
 
@@ -183,6 +183,133 @@ const BinaryChoice = ({ onYes, onNo }: { onYes: () => void; onNo: () => void }) 
   </RadioGroup>
 );
 
+const REPORT_TESTIMONIALS = [
+  { name: 'Patricia', state: 'FL', savings: 127, stars: 5 },
+  { name: 'Robert', state: 'TX', savings: 89, stars: 5 },
+  { name: 'Mary', state: 'OH', savings: 156, stars: 5 },
+  { name: 'James', state: 'AZ', savings: 112, stars: 5 },
+  { name: 'Linda', state: 'PA', savings: 94, stars: 5 },
+];
+
+const REPORT_FACTS = [
+  "Your plan benefits are identical no matter which company you choose — the only difference is price.",
+  "The average senior saves $1,200/year by switching to a lower-cost carrier.",
+  "Insurance companies can charge different rates for the exact same coverage.",
+  "You can switch carriers anytime without losing any benefits.",
+  "Most people who compare rates find a lower price within 60 seconds.",
+];
+
+const REPORT_LOADING_STEPS = [
+  { label: 'Connecting to carriers...', duration: 1500 },
+  { label: 'Scanning available rates...', duration: 2000 },
+  { label: 'Comparing options...', duration: 2000 },
+  { label: 'Calculating potential savings...', duration: 2000 },
+  { label: 'Preparing your savings report...', duration: 3000 },
+];
+
+const ReportLoadingProgress = React.forwardRef<HTMLDivElement, { planType?: string; firstName?: string }>(
+  ({ planType = "Plan G", firstName }, ref) => {
+    const steps = REPORT_LOADING_STEPS.map((s, i) =>
+      i === 2 ? { ...s, label: `Comparing ${planType} options...` } : s
+    );
+    const [currentStep, setCurrentStep] = useState(0);
+    const [isSlowLoading, setIsSlowLoading] = useState(false);
+    const [testimonialIndex, setTestimonialIndex] = useState(0);
+    const [factIndex, setFactIndex] = useState(0);
+
+    useEffect(() => {
+      const timers = steps.map((_, i) => {
+        if (i === 0) return null;
+        const delay = steps.slice(0, i).reduce((sum, s) => sum + s.duration, 0);
+        return setTimeout(() => setCurrentStep(i), delay);
+      });
+      const slowTimer = setTimeout(() => setIsSlowLoading(true), 15000);
+      return () => { timers.forEach(t => t && clearTimeout(t)); clearTimeout(slowTimer); };
+    }, []);
+
+    useEffect(() => {
+      const interval = setInterval(() => setTestimonialIndex(prev => (prev + 1) % REPORT_TESTIMONIALS.length), 3000);
+      return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+      const interval = setInterval(() => setFactIndex(prev => (prev + 1) % REPORT_FACTS.length), 4000);
+      return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+      const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+      window.addEventListener('beforeunload', handler);
+      return () => window.removeEventListener('beforeunload', handler);
+    }, []);
+
+    const progressValue = ((currentStep + 1) / steps.length) * 100;
+    const testimonial = REPORT_TESTIMONIALS[testimonialIndex];
+
+    return (
+      <div ref={ref} className="scroll-mt-4">
+        <div className="bg-white border border-stone-200 rounded-lg shadow-sm p-8 md:p-12">
+          <h2 className="text-xl md:text-2xl font-serif font-bold text-stone-800 mb-2 text-center">
+            {firstName ? `Preparing your savings report, ${firstName}...` : 'Preparing your savings report...'}
+          </h2>
+          <p className="text-stone-500 text-center mb-6 font-serif">This usually takes 5–10 seconds</p>
+
+          <div className="mb-8">
+            <Progress value={progressValue} className="h-2 [&>div]:bg-stone-700" />
+          </div>
+
+          <div className="space-y-4">
+            {steps.map((step, i) => (
+              <div key={i} className={`flex items-center gap-3 transition-all duration-300 ${i <= currentStep ? 'opacity-100' : 'opacity-40'}`}>
+                {i < currentStep ? (
+                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                ) : i === currentStep ? (
+                  <Loader2 className="h-5 w-5 text-stone-600 animate-spin flex-shrink-0" />
+                ) : (
+                  <Circle className="h-5 w-5 text-stone-300 flex-shrink-0" />
+                )}
+                <span className={`text-sm md:text-base font-serif ${
+                  i < currentStep ? 'text-green-700 font-medium' :
+                  i === currentStep ? 'text-stone-800 font-medium' :
+                  'text-stone-400'
+                }`}>{step.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 p-4 bg-stone-50 border border-stone-200 rounded-lg">
+            <p className="text-sm text-stone-700 font-medium mb-1 font-serif">💡 Did you know?</p>
+            <p className="text-sm text-stone-600 font-serif transition-opacity duration-500">{REPORT_FACTS[factIndex]}</p>
+          </div>
+
+          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center gap-1 mb-1">
+              {Array.from({ length: testimonial.stars }).map((_, i) => (
+                <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+              ))}
+            </div>
+            <p className="text-sm text-stone-700 font-medium font-serif transition-opacity duration-500">
+              "{testimonial.name} from {testimonial.state} saved ${testimonial.savings}/mo on the same coverage"
+            </p>
+          </div>
+
+          {isSlowLoading && (
+            <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-700">
+                <Clock className="h-4 w-4 flex-shrink-0" />
+                <p className="text-sm font-medium font-serif">Taking longer than usual... please wait a moment.</p>
+              </div>
+            </div>
+          )}
+
+          <p className="text-xs text-stone-400 text-center mt-8 font-serif">🔒 Your information is secure and never shared</p>
+        </div>
+      </div>
+    );
+  }
+);
+ReportLoadingProgress.displayName = 'ReportLoadingProgress';
+
 const MedicareSupplementReport = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<FunnelStep>("landing");
@@ -237,7 +364,7 @@ const MedicareSupplementReport = () => {
       const timer = setTimeout(() => {
         bookingWidgetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         setAutoScrollDone(true);
-      }, 5000);
+      }, 12000);
       return () => clearTimeout(timer);
     }
   }, [step, quoteResult, autoScrollDone]);
@@ -895,12 +1022,11 @@ const MedicareSupplementReport = () => {
 
           {/* Loading */}
           {step === "loading" && (
-            <div ref={loadingRef} className="scroll-mt-4">
-              <QuoteLoadingProgress 
-                planType={formData.plan} 
-                firstName={formData.firstName}
-              />
-            </div>
+            <ReportLoadingProgress 
+              ref={loadingRef}
+              planType={formData.plan} 
+              firstName={formData.firstName}
+            />
           )}
         </div>
 
@@ -967,12 +1093,12 @@ const MedicareSupplementReport = () => {
                     </div>
                   </div>
 
-                  {/* Carrier Info */}
+                  {/* Same coverage reassurance */}
                   <div className="flex items-start gap-4 p-4 bg-stone-50 rounded-lg border border-stone-100">
                     <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-stone-800 font-serif font-semibold">{quoteResult.carrier}</p>
-                      <p className="text-stone-500 text-sm">AM Best Rating: {quoteResult.amBestRating} · Same {formData.plan} benefits you have today</p>
+                      <p className="text-stone-800 font-serif font-semibold">Same {formData.plan} benefits you have today</p>
+                      <p className="text-stone-500 text-sm">Your coverage doesn't change — only the price does.</p>
                     </div>
                   </div>
 
@@ -1011,7 +1137,8 @@ const MedicareSupplementReport = () => {
               {/* Booking Widget */}
               <div ref={bookingWidgetRef} className="scroll-mt-4">
                 <div className="text-center mb-4">
-                  <p className="text-stone-500 font-serif">— or schedule a call —</p>
+                  <p className="text-stone-500 font-serif text-lg">Prefer to schedule a time?</p>
+                  <p className="text-stone-400 text-sm mt-1">Pick a day and time that works for you.</p>
                 </div>
                 <AppointmentBookingWidgetWithOptIn
                   quotedPremium={quoteResult.rate}
