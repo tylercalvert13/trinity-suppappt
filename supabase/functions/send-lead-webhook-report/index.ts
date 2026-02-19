@@ -57,7 +57,7 @@ serve(async (req) => {
       timezone: data.timezone || null,
       
       timestamp: new Date().toISOString(),
-      source: "Health Helpers Rate Report Funnel",
+      source: "Health Helpers Medigap Savings Report Funnel",
       page: "report",
       
       visitorId: data.visitorId,
