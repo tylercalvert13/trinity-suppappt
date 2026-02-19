@@ -1,22 +1,74 @@
 
-# Update /report Results Page: CTA Hierarchy, Rounding, and Scroll Timing
+# New Lead Form Funnel at /form
 
-## Changes (all in `src/pages/MedicareSupplementReport.tsx`)
+## Overview
+A streamlined, Facebook-lead-form-style multi-step funnel that collects lead info, quotes behind the scenes using the existing `crm-quote-webhook` edge function, and shows either a "good rate" redirect or a "we'll be in touch" confirmation. No rate is revealed on screen.
 
-### 1. Remove the "Call Now" button entirely
-Delete the entire CTA section between the report card and the booking widget (lines 1114-1135): the "Ready to Lock In Your Savings?" heading, the amber call button, and the "Available Mon-Fri" text. The booking widget already has a "Call Now" fallback built in, so this is redundant.
+## Funnel Steps (8 total)
+1. **Plan** -- "Which Medicare Supplement plan do you currently have?" (Plan G / Plan N / Plan F)
+2. **Gender** -- "What is your gender?" (Male / Female)
+3. **Spouse** -- "Do you have a spouse or roommate that's on Medicare?" (Yes / No)
+4. **Health** -- Single combined health question (same as /report funnel -- oxygen/wheelchair, daily care, dementia/Parkinson's, cancer/heart attack/stroke in past 2 years). Yes = disqualified, redirect to `/disqualified?reason=health`
+5. **Age** -- "What is your current age?" (65+ required)
+6. **Payment** -- "How much do you pay each month?" (dollar input)
+7. **ZIP Code** -- "What is your ZIP code?"
+8. **Contact** -- Full name (first + last), phone number, TCPA consent, and Submit button
 
-### 2. Make booking the primary CTA
-Replace the removed call section with a direct lead-in to the booking widget. Update the text above the widget (lines 1139-1141) to be more prominent:
-- Heading: "Ready to Lock In Your Savings?" (serif, 2xl, bold -- moved from the deleted section)
-- Subtext: "Pick a time and a licensed agent will confirm your rate and walk you through everything -- at no cost."
+## On Submit
+- Validate phone via `validate-contact` edge function
+- Call the existing `crm-quote-webhook` edge function with the collected data (plan, age, gender, spouse, zip, currentPremium)
+- The `crm-quote-webhook` already handles quoting + posting to GHL when savings are found
+- If response is `"no_savings"` or `"no_quotes"` -- redirect to `/great-rate`
+- If response is `"quoted"` (savings found) -- show a simple thank-you/confirmation screen: "We found savings! A licensed agent will call/text you shortly."
+- Save submission to `submissions` table (page: "form")
+- Track funnel analytics via `useFunnelAnalytics('form')` (need to add 'form' to the union type)
 
-### 3. Round Key Finding savings to whole dollars
-In the "Key Finding" section (lines 1061-1065), change:
-- `quoteResult.monthlySavings.toFixed(2)` to `Math.round(quoteResult.monthlySavings)`
-- `quoteResult.annualSavings.toFixed(2)` to `Math.round(quoteResult.annualSavings)`
+## What Gets Built
 
-The Rate Comparison table (lines 1077-1090) keeps `.toFixed(2)` -- cents stay in the detailed breakdown.
+### 1. New page: `src/pages/MedicareLeadForm.tsx`
+- Mirrors the `/report` page structure (StepCard, BinaryChoice, progress bar)
+- Same stone/serif editorial styling
+- TrustedForm script loaded
+- TCPA consent on the contact step (full name + phone + consent text)
+- Mobile spacer + Medicare disclaimer footer (matching /report)
+- No rate shown anywhere -- just "We found potential savings" confirmation
+- Facebook pixel submission tracking (reuse existing `trackFacebookSubmissionEvent` pattern)
 
-### 4. Increase auto-scroll delay from 12s to 25s
-Change the timeout on line 367 from `12000` to `25000` so users have enough time to read the full report before the page scrolls to the booking widget.
+### 2. Update `src/App.tsx`
+- Add route: `/form` pointing to the new lazy-loaded page
+
+### 3. Update `src/hooks/useFunnelAnalytics.ts`
+- Add `'form'` to the page union type
+
+### 4. Edge function: `supabase/functions/send-lead-webhook-form/index.ts`
+- New dedicated webhook function for this funnel (uses `GHL_WEBHOOK_URL` -- the same base webhook)
+- Sends contact info + quote data + TrustedForm cert to GHL
+- Source labeled as "Health Helpers Lead Form Funnel", page: "form"
+
+Alternatively, we can reuse the existing `crm-quote-webhook` directly and create a simpler webhook for just the lead data. Since `crm-quote-webhook` already quotes AND posts to GHL, the frontend flow would be:
+1. Collect all data
+2. Call `crm-quote-webhook` with `{ name, email, phone, age, currentPremium, currentType, zip, gender, spouse }`
+3. Based on response status, show confirmation or redirect to `/great-rate`
+4. No separate lead webhook needed since `crm-quote-webhook` handles the GHL post
+
+This is the cleaner approach -- one edge function call does both quoting and CRM posting.
+
+## Confirmation Screen (shown after successful quote)
+- Green checkmark icon
+- "Thank You, [First Name]!"
+- "We found potential savings on your Medicare Supplement. A licensed agent will reach out by phone and text shortly to walk you through your options -- at no cost to you."
+- Trust badges (Licensed Agents, 100% Free, No Obligation)
+- Medicare disclaimer footer
+
+## Technical Details
+
+### File changes:
+- **New**: `src/pages/MedicareLeadForm.tsx` -- ~600 lines, modeled after MedicareSupplementReport.tsx but simplified (no results display, no booking widget)
+- **Edit**: `src/App.tsx` -- add lazy import + route for `/form`
+- **Edit**: `src/hooks/useFunnelAnalytics.ts` -- add `'form'` to page type union
+
+### No new secrets needed
+The `crm-quote-webhook` already has `GHL_WEBHOOK_URL_CRM_QUOTE` and `CSG_API_KEY` configured.
+
+### No database changes needed
+Existing `submissions`, `funnel_sessions`, and `funnel_events` tables support this with the `page` field set to `"form"`.
