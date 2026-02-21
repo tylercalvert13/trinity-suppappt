@@ -1914,7 +1914,7 @@ const MedicareSupplementAppointment = () => {
       </section>
 
       {/* Spacer - reduced to push widget higher */}
-      <div className="h-16"></div>
+      <div className="h-64 md:h-96"></div>
 
       {/* Footer */}
       <footer className="py-8 md:py-12 bg-gray-50">
