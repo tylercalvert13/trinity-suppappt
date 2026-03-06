@@ -1594,8 +1594,8 @@ const MedicareSupplementAppointment = () => {
                   <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-red-800">{error}</p>
-                    <a href={PHONE_TEL} className="text-red-600 hover:underline font-medium">
-                      Call {PHONE_NUMBER} for immediate assistance
+                    <a href="tel:+19082245410" className="text-red-600 hover:underline font-medium">
+                      Call (908) 224-5410 for immediate assistance
                     </a>
                   </div>
                 </div>
