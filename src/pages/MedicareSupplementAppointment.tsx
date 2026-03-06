@@ -507,7 +507,7 @@ const MedicareSupplementAppointment = () => {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isValidating, setIsValidating] = useState(false);
 
-  const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt', variant);
+  const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt');
   
   // Warmup the calendar edge function early to prevent cold starts
   useCalendarWarmup();
