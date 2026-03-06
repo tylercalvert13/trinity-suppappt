@@ -5,19 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Clock, ChevronDown, Lock, Star } from 'lucide-react';
+import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Phone, Lock, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 
-import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
 import { useQuoteWarmup } from '@/hooks/useQuoteWarmup';
 import { z } from 'zod';
-import { AppointmentBookingWidget } from '@/components/AppointmentBookingWidget';
 import { getStateFromZip } from '@/lib/zipToState';
-import { toast } from 'sonner';
-import { ExitIntentModal } from '@/components/ExitIntentModal';
 import { SocialProofPopup } from '@/components/SocialProofPopup';
-import { StickyBookingCTA } from '@/components/StickyBookingCTA';
 import { QuoteLoadingProgress } from '@/components/QuoteLoadingProgress';
 import { initAdvancedMatching, trackPixelEvent } from '@/lib/facebookPixel';
 
