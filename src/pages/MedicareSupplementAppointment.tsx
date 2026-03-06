@@ -547,56 +547,7 @@ const MedicareSupplementAppointment = () => {
     }
   }, [step]);
 
-  // Auto-scroll to booking widget 5 seconds after qualification
-  useEffect(() => {
-    if (step === "qualified" && quoteResult && !autoScrollDone) {
-      const timer = setTimeout(() => {
-        bookingWidgetRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
-        });
-        setAutoScrollDone(true);
-        // Track auto-scroll trigger
-        trackEvent({ 
-          eventType: 'conversion_trigger', 
-          metadata: { trigger: 'auto_scroll' }
-        });
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [step, quoteResult, autoScrollDone, trackEvent]);
-
-  // Urgency toast 10 seconds after qualification
-  useEffect(() => {
-    if (step === "qualified" && quoteResult && !toastShown) {
-      const timer = setTimeout(() => {
-        toast("⏰ Your rate is reserved — pick a time to lock it in", {
-          duration: 5000,
-        });
-        setToastShown(true);
-        // Track urgency toast trigger
-        trackEvent({ 
-          eventType: 'conversion_trigger', 
-          metadata: { trigger: 'urgency_toast' }
-        });
-      }, 10000);
-      return () => clearTimeout(timer);
-    }
-  }, [step, quoteResult, toastShown, trackEvent]);
-
-  // Callback to scroll to booking widget (for exit intent modal)
-  const scrollToBookingWidget = useCallback(() => {
-    bookingWidgetRef.current?.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'start' 
-    });
-  }, []);
-
-  // Handle slot change from booking widget
-  const handleSlotChange = useCallback((dayLabel: string | null, timeDisplay: string | null) => {
-    setSelectedDayLabel(dayLabel);
-    setSelectedTimeDisplay(timeDisplay);
-  }, []);
+  // No auto-scroll or urgency toast — agent calls the lead directly
 
   // Detect user's state via IP geolocation on mount
   useEffect(() => {
