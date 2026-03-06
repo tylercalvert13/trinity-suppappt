@@ -522,8 +522,7 @@ const MedicareSupplementAppointment = () => {
 
   const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt');
   
-  // Warmup the calendar edge function early to prevent cold starts
-  useCalendarWarmup();
+  // No calendar warmup needed — using speed-to-lead agent assignment
   
   // Warmup the quote API to pre-cache CSG token
   useQuoteWarmup();
