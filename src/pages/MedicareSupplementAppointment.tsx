@@ -1838,6 +1838,41 @@ const MedicareSupplementAppointment = () => {
               </p>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Spacer */}
+      <div className="h-64 md:h-96"></div>
+
+      {/* Footer */}
+      <footer className="py-8 md:py-12 bg-gray-50">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="text-center text-xs text-muted-foreground space-y-4">
+            <p>
+              This is a free rate comparison service. We do not charge fees. By calling, you consent to speak with a licensed insurance agent about Medicare Supplement insurance.
+            </p>
+            <p>
+              Health Helpers is not connected with or endorsed by the U.S. government or the federal Medicare program. Medicare Supplement insurance is sold by private insurance companies.
+            </p>
+            <p>
+              Quoted rates are estimates based on the information provided. Actual rates may vary based on underwriting approval and other factors.
+            </p>
+            <div className="pt-4 border-t flex flex-col items-center gap-2">
+              <div className="flex items-center gap-4">
+                <Link to="/privacy-policy" className="hover:underline">Privacy Policy</Link>
+                <span>•</span>
+                <Link to="/terms-of-service" className="hover:underline">Terms of Service</Link>
+              </div>
+              <p>© {new Date().getFullYear()} Health Helpers. All rights reserved.</p>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Social Proof Popup - show after health questions (step 5+) */}
+      {['gender', 'tobacco', 'spouse', 'age', 'zip', 'contact', 'loading', 'qualified'].includes(step) && (
+        <SocialProofPopup delayMs={5000} visibleMs={4000} />
+      )}
 
     </div>
   );
