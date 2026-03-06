@@ -467,7 +467,7 @@ const trackTikTokScheduleEventServer = async (formData: FormData, quoteResult: Q
 
 const MedicareSupplementAppointment = () => {
   const navigate = useNavigate();
-  const [variant] = useState(() => getVariant('suppappt_hero_v1'));
+  
   const [step, setStep] = useState<FunnelStep>("landing");
   const [disqualReason, setDisqualReason] = useState<DisqualReason | null>(null);
   const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
