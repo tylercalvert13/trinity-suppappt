@@ -1081,7 +1081,7 @@ const MedicareSupplementAppointment = () => {
                 size="lg"
                 className="bg-green-500 hover:bg-green-600 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
               >
-                {variant === 'B' ? 'See How Much You\'ll Save' : 'Check If You Qualify'}
+                Check If You Qualify
               </Button>
               <div className="mt-6 text-sm text-blue-200">
                 <span>By continuing, you agree to our </span>
