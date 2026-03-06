@@ -1739,80 +1739,106 @@ const MedicareSupplementAppointment = () => {
           {/* Qualified/Results Screen - Agent Assignment */}
           {step === "qualified" && quoteResult && assignedAgent && (
             <div className="space-y-6">
-              {/* Success Header */}
-              <div ref={resultsHeaderRef} className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="h-10 w-10 text-green-600" />
-                </div>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                  Great News, {formData.firstName}!
-                </h1>
-                <p className="text-lg md:text-xl text-foreground mb-1">
-                  You Qualify for {formData.plan} at
-                </p>
-                <p className="text-3xl md:text-4xl font-bold text-green-600">
-                  ${quoteResult.rate.toFixed(2)}/month
-                </p>
-              </div>
-
-              {/* Agent Assignment Card */}
-              <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center space-y-4">
-                <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                  <Phone className="h-7 w-7 text-primary" />
-                </div>
-                <p className="text-lg md:text-xl text-foreground leading-relaxed">
-                  Your Medicare Specialist <span className="font-bold">{assignedAgent.firstName}</span> is reviewing your savings and will call you shortly from
-                </p>
-                <a
-                  href={assignedAgent.telLink}
-                  className="block text-3xl md:text-4xl font-bold text-primary hover:underline"
-                  onClick={() => trackEvent({ eventType: 'agent_phone_clicked', metadata: { agent: assignedAgent.firstName } })}
-                >
-                  {assignedAgent.phone}
-                </a>
-                <p className="text-base text-muted-foreground font-medium">
-                  📱 Save this number so you recognize our call!
-                </p>
-              </div>
-
-              {/* Call Agent Directly */}
-              <div className="bg-green-50 border-2 border-green-200 rounded-xl p-5 text-center space-y-3">
-                <p className="text-lg font-semibold text-foreground">
-                  Call {assignedAgent.firstName} directly:
-                </p>
-                <a
-                  href={assignedAgent.telLink}
-                  className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white text-xl md:text-2xl font-bold rounded-xl px-8 py-4 transition-colors"
-                  onClick={() => trackEvent({ eventType: 'call_directly_clicked', metadata: { agent: assignedAgent.firstName } })}
-                >
-                  <Phone className="h-6 w-6" />
-                  {assignedAgent.phone}
-                </a>
-              </div>
-
-              {/* Trust Elements */}
-              <div className="bg-white rounded-xl p-4 border">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    <span>Licensed Medicare agents</span>
+              {/* Main Consolidated Card */}
+              <div ref={resultsHeaderRef} className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                
+                {/* Section 1 — Success + Rate + Savings */}
+                <div className="p-6 md:p-8 text-center">
+                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    <span>No obligation consultation</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    <span>Same coverage, lower price</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    <span>Free comparison of all carriers</span>
+                  <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                    Great News, {formData.firstName}!
+                  </h1>
+                  <p className="text-base text-muted-foreground mb-1">
+                    You qualify for {formData.plan} at
+                  </p>
+                  <p className="text-3xl md:text-4xl font-bold text-green-600 mb-3">
+                    ${quoteResult.rate.toFixed(2)}<span className="text-lg font-normal text-muted-foreground">/month</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    You're paying <span className="line-through">${parseFloat(formData.currentPayment).toFixed(2)}</span> → <span className="font-semibold text-green-600">${quoteResult.rate.toFixed(2)}/mo</span>
+                  </p>
+
+                  {/* Savings Row */}
+                  <div className="flex justify-center gap-6 mt-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Monthly Savings</p>
+                      <p className="text-2xl md:text-3xl font-bold text-green-600">${quoteResult.monthlySavings.toFixed(2)}</p>
+                    </div>
+                    <div className="w-px bg-border"></div>
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Annual Savings</p>
+                      <p className="text-2xl md:text-3xl font-bold text-green-600">${quoteResult.annualSavings.toFixed(2)}</p>
+                    </div>
                   </div>
                 </div>
+
+                <div className="h-px bg-border mx-6"></div>
+
+                {/* Section 2 — Agent Assignment */}
+                <div className="p-6 md:p-8 text-center space-y-3">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                    <Phone className="h-6 w-6 text-primary" />
+                  </div>
+                  <p className="text-lg text-foreground leading-relaxed">
+                    Your Medicare Specialist <span className="font-bold">{assignedAgent.firstName}</span> is reviewing your savings and will call you shortly from
+                  </p>
+                  <a
+                    href={assignedAgent.telLink}
+                    className="block text-3xl md:text-4xl font-bold text-primary hover:underline"
+                    onClick={() => trackEvent({ eventType: 'agent_phone_clicked', metadata: { agent: assignedAgent.firstName } })}
+                  >
+                    {assignedAgent.phone}
+                  </a>
+                  <p className="text-sm text-muted-foreground font-medium">
+                    📱 Save this number so you recognize our call!
+                  </p>
+                </div>
+
+                <div className="h-px bg-border mx-6"></div>
+
+                {/* Section 3 — Call Directly CTA */}
+                <div className="p-6 text-center">
+                  <p className="text-base font-semibold text-foreground mb-3">
+                    Call {assignedAgent.firstName} directly:
+                  </p>
+                  <a
+                    href={assignedAgent.telLink}
+                    className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white text-xl md:text-2xl font-bold rounded-xl px-8 py-4 transition-colors"
+                    onClick={() => trackEvent({ eventType: 'call_directly_clicked', metadata: { agent: assignedAgent.firstName } })}
+                  >
+                    <Phone className="h-6 w-6" />
+                    {assignedAgent.phone}
+                  </a>
+                </div>
+
+                <div className="h-px bg-border mx-6"></div>
+
+                {/* Section 4 — Trust Badges (inline) */}
+                <div className="p-5">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span>Licensed Medicare agents</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span>No obligation consultation</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span>Same coverage, lower price</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span>Free comparison of all carriers</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Testimonials */}
+              {/* Testimonials (outside main card) */}
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-muted-foreground text-center uppercase tracking-wide">What Others Are Saying</h3>
                 {[

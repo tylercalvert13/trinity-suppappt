@@ -1,38 +1,16 @@
 
 
-# Redesign Thank-You Page: Add Savings + Reduce Box Clutter
+# Add More Space Between Form and Footer on /suppappt
 
-## Problems
-1. No savings info displayed (monthly/annual savings missing)
-2. Too many separate bordered/shadowed containers — looks choppy
+## Problem
+The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
 
-## Design Approach
-Consolidate into a single flowing card with sections separated by subtle dividers instead of individual boxes. Mobile-first, large readable text.
+## Solution
+Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
 
-## New Layout (single `bg-white rounded-2xl shadow-xl` container)
+## Technical Change
 
-**Section 1 — Success + Rate + Savings**
-- Green checkmark + "Great News, {firstName}!"
-- Rate: `$XX.XX/month` (large, green, bold)
-- Thin divider
-- Savings row: two side-by-side stats — Monthly Savings `$XX/mo` and Annual Savings `$XXX/yr` in green, with labels above
-- Current payment shown as struck-through for context: "You're paying ~~$XXX~~ → $XX.XX"
+**File: `src/pages/MedicareSupplementAppointment.tsx`**
+- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
 
-**Section 2 — Agent Assignment (separated by divider, same card)**
-- Phone icon + "Your Medicare Specialist **{Name}** is reviewing your savings and will call you shortly from"
-- Large bold phone number (clickable tel: link)
-- "Save this number so you recognize our call!"
-
-**Section 3 — Call Directly CTA (still inside the card)**
-- Green button: "Call {Name} directly: (XXX) XXX-XXXX"
-
-**Section 4 — Trust badges (inline, no box)**
-- 4 checkmark items in a 2x2 grid, no separate card border — just within the main card
-
-**Outside the card:**
-- Testimonials stay as individual small cards (these make sense as separate items)
-- Disclaimer text
-
-## File Changed
-`src/pages/MedicareSupplementAppointment.tsx` — lines 1740-1839 rewritten. No new files, no backend changes.
-
+One line change, no logic affected.
