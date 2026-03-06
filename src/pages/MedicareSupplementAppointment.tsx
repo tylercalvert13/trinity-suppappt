@@ -1072,13 +1072,7 @@ const MedicareSupplementAppointment = () => {
             See your personalized rate in under 2 minutes. No obligation. No pressure.
           </p>
 
-          {variant === 'B' && (
-            <p className="text-base text-blue-100 mb-8 max-w-xl mx-auto font-medium">
-              Answer a few quick questions about your current plan and we'll pull your personalized rate — it takes less than 2 minutes.
-            </p>
-          )}
-
-          {variant === 'A' && <div className="mb-8" />}
+          <div className="mb-8" />
 
           {step === "landing" && (
             <>
