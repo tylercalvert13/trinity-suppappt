@@ -29,9 +29,31 @@ declare global {
 // Question steps that should trigger auto-scroll
 const QUESTION_STEPS = ['plan', 'payment', 'care', 'treatment', 'medications', 'gender', 'tobacco', 'spouse', 'age', 'zip', 'contact'];
 
-// Outbound call number for this funnel
-const PHONE_NUMBER = "(201) 426-9898";
-const PHONE_TEL = "tel:+12014269898";
+// Agent data for speed-to-lead round-robin assignment
+interface Agent {
+  name: string;
+  firstName: string;
+  phone: string;
+  telLink: string;
+  ghlUserId: string;
+  states: string[]; // empty = all states (for future state-based filtering)
+}
+
+const AGENTS: Agent[] = [
+  { name: 'Maria Castro', firstName: 'Maria', phone: '(908) 224-5410', telLink: 'tel:+19082245410', ghlUserId: 'xh3zAJstdrOjv6G60sR6', states: [] },
+  { name: 'Claude Washington', firstName: 'Claude', phone: '(908) 498-9806', telLink: 'tel:+19084989806', ghlUserId: 'ABUX6hMZHC1sxkTg33T8', states: [] },
+  { name: 'Jerome Hinds', firstName: 'Jerome', phone: '(908) 681-8962', telLink: 'tel:+19086818962', ghlUserId: 'nVHKSQneg56OHykfIvi8', states: [] },
+  { name: 'Rosa Silva', firstName: 'Rosa', phone: '(908) 829-9820', telLink: 'tel:+19088299820', ghlUserId: 'GHG8mhKx8321E3EzVNQj', states: [] },
+  { name: 'Tiyanna Alexander', firstName: 'Tiyanna', phone: '(908) 830-3039', telLink: 'tel:+19088303039', ghlUserId: 'y48XmZvsa1HGzQv4ewXW', states: [] },
+  { name: 'Jay Ortega', firstName: 'Jay', phone: '(908) 987-2783', telLink: 'tel:+19089872783', ghlUserId: 'dXRwG0TzNKEnlkY9RuzO', states: [] },
+];
+
+function getNextAgent(): Agent {
+  const key = 'suppappt_agent_index';
+  const idx = parseInt(localStorage.getItem(key) || '0', 10) % AGENTS.length;
+  localStorage.setItem(key, String((idx + 1) % AGENTS.length));
+  return AGENTS[idx];
+}
 
 // Contact form validation schema
 const contactSchema = z.object({
