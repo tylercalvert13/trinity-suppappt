@@ -1736,8 +1736,8 @@ const MedicareSupplementAppointment = () => {
             </div>
           )}
 
-          {/* Qualified/Results Screen - Appointment Booking Widget */}
-          {step === "qualified" && quoteResult && (
+          {/* Qualified/Results Screen - Agent Assignment */}
+          {step === "qualified" && quoteResult && assignedAgent && (
             <div className="space-y-6">
               {/* Success Header */}
               <div ref={resultsHeaderRef} className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
@@ -1755,67 +1755,40 @@ const MedicareSupplementAppointment = () => {
                 </p>
               </div>
 
-              {/* Book Now CTA Button */}
-              <Button
-                onClick={() => {
-                  scrollToBookingWidget();
-                  trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'header_book_now_clicked' } });
-                }}
-                className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-xl font-semibold rounded-xl"
-              >
-                Book My Free Call Now
-              </Button>
-
-              {/* Lock In Rate CTA - Clickable */}
-              <button
-                onClick={() => {
-                  scrollToBookingWidget();
-                  trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'amber_cta_clicked' } });
-                }}
-                className="w-full bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-2 text-amber-800 mb-3">
-                  <Clock className="h-5 w-5" />
-                  <span className="font-semibold">Rate Reserved — 15 Minutes</span>
+              {/* Agent Assignment Card */}
+              <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center space-y-4">
+                <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                  <Phone className="h-7 w-7 text-primary" />
                 </div>
-                <div className="mb-3">
-                  <p className="text-2xl font-bold text-amber-700">
-                    ${quoteResult.monthlySavings.toFixed(2)}/month
-                  </p>
-                  <p className="text-sm text-muted-foreground">in savings</p>
-                </div>
-                <p className="text-base text-foreground">
-                  Tap to book your call →
+                <p className="text-lg md:text-xl text-foreground leading-relaxed">
+                  Your Medicare Specialist <span className="font-bold">{assignedAgent.firstName}</span> is reviewing your savings and will call you shortly from
                 </p>
-                <div className="mt-3 flex justify-center">
-                  <ChevronDown className="h-6 w-6 text-amber-600 animate-bounce" />
-                </div>
-              </button>
+                <a
+                  href={assignedAgent.telLink}
+                  className="block text-3xl md:text-4xl font-bold text-primary hover:underline"
+                  onClick={() => trackEvent({ eventType: 'agent_phone_clicked', metadata: { agent: assignedAgent.firstName } })}
+                >
+                  {assignedAgent.phone}
+                </a>
+                <p className="text-base text-muted-foreground font-medium">
+                  📱 Save this number so you recognize our call!
+                </p>
+              </div>
 
-              {/* Appointment Booking Widget */}
-              <AppointmentBookingWidget
-                firstName={formData.firstName}
-                lastName={formData.lastName}
-                phone={formData.phone}
-                email={formData.email}
-                quotedPremium={quoteResult.rate}
-                monthlySavings={quoteResult.monthlySavings}
-                planType={formData.plan}
-                userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
-                userState={getStateFromZip(formData.zipCode)}
-                onTrackEvent={(params) => {
-                  trackEvent(params);
-                  if (params.eventType === 'booking_completed') {
-                    trackFacebookAppointmentEvent(formData, quoteResult);
-                    trackTikTokScheduleEvent(formData, quoteResult);
-                    const tiktokScheduleEventId = generateEventId();
-                    trackTikTokScheduleEventServer(formData, quoteResult, tiktokScheduleEventId);
-                  }
-                }}
-                autoSelectFirst={false}
-                onSlotChange={handleSlotChange}
-                widgetRef={bookingWidgetRef}
-              />
+              {/* Call Agent Directly */}
+              <div className="bg-green-50 border-2 border-green-200 rounded-xl p-5 text-center space-y-3">
+                <p className="text-lg font-semibold text-foreground">
+                  Call {assignedAgent.firstName} directly:
+                </p>
+                <a
+                  href={assignedAgent.telLink}
+                  className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white text-xl md:text-2xl font-bold rounded-xl px-8 py-4 transition-colors"
+                  onClick={() => trackEvent({ eventType: 'call_directly_clicked', metadata: { agent: assignedAgent.firstName } })}
+                >
+                  <Phone className="h-6 w-6" />
+                  {assignedAgent.phone}
+                </a>
+              </div>
 
               {/* Trust Elements */}
               <div className="bg-white rounded-xl p-4 border">
@@ -1865,58 +1838,6 @@ const MedicareSupplementAppointment = () => {
               </p>
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Spacer - reduced to push widget higher */}
-      <div className="h-64 md:h-96"></div>
-
-      {/* Footer */}
-      <footer className="py-8 md:py-12 bg-gray-50">
-        <div className="max-w-3xl mx-auto px-4">
-          <div className="text-center text-xs text-muted-foreground space-y-4">
-            <p>
-              This is a free rate comparison service. We do not charge fees. By calling, you consent to speak with a licensed insurance agent about Medicare Supplement insurance.
-            </p>
-            <p>
-              Health Helpers is not connected with or endorsed by the U.S. government or the federal Medicare program. Medicare Supplement insurance is sold by private insurance companies.
-            </p>
-            <p>
-              Quoted rates are estimates based on the information provided. Actual rates may vary based on underwriting approval and other factors.
-            </p>
-            <div className="pt-4 border-t flex flex-col items-center gap-2">
-              <div className="flex items-center gap-4">
-                <Link to="/privacy-policy" className="hover:underline">Privacy Policy</Link>
-                <span>•</span>
-                <Link to="/terms-of-service" className="hover:underline">Terms of Service</Link>
-              </div>
-              <p>© {new Date().getFullYear()} Health Helpers. All rights reserved.</p>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Exit Intent Modal - only show when qualified */}
-      {step === "qualified" && quoteResult && (
-        <ExitIntentModal
-          monthlySavings={quoteResult.monthlySavings}
-          onBookClick={scrollToBookingWidget}
-        />
-      )}
-
-      {/* Social Proof Popup - show after health questions (step 5+) */}
-      {['gender', 'tobacco', 'spouse', 'age', 'zip', 'contact', 'loading', 'qualified'].includes(step) && (
-        <SocialProofPopup delayMs={5000} visibleMs={4000} />
-      )}
-
-      {/* Sticky Floating CTA - mobile only, when qualified */}
-      {step === "qualified" && quoteResult && (
-        <StickyBookingCTA
-          targetRef={bookingWidgetRef}
-          selectedTime={selectedTimeDisplay || undefined}
-          dayLabel={selectedDayLabel || undefined}
-        />
-      )}
 
     </div>
   );
