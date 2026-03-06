@@ -64,6 +64,12 @@ serve(async (req) => {
       // Timezone (IANA format, e.g., "America/New_York")
       timezone: data.timezone || null,
       
+      // Agent assignment (speed-to-lead)
+      assigned_agent_user_id: data.assigned_agent_user_id || null,
+      assigned_agent_name: data.assigned_agent_name || null,
+      assigned_agent_phone: data.assigned_agent_phone || null,
+      lead_state: data.lead_state || null,
+      
       // Metadata
       timestamp: new Date().toISOString(),
       source: "Health Helpers Quote Funnel",

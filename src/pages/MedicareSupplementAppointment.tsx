@@ -5,19 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Clock, ChevronDown, Lock, Star } from 'lucide-react';
+import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Phone, Lock, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 
-import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
 import { useQuoteWarmup } from '@/hooks/useQuoteWarmup';
 import { z } from 'zod';
-import { AppointmentBookingWidget } from '@/components/AppointmentBookingWidget';
 import { getStateFromZip } from '@/lib/zipToState';
-import { toast } from 'sonner';
-import { ExitIntentModal } from '@/components/ExitIntentModal';
 import { SocialProofPopup } from '@/components/SocialProofPopup';
-import { StickyBookingCTA } from '@/components/StickyBookingCTA';
 import { QuoteLoadingProgress } from '@/components/QuoteLoadingProgress';
 import { initAdvancedMatching, trackPixelEvent } from '@/lib/facebookPixel';
 
@@ -34,9 +29,31 @@ declare global {
 // Question steps that should trigger auto-scroll
 const QUESTION_STEPS = ['plan', 'payment', 'care', 'treatment', 'medications', 'gender', 'tobacco', 'spouse', 'age', 'zip', 'contact'];
 
-// Outbound call number for this funnel
-const PHONE_NUMBER = "(201) 426-9898";
-const PHONE_TEL = "tel:+12014269898";
+// Agent data for speed-to-lead round-robin assignment
+interface Agent {
+  name: string;
+  firstName: string;
+  phone: string;
+  telLink: string;
+  ghlUserId: string;
+  states: string[]; // empty = all states (for future state-based filtering)
+}
+
+const AGENTS: Agent[] = [
+  { name: 'Maria Castro', firstName: 'Maria', phone: '(908) 224-5410', telLink: 'tel:+19082245410', ghlUserId: 'xh3zAJstdrOjv6G60sR6', states: [] },
+  { name: 'Claude Washington', firstName: 'Claude', phone: '(908) 498-9806', telLink: 'tel:+19084989806', ghlUserId: 'ABUX6hMZHC1sxkTg33T8', states: [] },
+  { name: 'Jerome Hinds', firstName: 'Jerome', phone: '(908) 681-8962', telLink: 'tel:+19086818962', ghlUserId: 'nVHKSQneg56OHykfIvi8', states: [] },
+  { name: 'Rosa Silva', firstName: 'Rosa', phone: '(908) 829-9820', telLink: 'tel:+19088299820', ghlUserId: 'GHG8mhKx8321E3EzVNQj', states: [] },
+  { name: 'Tiyanna Alexander', firstName: 'Tiyanna', phone: '(908) 830-3039', telLink: 'tel:+19088303039', ghlUserId: 'y48XmZvsa1HGzQv4ewXW', states: [] },
+  { name: 'Jay Ortega', firstName: 'Jay', phone: '(908) 987-2783', telLink: 'tel:+19089872783', ghlUserId: 'dXRwG0TzNKEnlkY9RuzO', states: [] },
+];
+
+function getNextAgent(): Agent {
+  const key = 'suppappt_agent_index';
+  const idx = parseInt(localStorage.getItem(key) || '0', 10) % AGENTS.length;
+  localStorage.setItem(key, String((idx + 1) % AGENTS.length));
+  return AGENTS[idx];
+}
 
 // Contact form validation schema
 const contactSchema = z.object({
@@ -476,15 +493,11 @@ const MedicareSupplementAppointment = () => {
   const [error, setError] = useState<string | null>(null);
   const funnelRef = useRef<HTMLDivElement>(null);
   const questionContainerRef = useRef<HTMLDivElement>(null);
-  const bookingWidgetRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
   const resultsHeaderRef = useRef<HTMLDivElement>(null);
   const [detectedState, setDetectedState] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
-  const [autoScrollDone, setAutoScrollDone] = useState(false);
-  const [toastShown, setToastShown] = useState(false);
-  const [selectedDayLabel, setSelectedDayLabel] = useState<string | null>(null);
-  const [selectedTimeDisplay, setSelectedTimeDisplay] = useState<string | null>(null);
+  const [assignedAgent, setAssignedAgent] = useState<Agent | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     plan: '',
@@ -509,8 +522,7 @@ const MedicareSupplementAppointment = () => {
 
   const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt');
   
-  // Warmup the calendar edge function early to prevent cold starts
-  useCalendarWarmup();
+  // No calendar warmup needed — using speed-to-lead agent assignment
   
   // Warmup the quote API to pre-cache CSG token
   useQuoteWarmup();
@@ -535,56 +547,7 @@ const MedicareSupplementAppointment = () => {
     }
   }, [step]);
 
-  // Auto-scroll to booking widget 5 seconds after qualification
-  useEffect(() => {
-    if (step === "qualified" && quoteResult && !autoScrollDone) {
-      const timer = setTimeout(() => {
-        bookingWidgetRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
-        });
-        setAutoScrollDone(true);
-        // Track auto-scroll trigger
-        trackEvent({ 
-          eventType: 'conversion_trigger', 
-          metadata: { trigger: 'auto_scroll' }
-        });
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [step, quoteResult, autoScrollDone, trackEvent]);
-
-  // Urgency toast 10 seconds after qualification
-  useEffect(() => {
-    if (step === "qualified" && quoteResult && !toastShown) {
-      const timer = setTimeout(() => {
-        toast("⏰ Your rate is reserved — pick a time to lock it in", {
-          duration: 5000,
-        });
-        setToastShown(true);
-        // Track urgency toast trigger
-        trackEvent({ 
-          eventType: 'conversion_trigger', 
-          metadata: { trigger: 'urgency_toast' }
-        });
-      }, 10000);
-      return () => clearTimeout(timer);
-    }
-  }, [step, quoteResult, toastShown, trackEvent]);
-
-  // Callback to scroll to booking widget (for exit intent modal)
-  const scrollToBookingWidget = useCallback(() => {
-    bookingWidgetRef.current?.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'start' 
-    });
-  }, []);
-
-  // Handle slot change from booking widget
-  const handleSlotChange = useCallback((dayLabel: string | null, timeDisplay: string | null) => {
-    setSelectedDayLabel(dayLabel);
-    setSelectedTimeDisplay(timeDisplay);
-  }, []);
+  // No auto-scroll or urgency toast — agent calls the lead directly
 
   // Detect user's state via IP geolocation on mount
   useEffect(() => {
@@ -929,19 +892,23 @@ const MedicareSupplementAppointment = () => {
       setQuoteResult(data);
       await saveSubmission("success", undefined, data);
       
+      // Assign agent via round-robin
+      const agent = getNextAgent();
+      setAssignedAgent(agent);
+      
+      // Resolve lead's state from zip code
+      const leadState = getStateFromZip(formData.zipCode);
+      
       // Get user's timezone from browser (IANA format for GHL)
       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
       // Capture TrustedForm certificate URL with robust detection + polling
       const getTrustedFormCertUrl = async (): Promise<string | null> => {
-        // Selectors TrustedForm commonly uses
         const selectors = [
           '#xxTrustedFormCertUrl_0',
           '#xxTrustedFormCertUrl',
           'input[name="xxTrustedFormCertUrl"]',
         ];
-        
-        // Poll up to 2 seconds (20 * 100ms) for the value to be populated
         for (let attempt = 0; attempt < 20; attempt++) {
           for (const selector of selectors) {
             const el = document.querySelector(selector) as HTMLInputElement | null;
@@ -950,26 +917,16 @@ const MedicareSupplementAppointment = () => {
               return el.value;
             }
           }
-          // Wait 100ms before next attempt
           await new Promise(resolve => setTimeout(resolve, 100));
         }
-        
-        // Log diagnostics if we failed to get a cert
-        console.warn('[TrustedForm] Certificate URL not found after polling. Diagnostics:', {
-          scriptLoaded: !!document.getElementById('trustedform-script'),
-          hiddenInputsFound: selectors.map(s => ({
-            selector: s,
-            exists: !!document.querySelector(s),
-            value: (document.querySelector(s) as HTMLInputElement | null)?.value || null,
-          })),
-        });
+        console.warn('[TrustedForm] Certificate URL not found after polling.');
         return null;
       };
       
       const trustedFormCertUrl = await getTrustedFormCertUrl();
       
-      // Send lead to GHL webhook (suppappt-specific)
-      await supabase.functions.invoke('send-lead-webhook-suppappt', {
+      // Send lead to GHL webhook with agent assignment (fire-and-forget)
+      supabase.functions.invoke('send-lead-webhook-suppappt', {
         body: {
           ...formData,
           currentPayment: parseFloat(formData.currentPayment),
@@ -983,8 +940,12 @@ const MedicareSupplementAppointment = () => {
           page: 'suppappt',
           timezone: userTimezone,
           trustedFormCertUrl,
+          assigned_agent_user_id: agent.ghlUserId,
+          assigned_agent_name: agent.name,
+          assigned_agent_phone: agent.phone,
+          lead_state: leadState,
         }
-      });
+      }).catch(err => console.error('Webhook failed (non-critical):', err));
 
       // Track qualification and conversions
       trackQualification("qualified");
@@ -1633,8 +1594,8 @@ const MedicareSupplementAppointment = () => {
                   <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-red-800">{error}</p>
-                    <a href={PHONE_TEL} className="text-red-600 hover:underline font-medium">
-                      Call {PHONE_NUMBER} for immediate assistance
+                    <a href="tel:+19082245410" className="text-red-600 hover:underline font-medium">
+                      Call (908) 224-5410 for immediate assistance
                     </a>
                   </div>
                 </div>
@@ -1775,8 +1736,8 @@ const MedicareSupplementAppointment = () => {
             </div>
           )}
 
-          {/* Qualified/Results Screen - Appointment Booking Widget */}
-          {step === "qualified" && quoteResult && (
+          {/* Qualified/Results Screen - Agent Assignment */}
+          {step === "qualified" && quoteResult && assignedAgent && (
             <div className="space-y-6">
               {/* Success Header */}
               <div ref={resultsHeaderRef} className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center">
@@ -1794,67 +1755,40 @@ const MedicareSupplementAppointment = () => {
                 </p>
               </div>
 
-              {/* Book Now CTA Button */}
-              <Button
-                onClick={() => {
-                  scrollToBookingWidget();
-                  trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'header_book_now_clicked' } });
-                }}
-                className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-xl font-semibold rounded-xl"
-              >
-                Book My Free Call Now
-              </Button>
-
-              {/* Lock In Rate CTA - Clickable */}
-              <button
-                onClick={() => {
-                  scrollToBookingWidget();
-                  trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'amber_cta_clicked' } });
-                }}
-                className="w-full bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-2 text-amber-800 mb-3">
-                  <Clock className="h-5 w-5" />
-                  <span className="font-semibold">Rate Reserved — 15 Minutes</span>
+              {/* Agent Assignment Card */}
+              <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border text-center space-y-4">
+                <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                  <Phone className="h-7 w-7 text-primary" />
                 </div>
-                <div className="mb-3">
-                  <p className="text-2xl font-bold text-amber-700">
-                    ${quoteResult.monthlySavings.toFixed(2)}/month
-                  </p>
-                  <p className="text-sm text-muted-foreground">in savings</p>
-                </div>
-                <p className="text-base text-foreground">
-                  Tap to book your call →
+                <p className="text-lg md:text-xl text-foreground leading-relaxed">
+                  Your Medicare Specialist <span className="font-bold">{assignedAgent.firstName}</span> is reviewing your savings and will call you shortly from
                 </p>
-                <div className="mt-3 flex justify-center">
-                  <ChevronDown className="h-6 w-6 text-amber-600 animate-bounce" />
-                </div>
-              </button>
+                <a
+                  href={assignedAgent.telLink}
+                  className="block text-3xl md:text-4xl font-bold text-primary hover:underline"
+                  onClick={() => trackEvent({ eventType: 'agent_phone_clicked', metadata: { agent: assignedAgent.firstName } })}
+                >
+                  {assignedAgent.phone}
+                </a>
+                <p className="text-base text-muted-foreground font-medium">
+                  📱 Save this number so you recognize our call!
+                </p>
+              </div>
 
-              {/* Appointment Booking Widget */}
-              <AppointmentBookingWidget
-                firstName={formData.firstName}
-                lastName={formData.lastName}
-                phone={formData.phone}
-                email={formData.email}
-                quotedPremium={quoteResult.rate}
-                monthlySavings={quoteResult.monthlySavings}
-                planType={formData.plan}
-                userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
-                userState={getStateFromZip(formData.zipCode)}
-                onTrackEvent={(params) => {
-                  trackEvent(params);
-                  if (params.eventType === 'booking_completed') {
-                    trackFacebookAppointmentEvent(formData, quoteResult);
-                    trackTikTokScheduleEvent(formData, quoteResult);
-                    const tiktokScheduleEventId = generateEventId();
-                    trackTikTokScheduleEventServer(formData, quoteResult, tiktokScheduleEventId);
-                  }
-                }}
-                autoSelectFirst={false}
-                onSlotChange={handleSlotChange}
-                widgetRef={bookingWidgetRef}
-              />
+              {/* Call Agent Directly */}
+              <div className="bg-green-50 border-2 border-green-200 rounded-xl p-5 text-center space-y-3">
+                <p className="text-lg font-semibold text-foreground">
+                  Call {assignedAgent.firstName} directly:
+                </p>
+                <a
+                  href={assignedAgent.telLink}
+                  className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white text-xl md:text-2xl font-bold rounded-xl px-8 py-4 transition-colors"
+                  onClick={() => trackEvent({ eventType: 'call_directly_clicked', metadata: { agent: assignedAgent.firstName } })}
+                >
+                  <Phone className="h-6 w-6" />
+                  {assignedAgent.phone}
+                </a>
+              </div>
 
               {/* Trust Elements */}
               <div className="bg-white rounded-xl p-4 border">
@@ -1907,7 +1841,7 @@ const MedicareSupplementAppointment = () => {
         </div>
       </section>
 
-      {/* Spacer - reduced to push widget higher */}
+      {/* Spacer */}
       <div className="h-64 md:h-96"></div>
 
       {/* Footer */}
@@ -1935,26 +1869,9 @@ const MedicareSupplementAppointment = () => {
         </div>
       </footer>
 
-      {/* Exit Intent Modal - only show when qualified */}
-      {step === "qualified" && quoteResult && (
-        <ExitIntentModal
-          monthlySavings={quoteResult.monthlySavings}
-          onBookClick={scrollToBookingWidget}
-        />
-      )}
-
       {/* Social Proof Popup - show after health questions (step 5+) */}
       {['gender', 'tobacco', 'spouse', 'age', 'zip', 'contact', 'loading', 'qualified'].includes(step) && (
         <SocialProofPopup delayMs={5000} visibleMs={4000} />
-      )}
-
-      {/* Sticky Floating CTA - mobile only, when qualified */}
-      {step === "qualified" && quoteResult && (
-        <StickyBookingCTA
-          targetRef={bookingWidgetRef}
-          selectedTime={selectedTimeDisplay || undefined}
-          dayLabel={selectedDayLabel || undefined}
-        />
       )}
 
     </div>
