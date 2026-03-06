@@ -1,16 +1,20 @@
 
 
-# Add More Space Between Form and Footer on /suppappt
+# Update Testimonials + Enhance "Save Number" Section
 
-## Problem
-The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
+## Changes in `src/pages/MedicareSupplementAppointment.tsx`
 
-## Solution
-Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
+### 1. Update testimonial copy (lines 1845-1847)
+Replace the three testimonials with the STL-aligned versions:
+- Patricia M.: "Got a call within 30 seconds. Maria was friendly, no pressure, and I'm saving $127/month on the same Plan G coverage."
+- Robert K.: "I was skeptical but the whole thing took 2 minutes. Got a call right away, spoke to a licensed agent, and cut my premium by $89/month."
+- Mary S.: "So easy! Filled out the form, got a call immediately, and now I'm paying $156 less every month for the exact same benefits."
 
-## Technical Change
+### 2. Enhance "Save this number" section (lines 1794-1797)
+- Make the text bolder/larger
+- Add a "Save to Contacts" button that downloads a `.vcf` (vCard) file with the assigned agent's first name, company "Health Helpers", and their phone number
+- Use the `UserPlus` icon from lucide-react on the button
+- Reuse the same vCard download pattern already in the codebase (`BookingConfirmationCard.tsx` has `downloadContactCard()`) but personalize it with the assigned agent's name and number
 
-**File: `src/pages/MedicareSupplementAppointment.tsx`**
-- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
+### No new files, no backend changes.
 
-One line change, no logic affected.
