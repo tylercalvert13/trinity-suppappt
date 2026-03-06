@@ -1,16 +1,20 @@
 
 
-# Add More Space Between Form and Footer on /suppappt
+# End A/B Test: Make Variant A Permanent on /suppappt
 
-## Problem
-The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
-
-## Solution
-Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
-
-## Technical Change
+## What changes
 
 **File: `src/pages/MedicareSupplementAppointment.tsx`**
-- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
 
-One line change, no logic affected.
+1. **Remove the A/B test import and state** (lines 11, 470): Remove `getVariant` import and the `variant` state — no longer needed.
+
+2. **Remove Variant B copy block** (lines 1075-1079): Delete the conditional paragraph that only showed for Variant B ("Answer a few quick questions...").
+
+3. **Remove Variant A spacer conditional** (line 1081): Replace `{variant === 'A' && <div className="mb-8" />}` with just `<div className="mb-8" />` since it's always Variant A now.
+
+4. **Hardcode the CTA text** (line 1090): Change `{variant === 'B' ? 'See How Much You\'ll Save' : 'Check If You Qualify'}` to just `Check If You Qualify`.
+
+5. **Update funnel analytics variant** (wherever `variant` is passed to `useFunnelAnalytics`): Pass a static string like `'A'` or remove variant tracking.
+
+No new files. No database changes. Variant A's "Check If You Qualify" framing becomes the permanent experience for all visitors.
+
