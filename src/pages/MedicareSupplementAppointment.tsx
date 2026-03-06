@@ -892,19 +892,23 @@ const MedicareSupplementAppointment = () => {
       setQuoteResult(data);
       await saveSubmission("success", undefined, data);
       
+      // Assign agent via round-robin
+      const agent = getNextAgent();
+      setAssignedAgent(agent);
+      
+      // Resolve lead's state from zip code
+      const leadState = getStateFromZip(formData.zipCode);
+      
       // Get user's timezone from browser (IANA format for GHL)
       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
       // Capture TrustedForm certificate URL with robust detection + polling
       const getTrustedFormCertUrl = async (): Promise<string | null> => {
-        // Selectors TrustedForm commonly uses
         const selectors = [
           '#xxTrustedFormCertUrl_0',
           '#xxTrustedFormCertUrl',
           'input[name="xxTrustedFormCertUrl"]',
         ];
-        
-        // Poll up to 2 seconds (20 * 100ms) for the value to be populated
         for (let attempt = 0; attempt < 20; attempt++) {
           for (const selector of selectors) {
             const el = document.querySelector(selector) as HTMLInputElement | null;
@@ -913,26 +917,16 @@ const MedicareSupplementAppointment = () => {
               return el.value;
             }
           }
-          // Wait 100ms before next attempt
           await new Promise(resolve => setTimeout(resolve, 100));
         }
-        
-        // Log diagnostics if we failed to get a cert
-        console.warn('[TrustedForm] Certificate URL not found after polling. Diagnostics:', {
-          scriptLoaded: !!document.getElementById('trustedform-script'),
-          hiddenInputsFound: selectors.map(s => ({
-            selector: s,
-            exists: !!document.querySelector(s),
-            value: (document.querySelector(s) as HTMLInputElement | null)?.value || null,
-          })),
-        });
+        console.warn('[TrustedForm] Certificate URL not found after polling.');
         return null;
       };
       
       const trustedFormCertUrl = await getTrustedFormCertUrl();
       
-      // Send lead to GHL webhook (suppappt-specific)
-      await supabase.functions.invoke('send-lead-webhook-suppappt', {
+      // Send lead to GHL webhook with agent assignment (fire-and-forget)
+      supabase.functions.invoke('send-lead-webhook-suppappt', {
         body: {
           ...formData,
           currentPayment: parseFloat(formData.currentPayment),
@@ -946,8 +940,12 @@ const MedicareSupplementAppointment = () => {
           page: 'suppappt',
           timezone: userTimezone,
           trustedFormCertUrl,
+          assigned_agent_user_id: agent.ghlUserId,
+          assigned_agent_name: agent.name,
+          assigned_agent_phone: agent.phone,
+          lead_state: leadState,
         }
-      });
+      }).catch(err => console.error('Webhook failed (non-critical):', err));
 
       // Track qualification and conversions
       trackQualification("qualified");
