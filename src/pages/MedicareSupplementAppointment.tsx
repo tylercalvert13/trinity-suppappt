@@ -1757,7 +1757,7 @@ const MedicareSupplementAppointment = () => {
                     ${quoteResult.rate.toFixed(2)}<span className="text-lg font-normal text-muted-foreground">/month</span>
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    You're paying <span className="line-through">${formData.currentPayment.toFixed(2)}</span> → <span className="font-semibold text-green-600">${quoteResult.rate.toFixed(2)}/mo</span>
+                    You're paying <span className="line-through">${parseFloat(formData.currentPayment).toFixed(2)}</span> → <span className="font-semibold text-green-600">${quoteResult.rate.toFixed(2)}/mo</span>
                   </p>
 
                   {/* Savings Row */}
