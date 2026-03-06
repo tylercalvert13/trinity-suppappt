@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Phone, Lock, Star } from 'lucide-react';
+import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Phone, Lock, Star, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 
@@ -1791,9 +1791,28 @@ const MedicareSupplementAppointment = () => {
                   >
                     {assignedAgent.phone}
                   </a>
-                  <p className="text-sm text-muted-foreground font-medium">
+                  <p className="text-base text-foreground font-bold mt-2">
                     📱 Save this number so you recognize our call!
                   </p>
+                  <button
+                    onClick={() => {
+                      const vCard = `BEGIN:VCARD\nVERSION:3.0\nFN:${assignedAgent.firstName} (Health Helpers)\nORG:Health Helpers\nTEL;TYPE=CELL:${assignedAgent.phone.replace(/[^+\d]/g, '')}\nNOTE:Your Medicare Supplement Specialist\nEND:VCARD`;
+                      const blob = new Blob([vCard], { type: 'text/vcard' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${assignedAgent.firstName}-Health-Helpers.vcf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                      trackEvent({ eventType: 'save_contact_clicked', metadata: { agent: assignedAgent.firstName } });
+                    }}
+                    className="inline-flex items-center gap-2 mt-2 bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-sm rounded-xl px-5 py-2.5 transition-colors"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Save {assignedAgent.firstName} to Contacts
+                  </button>
                 </div>
 
                 <div className="h-px bg-border mx-6"></div>
@@ -1842,9 +1861,9 @@ const MedicareSupplementAppointment = () => {
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-muted-foreground text-center uppercase tracking-wide">What Others Are Saying</h3>
                 {[
-                  { name: 'Patricia M.', state: 'FL', text: "Scheduled my call in 30 seconds. The agent was friendly, no pressure, and I\u2019m saving $127/month on the same Plan G coverage.", savings: 127 },
-                  { name: 'Robert K.', state: 'TX', text: "I was skeptical but the whole thing took 2 minutes. Booked a call, spoke to a licensed agent, and cut my premium by $89/month.", savings: 89 },
-                  { name: 'Mary S.', state: 'OH', text: "So easy! I picked a time that worked for me, got a quick call, and now I\u2019m paying $156 less every month for the exact same benefits.", savings: 156 },
+                  { name: 'Patricia M.', state: 'FL', text: "Got a call within 30 seconds. Maria was friendly, no pressure, and I\u2019m saving $127/month on the same Plan G coverage.", savings: 127 },
+                  { name: 'Robert K.', state: 'TX', text: "I was skeptical but the whole thing took 2 minutes. Got a call right away, spoke to a licensed agent, and cut my premium by $89/month.", savings: 89 },
+                  { name: 'Mary S.', state: 'OH', text: "So easy! Filled out the form, got a call immediately, and now I\u2019m paying $156 less every month for the exact same benefits.", savings: 156 },
                 ].map((t, i) => (
                   <div key={i} className="bg-white rounded-xl p-4 border">
                     <div className="flex items-center gap-1 mb-2">
