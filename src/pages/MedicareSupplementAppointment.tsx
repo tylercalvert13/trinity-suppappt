@@ -1791,9 +1791,28 @@ const MedicareSupplementAppointment = () => {
                   >
                     {assignedAgent.phone}
                   </a>
-                  <p className="text-sm text-muted-foreground font-medium">
+                  <p className="text-base text-foreground font-bold mt-2">
                     📱 Save this number so you recognize our call!
                   </p>
+                  <button
+                    onClick={() => {
+                      const vCard = `BEGIN:VCARD\nVERSION:3.0\nFN:${assignedAgent.firstName} (Health Helpers)\nORG:Health Helpers\nTEL;TYPE=CELL:${assignedAgent.phone.replace(/[^+\d]/g, '')}\nNOTE:Your Medicare Supplement Specialist\nEND:VCARD`;
+                      const blob = new Blob([vCard], { type: 'text/vcard' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${assignedAgent.firstName}-Health-Helpers.vcf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                      trackEvent({ eventType: 'save_contact_clicked', metadata: { agent: assignedAgent.firstName } });
+                    }}
+                    className="inline-flex items-center gap-2 mt-2 bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-sm rounded-xl px-5 py-2.5 transition-colors"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Save {assignedAgent.firstName} to Contacts
+                  </button>
                 </div>
 
                 <div className="h-px bg-border mx-6"></div>
