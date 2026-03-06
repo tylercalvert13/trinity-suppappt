@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Clock, ChevronDown, Lock, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
-import { getVariant } from '@/lib/abTest';
+
 import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
 import { useQuoteWarmup } from '@/hooks/useQuoteWarmup';
 import { z } from 'zod';
