@@ -493,15 +493,11 @@ const MedicareSupplementAppointment = () => {
   const [error, setError] = useState<string | null>(null);
   const funnelRef = useRef<HTMLDivElement>(null);
   const questionContainerRef = useRef<HTMLDivElement>(null);
-  const bookingWidgetRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
   const resultsHeaderRef = useRef<HTMLDivElement>(null);
   const [detectedState, setDetectedState] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
-  const [autoScrollDone, setAutoScrollDone] = useState(false);
-  const [toastShown, setToastShown] = useState(false);
-  const [selectedDayLabel, setSelectedDayLabel] = useState<string | null>(null);
-  const [selectedTimeDisplay, setSelectedTimeDisplay] = useState<string | null>(null);
+  const [assignedAgent, setAssignedAgent] = useState<Agent | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     plan: '',
