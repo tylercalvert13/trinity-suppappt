@@ -902,8 +902,8 @@ const MedicareSupplementAppointment = () => {
       setQuoteResult(data);
       await saveSubmission("success", undefined, data);
       
-      // Assign agent via round-robin
-      const agent = getNextAgent();
+      // Assign agent via round-robin (server-side)
+      const agent = await getNextAgent();
       setAssignedAgent(agent);
       
       // Resolve lead's state from zip code
