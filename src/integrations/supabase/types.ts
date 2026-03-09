@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_round_robin: {
+        Row: {
+          current_index: number
+          id: string
+        }
+        Insert: {
+          current_index?: number
+          id?: string
+        }
+        Update: {
+          current_index?: number
+          id?: string
+        }
+        Relationships: []
+      }
       csg_api_tokens: {
         Row: {
           created_at: string
@@ -250,7 +265,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_next_agent_index: {
+        Args: { agent_count: number; funnel_id: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
