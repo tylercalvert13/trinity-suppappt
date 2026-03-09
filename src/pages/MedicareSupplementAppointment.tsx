@@ -48,11 +48,21 @@ const AGENTS: Agent[] = [
   { name: 'Jay Ortega', firstName: 'Jay', phone: '(908) 987-2783', telLink: 'tel:+19089872783', ghlUserId: 'dXRwG0TzNKEnlkY9RuzO', states: [] },
 ];
 
-function getNextAgent(): Agent {
-  const key = 'suppappt_agent_index';
-  const idx = parseInt(localStorage.getItem(key) || '0', 10) % AGENTS.length;
-  localStorage.setItem(key, String((idx + 1) % AGENTS.length));
-  return AGENTS[idx];
+async function getNextAgent(): Promise<Agent> {
+  try {
+    const { data, error } = await supabase.rpc('get_next_agent_index', {
+      funnel_id: 'suppappt',
+      agent_count: AGENTS.length,
+    });
+    if (error || data === null || data === undefined) {
+      console.error('Round-robin RPC error, falling back to random:', error);
+      return AGENTS[Math.floor(Math.random() * AGENTS.length)];
+    }
+    return AGENTS[data % AGENTS.length];
+  } catch (err) {
+    console.error('Round-robin fetch failed, falling back to random:', err);
+    return AGENTS[Math.floor(Math.random() * AGENTS.length)];
+  }
 }
 
 // Contact form validation schema
