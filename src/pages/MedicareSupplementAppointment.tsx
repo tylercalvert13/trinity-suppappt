@@ -550,7 +550,7 @@ const MedicareSupplementAppointment = () => {
   // Validation state
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isValidating, setIsValidating] = useState(false);
-  const [showFullConsent, setShowFullConsent] = useState(false);
+  
 
   const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt');
   
@@ -1582,37 +1582,18 @@ const MedicareSupplementAppointment = () => {
                   )}
                 </Button>
 
-                {/* Short consent one-liner + expandable full TCPA text */}
-                <p className="text-xs text-muted-foreground text-center mt-3 leading-relaxed">
-                  By clicking, you consent to be contacted about Medicare options.{' '}
-                  <button
-                    type="button"
-                    onClick={() => setShowFullConsent(!showFullConsent)}
-                    className="underline hover:text-foreground"
-                  >
-                    {showFullConsent ? 'Hide details' : 'Full disclosure ›'}
-                  </button>
-                </p>
-
-                {/* Full TCPA consent - always in DOM for TrustedForm, visually collapsed */}
-                <div 
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${showFullConsent ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
+                {/* Condensed TCPA consent - always visible below button */}
+                <p 
+                  className="text-[10px] text-muted-foreground text-center mt-3 leading-relaxed"
+                  data-tf-element-role="consent-language"
                 >
-                  <p 
-                    className="text-xs text-muted-foreground text-center leading-relaxed pt-2"
-                    data-tf-element-role="consent-language"
-                  >
-                    By clicking "<span data-tf-element-role="submit-text">See My New Rate</span>," I consent to receive calls, text messages, and emails 
-                    from <span data-tf-element-role="consent-advertiser-name">Health Helpers</span> regarding my Medicare inquiry. I understand these 
-                    communications may be made using automated telephone dialing systems, artificial intelligence, 
-                    and/or prerecorded messages. Message frequency varies. Message and data rates may apply. 
-                    I can opt out at any time by texting STOP or calling directly. This consent is not required 
-                    to receive a quote. I agree to the{' '}
-                    <Link to="/terms-of-service" className="underline hover:text-foreground">Terms of Service</Link>
-                    {' '}and{' '}
-                    <Link to="/privacy-policy" className="underline hover:text-foreground">Privacy Policy</Link>.
-                  </p>
-                </div>
+                  By clicking "<span data-tf-element-role="submit-text">See My New Rate</span>," I consent to calls, texts, and emails 
+                  from <span data-tf-element-role="consent-advertiser-name">Health Helpers</span> about Medicare, including via autodialer, AI, or prerecorded messages. 
+                  Msg &amp; data rates apply. Consent not required to purchase. Text STOP to opt out.{' '}
+                  <Link to="/terms-of-service" className="underline hover:text-foreground">Terms</Link>
+                  {' '}·{' '}
+                  <Link to="/privacy-policy" className="underline hover:text-foreground">Privacy</Link>
+                </p>
               </form>
             </div>
           </div>

@@ -1,23 +1,16 @@
 
 
-# Keep TCPA Consent Below the Submit Button
+# Add More Space Between Form and Footer on /suppappt
 
-## Change
+## Problem
+The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
 
-Place the condensed, always-visible TCPA consent **below** the submit button instead of above it. This is still legally compliant — the text is visible on the same screen, and the user can read it before or after clicking. Many high-converting lead forms (including the chat form in this project) use this pattern.
+## Solution
+Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
 
-## Layout Order
-1. Form fields (name, email, phone)
-2. **Submit button** ("See My New Rate")
-3. Condensed TCPA consent (tiny, always visible below)
-
-## Technical
+## Technical Change
 
 **File: `src/pages/MedicareSupplementAppointment.tsx`**
+- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
 
-- Remove `showFullConsent` state
-- Replace the current collapsed toggle consent with a single always-visible `<p>` placed **after** the submit button
-- Condensed text (~2 lines at `text-[10px] text-gray-400`):
-  > By clicking "See My New Rate," I consent to calls, texts, and emails from Health Helpers about Medicare, including via autodialer, AI, or prerecorded messages. Msg & data rates apply. Consent not required to purchase. Text STOP to opt out. Terms · Privacy
-- Keep all `data-tf-element-role` attributes intact (consent-language, submit-text, consent-advertiser-name)
-
+One line change, no logic affected.
