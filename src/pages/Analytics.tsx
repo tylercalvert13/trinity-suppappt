@@ -344,7 +344,7 @@ const Analytics = () => {
   const todaySuppquoteSubmissions = suppquoteSubmissions.filter(s => s.created_at >= todayStartISO && s.created_at < todayEndISO);
   const todayQuotes = todaySuppquoteSubmissions.filter(s => s.submission_type === 'success').length;
 
-  // 12-step funnel drop-off for suppquote
+  // 12-step funnel drop-off for suppquote (still uses 3 separate health screens)
   const funnelSteps = [
     { step: 'start', label: 'Landing' },
     { step: 'plan', label: 'Plan Selection' },
@@ -360,6 +360,22 @@ const Analytics = () => {
     { step: 'contact', label: 'Contact Info' },
     { step: 'loading', label: 'Loading Quote' },
     { step: 'qualified', label: 'Quote Displayed' },
+  ];
+
+  // 9-step funnel for suppappt (combined health check)
+  const suppapptFunnelSteps = [
+    { step: 'start', label: 'Landing' },
+    { step: 'plan', label: 'Plan Selection' },
+    { step: 'payment', label: 'Current Payment' },
+    { step: 'care', label: 'Health Check' },
+    { step: 'gender', label: 'Gender' },
+    { step: 'tobacco', label: 'Tobacco Use' },
+    { step: 'spouse', label: 'Spouse Coverage' },
+    { step: 'age', label: 'Age' },
+    { step: 'zip', label: 'Zip Code' },
+    { step: 'contact', label: 'Contact Info' },
+    { step: 'loading', label: 'Loading Quote' },
+    { step: 'qualified', label: 'Qualified' },
   ];
 
   // Helper: count unique sessions that reached a given step using events
@@ -410,7 +426,7 @@ const Analytics = () => {
     },
     { 
       name: 'DQ - Health Condition', 
-      value: disqualifiedSubmissions.filter(s => s.disqualification_reason?.includes('care') || s.disqualification_reason?.includes('condition')).length,
+      value: disqualifiedSubmissions.filter(s => s.disqualification_reason?.includes('care') || s.disqualification_reason?.includes('condition') || s.disqualification_reason === 'health').length,
       percentage: 0
     },
     { 
@@ -681,11 +697,12 @@ const Analytics = () => {
       ).map(e => e.session_id)
     ).size;
     
-    // Event-based funnel dropoff (uses step_change events for accurate counting)
-    const dropoffData = funnelSteps.map((funnelStep, index) => {
+    // Event-based funnel dropoff — suppappt uses consolidated health steps
+    const stepsForPage = page === 'suppappt' ? suppapptFunnelSteps : funnelSteps;
+    const dropoffData = stepsForPage.map((funnelStep, index) => {
       const count = countSessionsAtStep(pageEvents, pageSessions, funnelStep.step);
       const previousCount = index > 0 
-        ? countSessionsAtStep(pageEvents, pageSessions, funnelSteps[index - 1].step)
+        ? countSessionsAtStep(pageEvents, pageSessions, stepsForPage[index - 1].step)
         : pageSessions.length;
       
       const dropoff = previousCount > 0 ? ((previousCount - count) / previousCount) * 100 : 0;
