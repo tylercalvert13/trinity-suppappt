@@ -903,12 +903,12 @@ const MedicareSupplementAppointment = () => {
       setQuoteResult(data);
       await saveSubmission("success", undefined, data);
       
-      // Assign agent via round-robin (server-side)
-      const agent = await getNextAgent();
-      setAssignedAgent(agent);
-      
       // Resolve lead's state from zip code
       const leadState = getStateFromZip(formData.zipCode);
+      
+      // Assign agent via state-filtered round-robin (server-side)
+      const agent = await getNextAgent(leadState);
+      setAssignedAgent(agent);
       
       // Get user's timezone from browser (IANA format for GHL)
       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
