@@ -46,6 +46,7 @@ const AGENTS: Agent[] = [
   { name: 'Rosa Silva', firstName: 'Rosa', phone: '(908) 829-9820', telLink: 'tel:+19088299820', ghlUserId: 'GHG8mhKx8321E3EzVNQj', states: [] },
   { name: 'Tiyanna Alexander', firstName: 'Tiyanna', phone: '(908) 830-3039', telLink: 'tel:+19088303039', ghlUserId: 'y48XmZvsa1HGzQv4ewXW', states: [] },
   { name: 'Jay Ortega', firstName: 'Jay', phone: '(908) 987-2783', telLink: 'tel:+19089872783', ghlUserId: 'dXRwG0TzNKEnlkY9RuzO', states: [] },
+  { name: 'Joey Jimenez', firstName: 'Joey', phone: '(908) 829-6944', telLink: 'tel:+19088296944', ghlUserId: '6nCN3NDWyUugUCGz22hD', states: [] },
 ];
 
 async function getNextAgent(): Promise<Agent> {
