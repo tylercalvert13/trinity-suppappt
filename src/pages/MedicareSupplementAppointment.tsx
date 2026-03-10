@@ -27,7 +27,7 @@ declare global {
 }
 
 // Question steps that should trigger auto-scroll
-const QUESTION_STEPS = ['plan', 'payment', 'care', 'treatment', 'medications', 'gender', 'tobacco', 'spouse', 'age', 'zip', 'contact'];
+const QUESTION_STEPS = ['plan', 'payment', 'care', 'gender', 'tobacco', 'spouse', 'age', 'zip', 'contact'];
 
 // Agent data for speed-to-lead round-robin assignment
 interface Agent {
