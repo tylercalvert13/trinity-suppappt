@@ -550,7 +550,7 @@ const MedicareSupplementAppointment = () => {
   // Validation state
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isValidating, setIsValidating] = useState(false);
-  const [showFullConsent, setShowFullConsent] = useState(false);
+  
 
   const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt');
   
