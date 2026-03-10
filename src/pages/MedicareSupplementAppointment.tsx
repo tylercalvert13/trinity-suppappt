@@ -120,8 +120,6 @@ type FunnelStep =
   | "plan" 
   | "payment" 
   | "care" 
-  | "treatment" 
-  | "medications"
   | "gender"
   | "tobacco"
   | "spouse"
@@ -131,7 +129,7 @@ type FunnelStep =
   | "loading"
   | "qualified";
 
-type DisqualReason = "care" | "treatment" | "medications";
+type DisqualReason = "health";
 
 interface FormData {
   plan: string;
