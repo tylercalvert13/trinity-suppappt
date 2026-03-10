@@ -1,16 +1,44 @@
 
 
-# Add More Space Between Form and Footer on /suppappt
+# State-Based Agent Assignment for /suppappt
 
 ## Problem
-The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
+Currently, `getNextAgent()` picks the next agent in a simple round-robin without checking if that agent is licensed in the lead's state. This could assign leads to unlicensed agents.
 
 ## Solution
-Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
+Filter the `AGENTS` array by the lead's state before picking one via round-robin. Agents only receive leads from states they're licensed in.
 
-## Technical Change
+### Changes
 
-**File: `src/pages/MedicareSupplementAppointment.tsx`**
-- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
+**1. `src/pages/MedicareSupplementAppointment.tsx`**
 
-One line change, no logic affected.
+- **Populate `states` arrays** with each agent's licensed state abbreviations from the spreadsheet:
+  - Maria: AR, AZ, DE, GA, IA, KY, LA, MO, NC, NE, NJ, OH, OK, SC, TN, TX
+  - Tiyanna: AL, AR, AZ, DE, FL, GA, IA, KY, MI, MO, MS, NC, NE, NJ, OH, OK, PA, SC, TN, TX
+  - Claude: AL, AR, AZ, DE, FL, GA, IA, IL, KY, LA, ME, MI, MO, MS, NC, NE, NJ, NM, NV, OH, OK, PA, SC, TN, TX, WI, WV
+  - Jerome: AR, AZ, FL, GA, MO, NC, NE, NJ, OH, OK, SC, TN, TX
+  - Rosa: AL, AR, AZ, DE, IA, IL, KY, LA, MO, MS, NC, NE, NJ, NM, OH, OK, PA, SC, TN, TX, WI
+  - Jay: NJ, OH, TX
+  - Joey: AL, AZ, GA, LA, NC, NJ, OH, PA, SC, TN, TX, VA
+
+- **Add a state name-to-abbreviation map** (reverse of what exists in `zipToState.ts`) so we can convert `getStateFromZip()` output (e.g., "Texas") to abbreviation ("TX") for matching.
+
+- **Update `getNextAgent` to accept a state abbreviation**, filter agents to only those licensed in that state, then round-robin among the filtered set. The RPC call will use `funnel_id: 'suppappt-{stateAbbrev}'` (e.g., `suppappt-TX`) so each state gets its own even distribution counter.
+
+- **Fallback**: If no agents are licensed in the lead's state (or state can't be determined), fall back to random assignment from the full list.
+
+**2. Database change**: The `agent_round_robin` table and `get_next_agent_index` RPC already handle dynamic `funnel_id` values and will auto-insert new rows per state — no schema changes needed.
+
+### Logic flow
+```text
+Lead submits zip → getStateFromZip("75001") → "Texas"
+→ map to "TX"
+→ filter AGENTS where states includes "TX" → [Maria, Tiyanna, Claude, Jerome, Rosa, Jay, Joey] (all 7)
+→ RPC get_next_agent_index('suppappt-TX', 7) → returns index
+→ assign filtered[index]
+```
+
+For a state like VA, only Joey is licensed, so every VA lead goes to Joey.
+
+### No other files affected.
+
