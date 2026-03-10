@@ -1,14 +1,16 @@
 
 
-# Add Joey Jimenez to Agent Round-Robin
+# Add More Space Between Form and Footer on /suppappt
 
-## Change in `src/pages/MedicareSupplementAppointment.tsx`
+## Problem
+The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
 
-Add a new entry to the `AGENTS` array (line 49, before the closing bracket):
+## Solution
+Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
 
-```typescript
-{ name: 'Joey Jimenez', firstName: 'Joey', phone: '(908) 829-6944', telLink: 'tel:+19088296944', ghlUserId: '6nCN3NDWyUugUCGz22hD', states: [] },
-```
+## Technical Change
 
-No database changes needed — the `get_next_agent_index` RPC already uses `agent_count` dynamically from `AGENTS.length`, so it will automatically distribute across 7 agents.
+**File: `src/pages/MedicareSupplementAppointment.tsx`**
+- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
 
+One line change, no logic affected.
