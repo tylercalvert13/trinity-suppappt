@@ -697,11 +697,12 @@ const Analytics = () => {
       ).map(e => e.session_id)
     ).size;
     
-    // Event-based funnel dropoff (uses step_change events for accurate counting)
-    const dropoffData = funnelSteps.map((funnelStep, index) => {
+    // Event-based funnel dropoff — suppappt uses consolidated health steps
+    const stepsForPage = page === 'suppappt' ? suppapptFunnelSteps : funnelSteps;
+    const dropoffData = stepsForPage.map((funnelStep, index) => {
       const count = countSessionsAtStep(pageEvents, pageSessions, funnelStep.step);
       const previousCount = index > 0 
-        ? countSessionsAtStep(pageEvents, pageSessions, funnelSteps[index - 1].step)
+        ? countSessionsAtStep(pageEvents, pageSessions, stepsForPage[index - 1].step)
         : pageSessions.length;
       
       const dropoff = previousCount > 0 ? ((previousCount - count) / previousCount) * 100 : 0;
