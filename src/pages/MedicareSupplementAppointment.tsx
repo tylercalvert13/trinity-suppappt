@@ -27,7 +27,7 @@ declare global {
 }
 
 // Question steps that should trigger auto-scroll
-const QUESTION_STEPS = ['plan', 'payment', 'care', 'treatment', 'medications', 'gender', 'tobacco', 'spouse', 'age', 'zip', 'contact'];
+const QUESTION_STEPS = ['plan', 'payment', 'care', 'gender', 'tobacco', 'spouse', 'age', 'zip', 'contact'];
 
 // Agent data for speed-to-lead round-robin assignment
 interface Agent {
@@ -120,8 +120,6 @@ type FunnelStep =
   | "plan" 
   | "payment" 
   | "care" 
-  | "treatment" 
-  | "medications"
   | "gender"
   | "tobacco"
   | "spouse"
@@ -131,7 +129,7 @@ type FunnelStep =
   | "loading"
   | "qualified";
 
-type DisqualReason = "care" | "treatment" | "medications";
+type DisqualReason = "health";
 
 interface FormData {
   plan: string;
@@ -669,14 +667,14 @@ const MedicareSupplementAppointment = () => {
   };
 
   const getProgress = (): number => {
-    const steps: FunnelStep[] = ["plan", "payment", "care", "treatment", "medications", "gender", "tobacco", "spouse", "age", "zip", "contact"];
+    const steps: FunnelStep[] = ["plan", "payment", "care", "gender", "tobacco", "spouse", "age", "zip", "contact"];
     const currentIndex = steps.indexOf(step);
     if (currentIndex === -1) return 0;
     return Math.round(((currentIndex + 1) / steps.length) * 100);
   };
 
   const getStepNumber = (): number => {
-    const steps: FunnelStep[] = ["plan", "payment", "care", "treatment", "medications", "gender", "tobacco", "spouse", "age", "zip", "contact"];
+    const steps: FunnelStep[] = ["plan", "payment", "care", "gender", "tobacco", "spouse", "age", "zip", "contact"];
     return steps.indexOf(step) + 1;
   };
 
@@ -698,38 +696,10 @@ const MedicareSupplementAppointment = () => {
     setFormData(prev => ({ ...prev, careOrCondition: answer }));
     trackTikTokClickButton('care');
     if (answer === "yes") {
-      setDisqualReason("care");
-      trackQualification("disqualified", "care_or_condition");
-      saveSubmission("disqualified", "care_or_condition");
-      navigate("/disqualified?reason=care");
-      return;
-    }
-    setStep("treatment");
-    trackStepChange("treatment", answer);
-  };
-
-  const handleTreatmentAnswer = (answer: string) => {
-    setFormData(prev => ({ ...prev, recentTreatment: answer }));
-    trackTikTokClickButton('treatment');
-    if (answer === "yes") {
-      setDisqualReason("treatment");
-      trackQualification("disqualified", "recent_treatment");
-      saveSubmission("disqualified", "recent_treatment");
-      navigate("/disqualified?reason=treatment");
-      return;
-    }
-    setStep("medications");
-    trackStepChange("medications", answer);
-  };
-
-  const handleMedicationsAnswer = (answer: string) => {
-    setFormData(prev => ({ ...prev, medicationUse: answer }));
-    trackTikTokClickButton('medications');
-    if (answer === "yes") {
-      setDisqualReason("medications");
-      trackQualification("disqualified", "medication_use");
-      saveSubmission("disqualified", "medication_use");
-      navigate("/disqualified?reason=medications");
+      setDisqualReason("health");
+      trackQualification("disqualified", "health");
+      saveSubmission("disqualified", "health");
+      navigate("/disqualified?reason=health");
       return;
     }
     setStep("gender");
@@ -1113,7 +1083,7 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
@@ -1150,7 +1120,7 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
@@ -1193,12 +1163,12 @@ const MedicareSupplementAppointment = () => {
             </div>
           )}
 
-          {/* Care/Condition Question */}
+          {/* Quick Health Check - Combined Question */}
           {step === "care" && (
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
@@ -1214,180 +1184,47 @@ const MedicareSupplementAppointment = () => {
                 Quick Health Check
               </h2>
               <p className="text-lg md:text-xl text-muted-foreground mb-6">
-                Do any of these apply to you?
+                In the last 2 years, have any of these applied to you?
               </p>
               
               <ul className="text-foreground mb-8 space-y-3">
                 <li className="flex items-start gap-3 text-lg md:text-xl">
                   <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Nursing home or assisted living</span>
+                  <span>Cancer, heart attack, stroke, or heart surgery</span>
                 </li>
                 <li className="flex items-start gap-3 text-lg md:text-xl">
                   <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Need daily help with personal care</span>
+                  <span>Oxygen use, dialysis, or organ transplant</span>
                 </li>
                 <li className="flex items-start gap-3 text-lg md:text-xl">
                   <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Hospice or home health care</span>
+                  <span>Hospice, nursing home, or need daily care help</span>
                 </li>
                 <li className="flex items-start gap-3 text-lg md:text-xl">
                   <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Dementia or Alzheimer's</span>
+                  <span>Insulin or 3+ diabetes medications</span>
                 </li>
                 <li className="flex items-start gap-3 text-lg md:text-xl">
                   <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Use oxygen at home</span>
-                </li>
-                <li className="flex items-start gap-3 text-lg md:text-xl">
-                  <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Wheelchair-bound or bedridden</span>
+                  <span>Biologic injections (e.g., Humira, Enbrel)</span>
                 </li>
               </ul>
 
-              <RadioGroup className="space-y-4">
-                <div
-                  onClick={() => handleCareAnswer("yes")}
-                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
-                >
-                  <RadioGroupItem value="yes" id="care-yes" className="h-7 w-7 md:h-8 md:w-8" />
-                  <Label htmlFor="care-yes" className="text-xl md:text-2xl cursor-pointer flex-1">Yes</Label>
-                </div>
-                <div
+              <div className="space-y-4">
+                <Button
                   onClick={() => handleCareAnswer("no")}
-                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white text-lg md:text-xl py-6 h-auto rounded-xl"
                 >
-                  <RadioGroupItem value="no" id="care-no" className="h-7 w-7 md:h-8 md:w-8" />
-                  <Label htmlFor="care-no" className="text-xl md:text-2xl cursor-pointer flex-1">No</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          )}
-
-          {/* Recent Treatment Question */}
-          {step === "treatment" && (
-            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
-                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
-                </div>
-                <Progress value={getProgress()} className="h-2" />
+                  No, none of these apply to me
+                </Button>
+                <Button
+                  onClick={() => handleCareAnswer("yes")}
+                  variant="outline"
+                  className="w-full text-lg md:text-xl py-6 h-auto rounded-xl border-2"
+                >
+                  Yes, one or more applies
+                </Button>
               </div>
-              
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
-                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
-                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
-              </div>
-
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-                Recent Medical History
-              </h2>
-              <p className="text-lg md:text-xl text-muted-foreground mb-6">
-                In the last 2 years, have you had:
-              </p>
-              
-              <ul className="text-foreground mb-8 space-y-3">
-                <li className="flex items-start gap-3 text-lg md:text-xl">
-                  <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Cancer, heart attack, or stroke</span>
-                </li>
-                <li className="flex items-start gap-3 text-lg md:text-xl">
-                  <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Congestive heart failure (CHF) or COPD</span>
-                </li>
-                <li className="flex items-start gap-3 text-lg md:text-xl">
-                  <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Heart procedure: bypass, stent, or pacemaker</span>
-                </li>
-                <li className="flex items-start gap-3 text-lg md:text-xl">
-                  <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Kidney dialysis or organ transplant</span>
-                </li>
-                <li className="flex items-start gap-3 text-lg md:text-xl">
-                  <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>ALS, Parkinson's, or MS</span>
-                </li>
-              </ul>
-
-              <RadioGroup className="space-y-4">
-                <div
-                  onClick={() => handleTreatmentAnswer("yes")}
-                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
-                >
-                  <RadioGroupItem value="yes" id="treatment-yes" className="h-7 w-7 md:h-8 md:w-8" />
-                  <Label htmlFor="treatment-yes" className="text-xl md:text-2xl cursor-pointer flex-1">Yes</Label>
-                </div>
-                <div
-                  onClick={() => handleTreatmentAnswer("no")}
-                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
-                >
-                  <RadioGroupItem value="no" id="treatment-no" className="h-7 w-7 md:h-8 md:w-8" />
-                  <Label htmlFor="treatment-no" className="text-xl md:text-2xl cursor-pointer flex-1">No</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          )}
-
-          {/* Medications Question */}
-          {step === "medications" && (
-            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
-                  <span className="text-sm text-muted-foreground">{getProgress()}%</span>
-                </div>
-                <Progress value={getProgress()} className="h-2" />
-              </div>
-              
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Your info is secure</span>
-                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Licensed agents</span>
-                <span className="flex items-center gap-1"><Star className="h-3 w-3" /> A+ Rated carriers</span>
-              </div>
-
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-                Current Medications
-              </h2>
-              <p className="text-lg md:text-xl text-muted-foreground mb-6">
-                Do any of these apply to you?
-              </p>
-              
-              <ul className="text-foreground mb-8 space-y-3">
-                <li className="flex items-start gap-3 text-lg md:text-xl">
-                  <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Use insulin</span>
-                </li>
-                <li className="flex items-start gap-3 text-lg md:text-xl">
-                  <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Take 3+ diabetes medications</span>
-                </li>
-                <li className="flex items-start gap-3 text-lg md:text-xl">
-                  <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Daily prescription pain medicine (opioids)</span>
-                </li>
-                <li className="flex items-start gap-3 text-lg md:text-xl">
-                  <span className="text-blue-600 font-bold mt-0.5">•</span>
-                  <span>Biologic injections or infusions (e.g., Humira, Enbrel)</span>
-                </li>
-              </ul>
-
-              <RadioGroup className="space-y-4">
-                <div
-                  onClick={() => handleMedicationsAnswer("yes")}
-                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
-                >
-                  <RadioGroupItem value="yes" id="meds-yes" className="h-7 w-7 md:h-8 md:w-8" />
-                  <Label htmlFor="meds-yes" className="text-xl md:text-2xl cursor-pointer flex-1">Yes</Label>
-                </div>
-                <div
-                  onClick={() => handleMedicationsAnswer("no")}
-                  className="flex items-center space-x-4 p-5 md:p-6 border-2 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
-                >
-                  <RadioGroupItem value="no" id="meds-no" className="h-7 w-7 md:h-8 md:w-8" />
-                  <Label htmlFor="meds-no" className="text-xl md:text-2xl cursor-pointer flex-1">No</Label>
-                </div>
-              </RadioGroup>
             </div>
           )}
 
@@ -1396,7 +1233,7 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
@@ -1436,7 +1273,7 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
@@ -1476,7 +1313,7 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
@@ -1520,7 +1357,7 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
@@ -1562,7 +1399,7 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
@@ -1603,7 +1440,7 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
