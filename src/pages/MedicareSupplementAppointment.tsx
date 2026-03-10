@@ -667,14 +667,14 @@ const MedicareSupplementAppointment = () => {
   };
 
   const getProgress = (): number => {
-    const steps: FunnelStep[] = ["plan", "payment", "care", "treatment", "medications", "gender", "tobacco", "spouse", "age", "zip", "contact"];
+    const steps: FunnelStep[] = ["plan", "payment", "care", "gender", "tobacco", "spouse", "age", "zip", "contact"];
     const currentIndex = steps.indexOf(step);
     if (currentIndex === -1) return 0;
     return Math.round(((currentIndex + 1) / steps.length) * 100);
   };
 
   const getStepNumber = (): number => {
-    const steps: FunnelStep[] = ["plan", "payment", "care", "treatment", "medications", "gender", "tobacco", "spouse", "age", "zip", "contact"];
+    const steps: FunnelStep[] = ["plan", "payment", "care", "gender", "tobacco", "spouse", "age", "zip", "contact"];
     return steps.indexOf(step) + 1;
   };
 
