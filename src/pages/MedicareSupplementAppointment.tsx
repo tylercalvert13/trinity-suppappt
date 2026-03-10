@@ -40,29 +40,51 @@ interface Agent {
 }
 
 const AGENTS: Agent[] = [
-  { name: 'Maria Castro', firstName: 'Maria', phone: '(908) 224-5410', telLink: 'tel:+19082245410', ghlUserId: 'xh3zAJstdrOjv6G60sR6', states: [] },
-  { name: 'Claude Washington', firstName: 'Claude', phone: '(908) 498-9806', telLink: 'tel:+19084989806', ghlUserId: 'ABUX6hMZHC1sxkTg33T8', states: [] },
-  { name: 'Jerome Hinds', firstName: 'Jerome', phone: '(908) 681-8962', telLink: 'tel:+19086818962', ghlUserId: 'nVHKSQneg56OHykfIvi8', states: [] },
-  { name: 'Rosa Silva', firstName: 'Rosa', phone: '(908) 829-9820', telLink: 'tel:+19088299820', ghlUserId: 'GHG8mhKx8321E3EzVNQj', states: [] },
-  { name: 'Tiyanna Alexander', firstName: 'Tiyanna', phone: '(908) 830-3039', telLink: 'tel:+19088303039', ghlUserId: 'y48XmZvsa1HGzQv4ewXW', states: [] },
-  { name: 'Jay Ortega', firstName: 'Jay', phone: '(908) 987-2783', telLink: 'tel:+19089872783', ghlUserId: 'dXRwG0TzNKEnlkY9RuzO', states: [] },
-  { name: 'Joey Jimenez', firstName: 'Joey', phone: '(908) 829-6944', telLink: 'tel:+19088296944', ghlUserId: '6nCN3NDWyUugUCGz22hD', states: [] },
+  { name: 'Maria Castro', firstName: 'Maria', phone: '(908) 224-5410', telLink: 'tel:+19082245410', ghlUserId: 'xh3zAJstdrOjv6G60sR6', states: ['AR','AZ','DE','GA','IA','KY','LA','MO','NC','NE','NJ','OH','OK','SC','TN','TX'] },
+  { name: 'Claude Washington', firstName: 'Claude', phone: '(908) 498-9806', telLink: 'tel:+19084989806', ghlUserId: 'ABUX6hMZHC1sxkTg33T8', states: ['AL','AR','AZ','DE','FL','GA','IA','IL','KY','LA','ME','MI','MO','MS','NC','NE','NJ','NM','NV','OH','OK','PA','SC','TN','TX','WI','WV'] },
+  { name: 'Jerome Hinds', firstName: 'Jerome', phone: '(908) 681-8962', telLink: 'tel:+19086818962', ghlUserId: 'nVHKSQneg56OHykfIvi8', states: ['AR','AZ','FL','GA','MO','NC','NE','NJ','OH','OK','SC','TN','TX'] },
+  { name: 'Rosa Silva', firstName: 'Rosa', phone: '(908) 829-9820', telLink: 'tel:+19088299820', ghlUserId: 'GHG8mhKx8321E3EzVNQj', states: ['AL','AR','AZ','DE','IA','IL','KY','LA','MO','MS','NC','NE','NJ','NM','OH','OK','PA','SC','TN','TX','WI'] },
+  { name: 'Tiyanna Alexander', firstName: 'Tiyanna', phone: '(908) 830-3039', telLink: 'tel:+19088303039', ghlUserId: 'y48XmZvsa1HGzQv4ewXW', states: ['AL','AR','AZ','DE','FL','GA','IA','KY','MI','MO','MS','NC','NE','NJ','OH','OK','PA','SC','TN','TX'] },
+  { name: 'Jay Ortega', firstName: 'Jay', phone: '(908) 987-2783', telLink: 'tel:+19089872783', ghlUserId: 'dXRwG0TzNKEnlkY9RuzO', states: ['NJ','OH','TX'] },
+  { name: 'Joey Jimenez', firstName: 'Joey', phone: '(908) 829-6944', telLink: 'tel:+19088296944', ghlUserId: '6nCN3NDWyUugUCGz22hD', states: ['AL','AZ','GA','LA','NC','NJ','OH','PA','SC','TN','TX','VA'] },
 ];
 
-async function getNextAgent(): Promise<Agent> {
+// Map full state names to abbreviations for agent filtering
+const STATE_NAME_TO_ABBREV: Record<string, string> = {
+  "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR", "California": "CA",
+  "Colorado": "CO", "Connecticut": "CT", "Delaware": "DE", "Florida": "FL", "Georgia": "GA",
+  "Hawaii": "HI", "Idaho": "ID", "Illinois": "IL", "Indiana": "IN", "Iowa": "IA",
+  "Kansas": "KS", "Kentucky": "KY", "Louisiana": "LA", "Maine": "ME", "Maryland": "MD",
+  "Massachusetts": "MA", "Michigan": "MI", "Minnesota": "MN", "Mississippi": "MS", "Missouri": "MO",
+  "Montana": "MT", "Nebraska": "NE", "Nevada": "NV", "New Hampshire": "NH", "New Jersey": "NJ",
+  "New Mexico": "NM", "New York": "NY", "North Carolina": "NC", "North Dakota": "ND", "Ohio": "OH",
+  "Oklahoma": "OK", "Oregon": "OR", "Pennsylvania": "PA", "Rhode Island": "RI", "South Carolina": "SC",
+  "South Dakota": "SD", "Tennessee": "TN", "Texas": "TX", "Utah": "UT", "Vermont": "VT",
+  "Virginia": "VA", "Washington": "WA", "Washington DC": "DC", "West Virginia": "WV", "Wisconsin": "WI",
+  "Wyoming": "WY",
+};
+
+async function getNextAgent(stateName?: string): Promise<Agent> {
+  const stateAbbrev = stateName ? STATE_NAME_TO_ABBREV[stateName] : undefined;
+  const eligible = stateAbbrev
+    ? AGENTS.filter(a => a.states.includes(stateAbbrev))
+    : [];
+  const pool = eligible.length > 0 ? eligible : AGENTS;
+  const funnelId = eligible.length > 0 ? `suppappt-${stateAbbrev}` : 'suppappt';
+
   try {
     const { data, error } = await supabase.rpc('get_next_agent_index', {
-      funnel_id: 'suppappt',
-      agent_count: AGENTS.length,
+      funnel_id: funnelId,
+      agent_count: pool.length,
     });
     if (error || data === null || data === undefined) {
       console.error('Round-robin RPC error, falling back to random:', error);
-      return AGENTS[Math.floor(Math.random() * AGENTS.length)];
+      return pool[Math.floor(Math.random() * pool.length)];
     }
-    return AGENTS[data % AGENTS.length];
+    return pool[data % pool.length];
   } catch (err) {
     console.error('Round-robin fetch failed, falling back to random:', err);
-    return AGENTS[Math.floor(Math.random() * AGENTS.length)];
+    return pool[Math.floor(Math.random() * pool.length)];
   }
 }
 
