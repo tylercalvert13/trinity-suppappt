@@ -1273,7 +1273,7 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 11</span>
+                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
