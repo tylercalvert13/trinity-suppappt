@@ -696,38 +696,10 @@ const MedicareSupplementAppointment = () => {
     setFormData(prev => ({ ...prev, careOrCondition: answer }));
     trackTikTokClickButton('care');
     if (answer === "yes") {
-      setDisqualReason("care");
-      trackQualification("disqualified", "care_or_condition");
-      saveSubmission("disqualified", "care_or_condition");
-      navigate("/disqualified?reason=care");
-      return;
-    }
-    setStep("treatment");
-    trackStepChange("treatment", answer);
-  };
-
-  const handleTreatmentAnswer = (answer: string) => {
-    setFormData(prev => ({ ...prev, recentTreatment: answer }));
-    trackTikTokClickButton('treatment');
-    if (answer === "yes") {
-      setDisqualReason("treatment");
-      trackQualification("disqualified", "recent_treatment");
-      saveSubmission("disqualified", "recent_treatment");
-      navigate("/disqualified?reason=treatment");
-      return;
-    }
-    setStep("medications");
-    trackStepChange("medications", answer);
-  };
-
-  const handleMedicationsAnswer = (answer: string) => {
-    setFormData(prev => ({ ...prev, medicationUse: answer }));
-    trackTikTokClickButton('medications');
-    if (answer === "yes") {
-      setDisqualReason("medications");
-      trackQualification("disqualified", "medication_use");
-      saveSubmission("disqualified", "medication_use");
-      navigate("/disqualified?reason=medications");
+      setDisqualReason("health");
+      trackQualification("disqualified", "health");
+      saveSubmission("disqualified", "health");
+      navigate("/disqualified?reason=health");
       return;
     }
     setStep("gender");
