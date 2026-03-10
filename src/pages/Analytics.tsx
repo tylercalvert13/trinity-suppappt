@@ -344,7 +344,7 @@ const Analytics = () => {
   const todaySuppquoteSubmissions = suppquoteSubmissions.filter(s => s.created_at >= todayStartISO && s.created_at < todayEndISO);
   const todayQuotes = todaySuppquoteSubmissions.filter(s => s.submission_type === 'success').length;
 
-  // 12-step funnel drop-off for suppquote
+  // 12-step funnel drop-off for suppquote (still uses 3 separate health screens)
   const funnelSteps = [
     { step: 'start', label: 'Landing' },
     { step: 'plan', label: 'Plan Selection' },
@@ -360,6 +360,22 @@ const Analytics = () => {
     { step: 'contact', label: 'Contact Info' },
     { step: 'loading', label: 'Loading Quote' },
     { step: 'qualified', label: 'Quote Displayed' },
+  ];
+
+  // 9-step funnel for suppappt (combined health check)
+  const suppapptFunnelSteps = [
+    { step: 'start', label: 'Landing' },
+    { step: 'plan', label: 'Plan Selection' },
+    { step: 'payment', label: 'Current Payment' },
+    { step: 'care', label: 'Health Check' },
+    { step: 'gender', label: 'Gender' },
+    { step: 'tobacco', label: 'Tobacco Use' },
+    { step: 'spouse', label: 'Spouse Coverage' },
+    { step: 'age', label: 'Age' },
+    { step: 'zip', label: 'Zip Code' },
+    { step: 'contact', label: 'Contact Info' },
+    { step: 'loading', label: 'Loading Quote' },
+    { step: 'qualified', label: 'Qualified' },
   ];
 
   // Helper: count unique sessions that reached a given step using events
