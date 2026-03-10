@@ -426,7 +426,7 @@ const Analytics = () => {
     },
     { 
       name: 'DQ - Health Condition', 
-      value: disqualifiedSubmissions.filter(s => s.disqualification_reason?.includes('care') || s.disqualification_reason?.includes('condition')).length,
+      value: disqualifiedSubmissions.filter(s => s.disqualification_reason?.includes('care') || s.disqualification_reason?.includes('condition') || s.disqualification_reason === 'health').length,
       percentage: 0
     },
     { 
