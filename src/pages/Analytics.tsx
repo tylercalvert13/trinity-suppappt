@@ -19,6 +19,7 @@ import { TrafficSourcePerformance } from "@/components/analytics/TrafficSourcePe
 import { DemographicInsights } from "@/components/analytics/DemographicInsights";
 import { QuoteFunnelTimeSeries } from "@/components/analytics/QuoteFunnelTimeSeries";
 import { AppointmentFunnelTab } from "@/components/analytics/AppointmentFunnelTab";
+import { ABTestTracker } from "@/components/analytics/ABTestTracker";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
