@@ -954,6 +954,10 @@ const Analytics = () => {
             />
           </TabsContent>
 
+          <TabsContent value="abtest" className="space-y-6">
+            <ABTestTracker legacy={abLegacy} variant={abVariant} />
+          </TabsContent>
+
           <TabsContent value="sources" className="space-y-4">
             <TrafficSourcesTable data={trafficSources} />
           </TabsContent>
