@@ -743,6 +743,71 @@ const Analytics = () => {
   const suppapptData = createAppointmentFunnelData('suppappt');
   const suppappt1Data = createAppointmentFunnelData('suppappt1');
 
+  // ============= A/B TEST: calm_trust_v1 vs legacy =============
+  const suppapptAllSessions = sessions.filter(s => s.page === 'suppappt');
+  const suppapptAllEvents = events.filter(e => e.page === 'suppappt');
+
+  const buildVariantData = (variantSessions: typeof suppapptAllSessions, variantEvents: typeof suppapptAllEvents, name: string) => {
+    const visitors = variantSessions.length;
+    const sessionIds = new Set(variantSessions.map(s => s.session_id));
+    const filteredEvents = variantEvents.filter(e => sessionIds.has(e.session_id));
+
+    // Engagement = reached plan_type step
+    const engagedCount = new Set(filteredEvents.filter(e => e.event_type === 'step_change' && e.step === 'plan').map(e => e.session_id)).size;
+    const engagementRate = visitors > 0 ? (engagedCount / visitors) * 100 : 0;
+
+    // Lead = qualified or booking_completed
+    const qualifiedIds = new Set(filteredEvents.filter(e => e.event_type === 'qualification' && e.step === 'qualified').map(e => e.session_id));
+    const bookedIds = new Set(filteredEvents.filter(e => e.event_type === 'booking_completed').map(e => e.session_id));
+    const leadIds = new Set([...qualifiedIds, ...bookedIds]);
+    const leadRate = visitors > 0 ? (leadIds.size / visitors) * 100 : 0;
+
+    // Funnel steps
+    const funnelSteps = suppapptFunnelSteps.map(fs => {
+      const count = countSessionsAtStep(filteredEvents, variantSessions, fs.step);
+      return {
+        step: fs.step,
+        label: fs.label,
+        count,
+        percentage: visitors > 0 ? (count / visitors) * 100 : 0,
+      };
+    });
+
+    // Daily trend
+    const dailyMap = new Map<string, { visitors: number; leads: number }>();
+    variantSessions.forEach(s => {
+      const date = format(new Date(s.started_at), 'MM/dd');
+      const cur = dailyMap.get(date) || { visitors: 0, leads: 0 };
+      dailyMap.set(date, { ...cur, visitors: cur.visitors + 1 });
+    });
+    // Count leads per day
+    filteredEvents.forEach(e => {
+      if ((e.event_type === 'qualification' && e.step === 'qualified') || e.event_type === 'booking_completed') {
+        const date = format(new Date(e.created_at), 'MM/dd');
+        const cur = dailyMap.get(date) || { visitors: 0, leads: 0 };
+        dailyMap.set(date, { ...cur, leads: cur.leads + 1 });
+      }
+    });
+    const dailyTrend = Array.from(dailyMap.entries())
+      .map(([date, v]) => ({
+        date,
+        visitors: v.visitors,
+        engagementRate: 0, // not computed per-day for simplicity
+        leadRate: v.visitors > 0 ? (v.leads / v.visitors) * 100 : 0,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return { name, visitors, engagementRate, leadRate, funnelSteps, dailyTrend };
+  };
+
+  const legacySessions = suppapptAllSessions.filter(s => !s.variant);
+  const legacyEvents = suppapptAllEvents;
+  const calmTrustSessions = suppapptAllSessions.filter(s => s.variant === 'calm_trust_v1');
+  const calmTrustEvents = suppapptAllEvents;
+
+  const abLegacy = buildVariantData(legacySessions, legacyEvents, 'Legacy');
+  const abVariant = buildVariantData(calmTrustSessions, calmTrustEvents, 'Calm Trust');
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
