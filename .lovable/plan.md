@@ -1,14 +1,16 @@
 
 
-# Update Subheadline & Add Second Line + CTA
+# Add More Space Between Form and Footer on /suppappt
 
-## Changes in `src/pages/MedicareSupplementAppointment.tsx` (hero section, ~lines 1032-1042)
+## Problem
+The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
 
-| Element | Current | Proposed |
-|---------|---------|----------|
-| Subheadline | "Most Plan G, F, and N policyholders are overpaying..." | **"Plan G, F, and N rates increase every year — If you're not checking for the best rates in your area every year, you're likely paying more for the exact same coverage."** |
-| New second line | (none) | **"We'll check this for you now — and every year after — so you always have the best price for your Medicare Supplement."** |
-| CTA button | "See My Savings" | **"See How Much I Can Save"** |
+## Solution
+Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
 
-The second line will be a separate `<p>` tag styled slightly smaller/lighter than the subheadline (e.g. `text-base` vs `text-lg`, slightly more muted color) to create visual hierarchy. This keeps it readable without competing with the main subheadline. It acts as a value proposition / trust builder before the CTA.
+## Technical Change
 
+**File: `src/pages/MedicareSupplementAppointment.tsx`**
+- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
+
+One line change, no logic affected.

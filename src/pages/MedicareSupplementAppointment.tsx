@@ -1029,8 +1029,11 @@ const MedicareSupplementAppointment = () => {
             See How Much You Can Save on Your Medicare Supplement in Under 2 Minutes
           </h1>
           
-          <p className="text-lg md:text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
-            Most Plan G, F, and N policyholders are overpaying after rate increases. Your coverage stays exactly the same — you just pay less.
+          <p className="text-lg md:text-xl text-slate-600 mb-4 max-w-2xl mx-auto">
+            Plan G, F, and N rates increase every year —  If you're not checking for the best rates in your area every year, you're likely paying more for the exact same coverage.
+          </p>
+          <p className="text-base text-slate-500 mb-8 max-w-2xl mx-auto">
+            We'll check this for you now — and every year after — so you always have the best price for your Medicare Supplement.
           </p>
 
           {step === "landing" && (
@@ -1039,7 +1042,7 @@ const MedicareSupplementAppointment = () => {
               size="lg"
               className="bg-teal-600 hover:bg-teal-700 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
             >
-              See My Savings
+              See How Much I Can Save
             </Button>
           )}
 
