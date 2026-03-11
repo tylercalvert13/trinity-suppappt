@@ -1019,42 +1019,28 @@ const MedicareSupplementAppointment = () => {
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white py-8 md:py-12">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          {/* Breaking News Badge */}
-          <div className="inline-flex items-center bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold mb-6 animate-pulse">
-            <span className="mr-2">🚨</span>
-            EXPOSED: Medicare Supplement "Rate Trap"
+          {/* Trust Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100/20 text-blue-100 mb-6">
+            <Shield className="w-4 h-4" />
+            <span className="text-sm font-semibold">Free Medicare Rate Check</span>
           </div>
 
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
-            Seniors on Plan G, F, or N Are Overpaying by $100-200/Month
+            Compare Medicare Supplement Rates in Under 2 Minutes
           </h1>
           
-          <p className="text-lg md:text-xl text-blue-100 mb-4 max-w-2xl mx-auto">
-            Your benefits are <span className="font-bold text-white">federally standardized</span> — the only difference is the price.
+          <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            Your Plan G, F, or N coverage stays exactly the same — only the price changes.
           </p>
-          
-          <p className="text-base text-blue-200 mb-4 max-w-xl mx-auto">
-            See your personalized rate in under 2 minutes. No obligation. No pressure.
-          </p>
-
-          <div className="mb-8" />
 
           {step === "landing" && (
-            <>
-              <Button
-                onClick={scrollToFunnel}
-                size="lg"
-                className="bg-green-500 hover:bg-green-600 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
-              >
-                Check If You Qualify
-              </Button>
-              <div className="mt-6 text-sm text-blue-200">
-                <span>By continuing, you agree to our </span>
-                <Link to="/privacy-policy" className="underline hover:text-white">Privacy Policy</Link>
-                <span> and </span>
-                <Link to="/terms-of-service" className="underline hover:text-white">Terms of Service</Link>
-              </div>
-            </>
+            <Button
+              onClick={scrollToFunnel}
+              size="lg"
+              className="bg-green-500 hover:bg-green-600 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
+            >
+              Get My Free Comparison
+            </Button>
           )}
 
           {/* Trust Badges */}
