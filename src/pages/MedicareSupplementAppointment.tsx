@@ -1033,7 +1033,7 @@ const MedicareSupplementAppointment = () => {
             Plan G, F, and N rates increase every year —  If you're not checking for the best rates in your area every year, you're likely paying more for the exact same coverage.
           </p>
           <p className="text-base text-slate-500 mb-8 max-w-2xl mx-auto">
-            We'll check this for you now — and every year after — so you always have the best price for your Medicare Supplement.
+            We can check this for you now and we check this every year for our clients so they always have the best price for their medicare supplement in their geographical area every year.
           </p>
 
           {step === "landing" && (
