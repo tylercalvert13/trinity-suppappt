@@ -552,7 +552,7 @@ const MedicareSupplementAppointment = () => {
   const [isValidating, setIsValidating] = useState(false);
   
 
-  const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt');
+  const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt', 'calm_trust_v1');
   
   // No calendar warmup needed — using speed-to-lead agent assignment
   
