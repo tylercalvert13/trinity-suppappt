@@ -1026,7 +1026,7 @@ const MedicareSupplementAppointment = () => {
           </div>
 
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight text-slate-800">
-            Compare Medicare Supplement Rates in Under 2 Minutes
+            See How Much You Can Save on Your Medicare Supplement in Under 2 Minutes
           </h1>
           
           <p className="text-lg md:text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
