@@ -38,6 +38,7 @@ interface Session {
   utm_campaign: string | null;
   visitor_id: string;
   session_id: string;
+  variant: string | null;
 }
 
 interface Event {
