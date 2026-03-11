@@ -1017,19 +1017,19 @@ const MedicareSupplementAppointment = () => {
       </noscript>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white py-8 md:py-12">
+      <section className="bg-gradient-to-b from-slate-50 to-blue-50 py-8 md:py-12">
         <div className="max-w-4xl mx-auto px-4 text-center">
           {/* Trust Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100/20 text-blue-100 mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 mb-6">
             <Shield className="w-4 h-4" />
             <span className="text-sm font-semibold">Free Medicare Rate Check</span>
           </div>
 
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight text-slate-800">
             Compare Medicare Supplement Rates in Under 2 Minutes
           </h1>
           
-          <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
             Your Plan G, F, or N coverage stays exactly the same — only the price changes.
           </p>
 
@@ -1037,7 +1037,7 @@ const MedicareSupplementAppointment = () => {
             <Button
               onClick={scrollToFunnel}
               size="lg"
-              className="bg-green-500 hover:bg-green-600 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
+              className="bg-teal-600 hover:bg-teal-700 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
             >
               Get My Free Comparison
             </Button>
@@ -1045,15 +1045,15 @@ const MedicareSupplementAppointment = () => {
 
           {/* Trust Badges */}
           <div className="flex flex-wrap justify-center gap-6 mt-8">
-            <div className="flex items-center gap-2 text-blue-100">
+            <div className="flex items-center gap-2 text-slate-500">
               <Shield className="h-5 w-5" />
               <span className="text-sm">US Based Licensed Agents</span>
             </div>
-            <div className="flex items-center gap-2 text-blue-100">
+            <div className="flex items-center gap-2 text-slate-500">
               <Users className="h-5 w-5" />
               <span className="text-sm">10,000+ Seniors Helped</span>
             </div>
-            <div className="flex items-center gap-2 text-blue-100">
+            <div className="flex items-center gap-2 text-slate-500">
               <FileCheck className="h-5 w-5" />
               <span className="text-sm">100% Free Service</span>
             </div>
