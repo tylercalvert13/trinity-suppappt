@@ -1,20 +1,16 @@
 
 
-# Rewrite /suppappt Copy for Ad Congruency: Savings-First Messaging
+# Add More Space Between Form and Footer on /suppappt
 
 ## Problem
-The current "calm trust" copy focuses on **comparing rates** ("Compare Medicare Supplement Rates," "Get My Free Comparison"), but the ads promise **savings** and **getting money back**. This mismatch between ad promise and landing page copy hurts congruency and likely contributes to lower engagement.
+The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
 
-## Copy Changes
+## Solution
+Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
 
-All changes are in **`src/pages/MedicareSupplementAppointment.tsx`**, hero section only (~lines 1020–1060). Colors and layout stay the same.
+## Technical Change
 
-| Element | Current | Proposed |
-|---------|---------|----------|
-| Trust badge pill | "Free Medicare Rate Check" | "Free Medicare Savings Check" |
-| H1 headline | "Compare Medicare Supplement Rates in Under 2 Minutes" | "See How Much You Can Save on Your Medicare Supplement in Under 2 Minutes" |
-| Subhead | "Your Plan G, F, or N coverage stays exactly the same — only the price changes." | "Most Plan G, F, and N policyholders are overpaying after rate increases. Your coverage stays exactly the same — you just pay less." |
-| CTA button | "Get My Free Comparison" | "See My Savings" |
+**File: `src/pages/MedicareSupplementAppointment.tsx`**
+- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
 
-Everything else (trust badges, teal colors, form steps, variant tracking as `calm_trust_v1`) stays identical. This is a copy-only change — 4 strings swapped.
-
+One line change, no logic affected.

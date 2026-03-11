@@ -1022,15 +1022,15 @@ const MedicareSupplementAppointment = () => {
           {/* Trust Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 mb-6">
             <Shield className="w-4 h-4" />
-            <span className="text-sm font-semibold">Free Medicare Rate Check</span>
+            <span className="text-sm font-semibold">Free Medicare Savings Check</span>
           </div>
 
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight text-slate-800">
-            Compare Medicare Supplement Rates in Under 2 Minutes
+            See How Much You Can Save on Your Medicare Supplement in Under 2 Minutes
           </h1>
           
           <p className="text-lg md:text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
-            Your Plan G, F, or N coverage stays exactly the same — only the price changes.
+            Most Plan G, F, and N policyholders are overpaying after rate increases. Your coverage stays exactly the same — you just pay less.
           </p>
 
           {step === "landing" && (
@@ -1039,7 +1039,7 @@ const MedicareSupplementAppointment = () => {
               size="lg"
               className="bg-teal-600 hover:bg-teal-700 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
             >
-              Get My Free Comparison
+              See My Savings
             </Button>
           )}
 
