@@ -1030,7 +1030,7 @@ const MedicareSupplementAppointment = () => {
           </h1>
           
           <p className="text-lg md:text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
-            Your Plan G, F, or N coverage stays exactly the same — only the price changes.
+            Most Plan G, F, and N policyholders are overpaying after rate increases. Your coverage stays exactly the same — you just pay less.
           </p>
 
           {step === "landing" && (
