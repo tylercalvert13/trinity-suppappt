@@ -1022,7 +1022,7 @@ const MedicareSupplementAppointment = () => {
           {/* Trust Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 mb-6">
             <Shield className="w-4 h-4" />
-            <span className="text-sm font-semibold">Free Medicare Rate Check</span>
+            <span className="text-sm font-semibold">Free Medicare Savings Check</span>
           </div>
 
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight text-slate-800">
