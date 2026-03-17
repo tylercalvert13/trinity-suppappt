@@ -1,15 +1,16 @@
 
 
-# Add Google Tag Manager (GTM-NMJSPM99) Site-Wide
+# Add More Space Between Form and Footer on /suppappt
 
-## What
-Install Google Tag Manager across all pages using the container ID `GTM-NMJSPM99` from your screenshot.
+## Problem
+The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
 
-## How
-**Edit `index.html`** — two additions:
+## Solution
+Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
 
-1. **In `<head>`** (as high as possible): Add the GTM script snippet right after `<meta charset="UTF-8" />`.
-2. **After opening `<body>`**: Add the GTM `<noscript>` iframe fallback right before the `<div id="root">`.
+## Technical Change
 
-Both snippets come directly from your screenshot. Since GTM loads on every page via `index.html`, it will automatically cover all routes in the SPA. The existing Google Ads gtag.js script in the deferred block can stay — GTM and gtag.js can coexist, though you may eventually want to migrate the gtag config into GTM itself.
+**File: `src/pages/MedicareSupplementAppointment.tsx`**
+- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
 
+One line change, no logic affected.
