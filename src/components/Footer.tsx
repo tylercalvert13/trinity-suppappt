@@ -38,11 +38,11 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Medicare Supplement Plans</h3>
             <ul className="space-y-2 text-sm text-primary-foreground/80">
-              <li><a href="#services" className="hover:text-accent transition-colors">Plan G</a></li>
-              <li><a href="#services" className="hover:text-accent transition-colors">Plan F</a></li>
-              <li><a href="#services" className="hover:text-accent transition-colors">Plan N</a></li>
+              <li><a href="/plan-g-vs-f-vs-n" className="hover:text-accent transition-colors">Plan G vs F vs N</a></li>
+              <li><a href="/cheapest-plan-g-rates" className="hover:text-accent transition-colors">Cheapest Plan G Rates</a></li>
+              <li><a href="/why-medigap-rates-increase" className="hover:text-accent transition-colors">Why Rates Increase</a></li>
+              <li><a href="/switch-medigap-plans" className="hover:text-accent transition-colors">How to Switch Plans</a></li>
               <li><a href="/suppappt" className="hover:text-accent transition-colors">Free Rate Comparison</a></li>
-              <li><a href="#services" className="hover:text-accent transition-colors">Carrier Comparison</a></li>
             </ul>
           </div>
 

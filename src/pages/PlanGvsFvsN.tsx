@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import RelatedArticles from "@/components/RelatedArticles";
 
 const PlanGvsFvsN = () => {
   const navigate = useNavigate();
@@ -310,6 +311,8 @@ const PlanGvsFvsN = () => {
             Licensed agents • A-rated carriers • No pressure
           </p>
         </section>
+
+        <RelatedArticles currentSlug="/plan-g-vs-f-vs-n" />
       </article>
 
       <Footer />
