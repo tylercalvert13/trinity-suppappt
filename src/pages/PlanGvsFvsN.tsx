@@ -311,6 +311,8 @@ const PlanGvsFvsN = () => {
             Licensed agents • A-rated carriers • No pressure
           </p>
         </section>
+
+        <RelatedArticles currentSlug="/plan-g-vs-f-vs-n" />
       </article>
 
       <Footer />

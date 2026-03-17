@@ -330,6 +330,8 @@ const CheapestPlanGRates = () => {
             Licensed agents • A-rated carriers • No pressure
           </p>
         </section>
+
+        <RelatedArticles currentSlug="/cheapest-plan-g-rates" />
       </article>
 
       <Footer />

@@ -191,6 +191,8 @@ const WhyMedigapRatesIncrease = () => {
             Licensed agents • A-rated carriers • No pressure
           </p>
         </section>
+
+        <RelatedArticles currentSlug="/why-medigap-rates-increase" />
       </article>
 
       <Footer />

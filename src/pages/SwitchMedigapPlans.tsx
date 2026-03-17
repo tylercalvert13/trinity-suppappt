@@ -266,6 +266,8 @@ const SwitchMedigapPlans = () => {
             Licensed agents • A-rated carriers • No pressure
           </p>
         </section>
+
+        <RelatedArticles currentSlug="/switch-medigap-plans" />
       </article>
 
       <Footer />
