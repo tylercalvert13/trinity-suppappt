@@ -38,6 +38,7 @@ const MedicareSupplementChat = lazyWithRetry(() => import("./pages/MedicareSuppl
 const MedicareAdvantage = lazyWithRetry(() => import("./pages/MedicareAdvantage"));
 const MedicareSupplementReport = lazyWithRetry(() => import("./pages/MedicareSupplementReport"));
 const MedicareLeadForm = lazyWithRetry(() => import("./pages/MedicareLeadForm"));
+const TextSUPP = lazyWithRetry(() => import("./pages/TextSUPP"));
 
 const queryClient = new QueryClient();
 
