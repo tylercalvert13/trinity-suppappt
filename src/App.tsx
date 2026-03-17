@@ -38,6 +38,7 @@ const MedicareSupplementChat = lazyWithRetry(() => import("./pages/MedicareSuppl
 const MedicareAdvantage = lazyWithRetry(() => import("./pages/MedicareAdvantage"));
 const MedicareSupplementReport = lazyWithRetry(() => import("./pages/MedicareSupplementReport"));
 const MedicareLeadForm = lazyWithRetry(() => import("./pages/MedicareLeadForm"));
+const TextSUPP = lazyWithRetry(() => import("./pages/TextSUPP"));
 
 const queryClient = new QueryClient();
 
@@ -110,6 +111,7 @@ const App = () => (
               <Route path="/advantage" element={<MedicareAdvantage />} />
               <Route path="/report" element={<MedicareSupplementReport />} />
               <Route path="/form" element={<MedicareLeadForm />} />
+              <Route path="/text" element={<TextSUPP />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
