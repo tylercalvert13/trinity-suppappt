@@ -111,6 +111,7 @@ const App = () => (
               <Route path="/advantage" element={<MedicareAdvantage />} />
               <Route path="/report" element={<MedicareSupplementReport />} />
               <Route path="/form" element={<MedicareLeadForm />} />
+              <Route path="/text" element={<TextSUPP />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
