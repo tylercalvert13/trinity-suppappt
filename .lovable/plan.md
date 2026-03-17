@@ -1,16 +1,17 @@
 
 
-# Add More Space Between Form and Footer on /suppappt
+# Auto-SMS Landing Page at `/text`
 
-## Problem
-The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
+## What it does
+When a user clicks a Facebook ad linking to `/text`, the page immediately attempts to open their phone's native SMS app with the number `201-298-8393` and the message `SUPP` pre-filled. No button press needed.
 
-## Solution
-Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
+## How
+1. **New page `src/pages/TextSUPP.tsx`** — On mount, uses `window.location.href = "sms:2012988393?body=SUPP"` to trigger the native SMS intent. Shows a brief fallback UI (headline + manual "Text us" link) for users whose browser blocks the auto-redirect or who are on desktop.
 
-## Technical Change
+2. **Add route in `App.tsx`** — Lazy-load the new page at `/text`.
 
-**File: `src/pages/MedicareSupplementAppointment.tsx`**
-- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
+## Technical notes
+- iOS uses `sms:2012988393&body=SUPP`, Android uses `sms:2012988393?body=SUPP`. We'll use the `?` format which works on modern iOS (iOS 8+) and Android.
+- The fallback UI will have the phone number, "SUPP" instruction, and a clickable `sms:` link styled as a button, plus brief branding so it doesn't look like a blank page if the redirect is slow.
+- Will track a `page_view` via `useFunnelAnalytics` so you can see how many people hit the page.
 
-One line change, no logic affected.
