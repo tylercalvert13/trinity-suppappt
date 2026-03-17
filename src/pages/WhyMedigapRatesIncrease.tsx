@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, DollarSign, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
+import RelatedArticles from "@/components/RelatedArticles";
 
 const WhyMedigapRatesIncrease = () => {
   const navigate = useNavigate();
