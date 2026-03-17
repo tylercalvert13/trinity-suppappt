@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import RelatedArticles from "@/components/RelatedArticles";
 
 const PlanGvsFvsN = () => {
   const navigate = useNavigate();
