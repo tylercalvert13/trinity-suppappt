@@ -30,11 +30,18 @@ export function AdsTrackingTab({ adsData, salesData, loading }: AdsTrackingTabPr
   const roas = totalSpend > 0 ? totalCommission / totalSpend : 0;
   const profit = totalCommission - totalSpend;
   const avgCostPerLead = adsData?.avgCostPerLead ?? 0;
+  const leadToCloseRate = totalLeads > 0 ? (approvedSales / totalLeads) * 100 : 0;
+
+  // Build a map of date -> approved sales for the daily table
+  const dailySalesMap: Record<string, number> = {};
+  salesData?.dailyStats?.forEach((day) => {
+    dailySalesMap[day.date] = day.approved;
+  });
 
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Row 1: Primary KPIs */}
-      <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0">
+      <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0">
         <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
           <StatCard
             title="Total Spend"
@@ -59,6 +66,15 @@ export function AdsTrackingTab({ adsData, salesData, loading }: AdsTrackingTabPr
             value={loading ? null : approvedSales}
             icon={<TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />}
             subtitle="Closed deals"
+            loading={loading}
+          />
+        </div>
+        <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+          <StatCard
+            title="Lead → Close"
+            value={loading ? null : `${leadToCloseRate.toFixed(1)}%`}
+            icon={<Target className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500" />}
+            subtitle={`${approvedSales} of ${totalLeads} leads`}
             loading={loading}
           />
         </div>
@@ -115,7 +131,7 @@ export function AdsTrackingTab({ adsData, salesData, loading }: AdsTrackingTabPr
       </div>
 
       {/* Row 4: Daily Table */}
-      <DailyAdsTable data={adsData?.dailyStats || []} loading={loading} />
+      <DailyAdsTable data={adsData?.dailyStats || []} dailySalesMap={dailySalesMap} loading={loading} />
     </div>
   );
 }
