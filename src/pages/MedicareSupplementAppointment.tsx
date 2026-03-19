@@ -5,13 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Phone, Lock, Star, UserPlus } from 'lucide-react';
+import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Phone, Lock, Star, UserPlus, Clock, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 
 import { useQuoteWarmup } from '@/hooks/useQuoteWarmup';
-import { z } from 'zod';
+import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
+import { AppointmentBookingWidgetWithOptIn } from '@/components/AppointmentBookingWidgetWithOptIn';
+import { StickyBookingCTA } from '@/components/StickyBookingCTA';
+import { ExitIntentModal } from '@/components/ExitIntentModal';
 import { getStateFromZip } from '@/lib/zipToState';
+import { z } from 'zod';
 import { SocialProofPopup } from '@/components/SocialProofPopup';
 import { QuoteLoadingProgress } from '@/components/QuoteLoadingProgress';
 import { initAdvancedMatching, trackPixelEvent } from '@/lib/facebookPixel';
@@ -529,6 +533,9 @@ const MedicareSupplementAppointment = () => {
   const [detectedState, setDetectedState] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [assignedAgent, setAssignedAgent] = useState<Agent | null>(null);
+  const bookingWidgetRef = useRef<HTMLDivElement>(null);
+  const [selectedDayLabel, setSelectedDayLabel] = useState<string | null>(null);
+  const [selectedTimeDisplay, setSelectedTimeDisplay] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     plan: '',
@@ -554,10 +561,24 @@ const MedicareSupplementAppointment = () => {
 
   const { visitorId, sessionId, trackStepChange, trackQualification, trackEvent } = useFunnelAnalytics('suppappt', 'calm_trust_v1');
   
-  // No calendar warmup needed — using speed-to-lead agent assignment
+  // Warmup the calendar edge function early to prevent cold starts
+  useCalendarWarmup();
   
   // Warmup the quote API to pre-cache CSG token
   useQuoteWarmup();
+
+  // Handle booking completed - fire Facebook Appointment tracking
+  const handleBookingCompleted = useCallback((contactData: { firstName: string; lastName: string; email: string; phone: string }) => {
+    trackFacebookAppointmentEvent(formData, quoteResult);
+    trackTikTokScheduleEvent(formData, quoteResult);
+    const ttEventId = generateEventId();
+    trackTikTokScheduleEventServer(formData, quoteResult, ttEventId);
+  }, [formData, quoteResult]);
+
+  // Scroll to booking widget helper
+  const scrollToBookingWidget = useCallback(() => {
+    bookingWidgetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   // Auto-scroll behavior based on step changes
   useEffect(() => {
@@ -1715,6 +1736,74 @@ const MedicareSupplementAppointment = () => {
                 </div>
               </div>
 
+              {/* Or Book a Call CTA */}
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">Prefer to pick a time?</p>
+                <Button
+                  onClick={() => {
+                    scrollToBookingWidget();
+                    trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'header_book_now_clicked' } });
+                  }}
+                  className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-xl font-semibold rounded-xl"
+                >
+                  Book My Free Call Now
+                </Button>
+              </div>
+
+              {/* Lock In Rate CTA */}
+              <button
+                onClick={() => {
+                  scrollToBookingWidget();
+                  trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'amber_cta_clicked' } });
+                }}
+                className="w-full bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-colors"
+              >
+                <div className="flex items-center justify-center gap-2 text-amber-800 mb-3">
+                  <Clock className="h-5 w-5" />
+                  <span className="font-semibold">Rate Reserved — 15 Minutes</span>
+                </div>
+                <div className="mb-3">
+                  <p className="text-2xl font-bold text-amber-700">
+                    ${quoteResult.monthlySavings.toFixed(2)}/month
+                  </p>
+                  <p className="text-sm text-muted-foreground">in savings</p>
+                </div>
+                <p className="text-base text-foreground">
+                  Tap to book your call →
+                </p>
+                <div className="mt-3 flex justify-center">
+                  <ChevronDown className="h-6 w-6 text-amber-600 animate-bounce" />
+                </div>
+              </button>
+
+              {/* Appointment Booking Widget - prefilled with contact data */}
+              <div ref={bookingWidgetRef}>
+                <AppointmentBookingWidgetWithOptIn
+                  quotedPremium={quoteResult.rate}
+                  monthlySavings={quoteResult.monthlySavings}
+                  planType={formData.plan}
+                  currentPayment={parseFloat(formData.currentPayment)}
+                  age={parseInt(formData.age)}
+                  zipCode={formData.zipCode}
+                  gender={formData.gender}
+                  tobacco={formData.tobacco}
+                  spouse={formData.spouse}
+                  quotedCarrier={quoteResult.carrier}
+                  amBestRating={quoteResult.amBestRating}
+                  savingsPercent={quoteResult.savingsPercent}
+                  userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
+                  userState={getStateFromZip(formData.zipCode)}
+                  visitorId={visitorId}
+                  sessionId={sessionId}
+                  onTrackEvent={trackEvent}
+                  onBookingCompleted={handleBookingCompleted}
+                  prefilledContact={{
+                    firstName: formData.firstName,
+                    phone: formData.phone,
+                  }}
+                />
+              </div>
+
               {/* Testimonials (outside main card) */}
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-muted-foreground text-center uppercase tracking-wide">What Others Are Saying</h3>
@@ -1775,6 +1864,23 @@ const MedicareSupplementAppointment = () => {
       {/* Social Proof Popup - show after health questions (step 5+) */}
       {['gender', 'tobacco', 'spouse', 'age', 'zip', 'contact', 'loading', 'qualified'].includes(step) && (
         <SocialProofPopup delayMs={5000} visibleMs={4000} />
+      )}
+
+      {/* Exit Intent Modal - only show when qualified */}
+      {step === "qualified" && quoteResult && (
+        <ExitIntentModal
+          monthlySavings={quoteResult.monthlySavings}
+          onBookClick={scrollToBookingWidget}
+        />
+      )}
+
+      {/* Sticky Floating CTA - mobile only, when qualified */}
+      {step === "qualified" && quoteResult && (
+        <StickyBookingCTA
+          targetRef={bookingWidgetRef}
+          selectedTime={selectedTimeDisplay || undefined}
+          dayLabel={selectedDayLabel || undefined}
+        />
       )}
 
     </div>
