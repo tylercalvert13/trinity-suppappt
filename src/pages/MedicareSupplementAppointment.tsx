@@ -1866,6 +1866,23 @@ const MedicareSupplementAppointment = () => {
         <SocialProofPopup delayMs={5000} visibleMs={4000} />
       )}
 
+      {/* Exit Intent Modal - only show when qualified */}
+      {step === "qualified" && quoteResult && (
+        <ExitIntentModal
+          monthlySavings={quoteResult.monthlySavings}
+          onBookClick={scrollToBookingWidget}
+        />
+      )}
+
+      {/* Sticky Floating CTA - mobile only, when qualified */}
+      {step === "qualified" && quoteResult && (
+        <StickyBookingCTA
+          targetRef={bookingWidgetRef}
+          selectedTime={selectedTimeDisplay || undefined}
+          dayLabel={selectedDayLabel || undefined}
+        />
+      )}
+
     </div>
   );
 };
