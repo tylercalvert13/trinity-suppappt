@@ -200,8 +200,7 @@ export function useSalesData(dateRange?: { from: Date | null; to: Date | null })
           const [aM, aD] = a.date.split("/").map(Number);
           const [bM, bD] = b.date.split("/").map(Number);
           return aM === bM ? aD - bD : aM - bM;
-        })
-        .slice(-7);
+        });
 
       // Carrier stats - group by New Carrier
       const carrierMap = new Map<string, CarrierStats>();
