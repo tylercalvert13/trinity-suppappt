@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Phone, Lock, Star, UserPlus, Clock, ChevronDown } from 'lucide-react';
+import { Shield, Users, FileCheck, CheckCircle, AlertCircle, Loader2, Phone, Lock, Star, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 
@@ -96,7 +96,6 @@ async function getNextAgent(stateName?: string): Promise<Agent> {
 const contactSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name is too long"),
   lastName: z.string().min(1, "Last name is required").max(50, "Last name is too long"),
-  email: z.string().email("Please enter a valid email address").max(255, "Email is too long"),
   phone: z.string()
     .transform(val => val.replace(/\D/g, ''))
     .refine(val => val.length === 10, "Phone must be 10 digits")
@@ -115,7 +114,6 @@ const formatPhoneNumber = (value: string): string => {
 interface ValidationErrors {
   firstName?: string;
   lastName?: string;
-  email?: string;
   phone?: string;
 }
 
@@ -148,7 +146,6 @@ interface FormData {
   zipCode: string;
   firstName: string;
   lastName: string;
-  email: string;
   phone: string;
 }
 
@@ -253,7 +250,7 @@ const trackFacebookAppointmentEvent = async (
         event_id: eventId,
         first_name: formData.firstName,
         last_name: formData.lastName,
-        email: formData.email,
+        email: '' as string,
         phone: formData.phone,
         zip_code: formData.zipCode,
         value: conversionValue,
@@ -278,7 +275,7 @@ const trackFacebookSubmissionEvent = async (
     
     // Initialize Advanced Matching with user data (re-init is idempotent)
     initAdvancedMatching({
-      email: formData.email,
+      email: '' as string,
       firstName: formData.firstName,
       lastName: formData.lastName,
       phone: formData.phone,
@@ -300,7 +297,7 @@ const trackFacebookSubmissionEvent = async (
         event_id: eventId,
         first_name: formData.firstName,
         last_name: formData.lastName,
-        email: formData.email,
+        email: '' as string,
         phone: formData.phone,
         zip_code: formData.zipCode,
         value: conversionValue,
@@ -334,7 +331,7 @@ const trackBingSubmissionEvent = (formData: FormData) => {
     }
     
     // Normalize email per Microsoft spec
-    const normalizedEmail = normalizeEmailForBing(formData.email);
+    const normalizedEmail = normalizeEmailForBing('' as string);
     
     // Format phone to E.164 (add +1 for US)
     const phoneDigits = formData.phone.replace(/\D/g, '');
@@ -422,7 +419,7 @@ const trackTikTokLeadEvent = async (formData: FormData, quoteResult: QuoteResult
   try {
     if (!window.ttq) return;
     window.ttq.identify({
-      email: await hashSHA256(formData.email),
+      email: await hashSHA256('' as string),
       phone_number: await hashSHA256(formData.phone.replace(/\D/g, '')),
       external_id: await hashSHA256(getVisitorIdForTracking()),
     });
@@ -449,7 +446,7 @@ const trackTikTokLeadEventServer = async (formData: FormData, quoteResult: Quote
         event: 'Lead',
         event_id: eventId,
         event_source_url: window.location.href,
-        email: formData.email,
+        email: '' as string,
         phone: formData.phone,
         external_id: getVisitorIdForTracking(),
         ttclid,
@@ -472,7 +469,7 @@ const trackTikTokScheduleEvent = async (formData: FormData, quoteResult: QuoteRe
   try {
     if (!window.ttq) return;
     window.ttq.identify({
-      email: await hashSHA256(formData.email),
+      email: await hashSHA256('' as string),
       phone_number: await hashSHA256(formData.phone.replace(/\D/g, '')),
       external_id: await hashSHA256(getVisitorIdForTracking()),
     });
@@ -499,7 +496,7 @@ const trackTikTokScheduleEventServer = async (formData: FormData, quoteResult: Q
         event: 'Schedule',
         event_id: eventId,
         event_source_url: window.location.href,
-        email: formData.email,
+        email: '' as string,
         phone: formData.phone,
         external_id: getVisitorIdForTracking(),
         ttclid,
@@ -550,7 +547,7 @@ const MedicareSupplementAppointment = () => {
     zipCode: '',
     firstName: '',
     lastName: '',
-    email: '',
+    
     phone: '',
   });
 
@@ -597,10 +594,13 @@ const MedicareSupplementAppointment = () => {
       setTimeout(() => {
         resultsHeaderRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
       }, 50);
+      // Auto-scroll to booking widget after 5 seconds so user can read savings first
+      const autoScrollTimer = setTimeout(() => {
+        bookingWidgetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 5000);
+      return () => clearTimeout(autoScrollTimer);
     }
   }, [step]);
-
-  // No auto-scroll or urgency toast — agent calls the lead directly
 
   // Detect user's state via IP geolocation on mount
   useEffect(() => {
@@ -773,7 +773,6 @@ const MedicareSupplementAppointment = () => {
     const validationResult = contactSchema.safeParse({
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
-      email: formData.email.trim(),
       phone: formData.phone,
     });
 
@@ -787,13 +786,12 @@ const MedicareSupplementAppointment = () => {
       return;
     }
 
-    // Step 2: Server-side API validation
+    // Step 2: Server-side API validation (phone only)
     setIsValidating(true);
     
     try {
       const { data: validationData, error: validationError } = await supabase.functions.invoke('validate-contact', {
         body: {
-          email: formData.email.trim(),
           phone: formData.phone.replace(/\D/g, ''),
         }
       });
@@ -802,15 +800,7 @@ const MedicareSupplementAppointment = () => {
         console.error("Validation API error:", validationError);
         // Continue anyway - fail open
       } else if (validationData && !validationData.valid) {
-        // Check which field failed
         const errors: ValidationErrors = {};
-        if (!validationData.email?.valid) {
-          if (validationData.email?.disposable) {
-            errors.email = "Please use a permanent email address (no temporary emails)";
-          } else {
-            errors.email = "We couldn't verify this email. Please check it and try again.";
-          }
-        }
         if (!validationData.phone?.valid) {
           errors.phone = "This phone number doesn't appear to be valid. Please double-check it.";
         }
@@ -1014,7 +1004,7 @@ const MedicareSupplementAppointment = () => {
         zip_code: formData.zipCode,
         first_name: formData.firstName,
         last_name: formData.lastName,
-        email: formData.email,
+        email: '' as string,
         phone: formData.phone,
         submission_type: submissionType,
         disqualification_reason: disqualificationReason || null,
@@ -1410,10 +1400,10 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
+                  <span className="text-sm font-medium text-green-600">Almost done!</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
-                <Progress value={getProgress()} className="h-2" />
+                <Progress value={getProgress()} className="h-2 [&>div]:bg-green-500" />
               </div>
               
               <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
@@ -1451,10 +1441,10 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
+                  <span className="text-sm font-medium text-green-600">Almost done! Last step</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
-                <Progress value={getProgress()} className="h-2" />
+                <Progress value={getProgress()} className="h-2 [&>div]:bg-green-500" />
               </div>
               
               <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
@@ -1535,24 +1525,6 @@ const MedicareSupplementAppointment = () => {
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, email: e.target.value }));
-                      if (validationErrors.email) setValidationErrors(prev => ({ ...prev, email: undefined }));
-                    }}
-                    placeholder="john@example.com"
-                    className={`h-12 rounded-xl ${validationErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
-                    required
-                  />
-                  {validationErrors.email && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
-                  )}
-                </div>
-                <div>
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
@@ -1577,7 +1549,7 @@ const MedicareSupplementAppointment = () => {
                 <Button
                   type="submit"
                   className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto rounded-xl mt-4"
-                  disabled={isSubmitting || isValidating || !formData.firstName || !formData.lastName || !formData.email || !formData.phone}
+                  disabled={isSubmitting || isValidating || !formData.firstName || !formData.lastName || !formData.phone}
                   data-tf-element-role="submit"
                 >
                   {isValidating ? (
@@ -1676,42 +1648,7 @@ const MedicareSupplementAppointment = () => {
                 </div>
               </div>
 
-              {/* Primary CTA — Book a Call */}
-              <Button
-                onClick={() => {
-                  scrollToBookingWidget();
-                  trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'header_book_now_clicked' } });
-                }}
-                className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-xl font-semibold rounded-xl"
-              >
-                Book My Free Call Now
-              </Button>
 
-              {/* Lock In Rate CTA */}
-              <button
-                onClick={() => {
-                  scrollToBookingWidget();
-                  trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'amber_cta_clicked' } });
-                }}
-                className="w-full bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-2 text-amber-800 mb-3">
-                  <Clock className="h-5 w-5" />
-                  <span className="font-semibold">Rate Reserved — 15 Minutes</span>
-                </div>
-                <div className="mb-3">
-                  <p className="text-2xl font-bold text-amber-700">
-                    ${quoteResult.monthlySavings.toFixed(2)}/month
-                  </p>
-                  <p className="text-sm text-muted-foreground">in savings</p>
-                </div>
-                <p className="text-base text-foreground">
-                  Tap to book your call →
-                </p>
-                <div className="mt-3 flex justify-center">
-                  <ChevronDown className="h-6 w-6 text-amber-600 animate-bounce" />
-                </div>
-              </button>
 
               {/* Appointment Booking Widget - prefilled with contact data */}
               <div ref={bookingWidgetRef}>
@@ -1793,24 +1730,15 @@ const MedicareSupplementAppointment = () => {
                 </div>
               </div>
 
-              {/* Testimonials (outside main card) */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-muted-foreground text-center uppercase tracking-wide">What Others Are Saying</h3>
-                {[
-                  { name: 'Patricia M.', state: 'FL', text: "Got a call within 30 seconds. Maria was friendly, no pressure, and I\u2019m saving $127/month on the same Plan G coverage.", savings: 127 },
-                  { name: 'Robert K.', state: 'TX', text: "I was skeptical but the whole thing took 2 minutes. Got a call right away, spoke to a licensed agent, and cut my premium by $89/month.", savings: 89 },
-                  { name: 'Mary S.', state: 'OH', text: "So easy! Filled out the form, got a call immediately, and now I\u2019m paying $156 less every month for the exact same benefits.", savings: 156 },
-                ].map((t, i) => (
-                  <div key={i} className="bg-white rounded-xl p-4 border">
-                    <div className="flex items-center gap-1 mb-2">
-                      {Array.from({ length: 5 }).map((_, j) => (
-                        <Star key={j} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                    <p className="text-sm text-foreground italic mb-2">"{t.text}"</p>
-                    <p className="text-xs text-muted-foreground font-medium">— {t.name}, {t.state} · Saved ${t.savings}/mo</p>
-                  </div>
-                ))}
+              {/* Testimonial */}
+              <div className="bg-white rounded-xl p-4 border">
+                <div className="flex items-center gap-1 mb-2">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Star key={j} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-sm text-foreground italic mb-2">"I was nervous to share my info, but they called me right on time and saved me $89/month."</p>
+                <p className="text-xs text-muted-foreground font-medium">— Robert K., TX · Saved $89/mo</p>
               </div>
 
               {/* Disclaimer */}
