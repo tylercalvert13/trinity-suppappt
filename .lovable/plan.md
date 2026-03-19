@@ -1,16 +1,35 @@
 
 
-# Add More Space Between Form and Footer on /suppappt
+# Add Calendar Booking Widget to /suppappt Funnel
 
-## Problem
-The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
+## Summary
+Not hard at all. The suppappt funnel already collects contact info before showing results, so we just need to add the booking widget below the existing agent assignment card on the qualified screen. We'll use `AppointmentBookingWidgetWithOptIn` (like suppappt2) since it handles contact creation internally — we just prefill the contact data.
 
-## Solution
-Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
+## Changes
 
-## Technical Change
+### `src/pages/MedicareSupplementAppointment.tsx`
 
-**File: `src/pages/MedicareSupplementAppointment.tsx`**
-- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
+1. **Add imports**: `AppointmentBookingWidgetWithOptIn`, `useCalendarWarmup`, `StickyBookingCTA`, `ExitIntentModal`, plus `Clock` and `ChevronDown` icons.
 
-One line change, no logic affected.
+2. **Add state/refs**: `bookingWidgetRef` for scroll targeting, `selectedTimeDisplay` and `selectedDayLabel` for the sticky CTA.
+
+3. **Add `useCalendarWarmup()`** call (replace the "no calendar warmup needed" comment).
+
+4. **Add `handleBookingCompleted` callback** to fire Facebook appointment tracking (similar to suppappt2).
+
+5. **Add `scrollToBookingWidget` helper** function.
+
+6. **Update the qualified screen** (lines ~1597-1742): After the existing agent assignment card, add:
+   - A "Book My Free Call Now" button that scrolls to the widget
+   - A "Rate Reserved — 15 Minutes" urgency CTA
+   - The `AppointmentBookingWidgetWithOptIn` component, prefilled with the user's name, email, phone, zip, quote data
+   - Keep existing agent card + testimonials + trust badges
+
+7. **Add overlays**: `ExitIntentModal`, `StickyBookingCTA` when qualified (same pattern as suppappt2).
+
+### What stays the same
+- The speed-to-lead agent assignment still happens and displays
+- All existing conversion tracking (Facebook, TikTok, Google, Bing, Vibe) stays
+- The "Call directly" CTA remains as a fallback
+- The booking widget is an **addition**, not a replacement — users can either call the assigned agent or book a time slot
+
