@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Check, ChevronLeft, Phone, Calendar, Loader2, AlertTriangle } from 'lucide-react';
+import { Check, ChevronLeft, Phone, Calendar, Loader2, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +21,6 @@ interface PrefilledContact {
 }
 
 interface AppointmentWidgetWithOptInProps {
-  // Quote data (no contact info - collected in widget)
   quotedPremium?: number;
   monthlySavings?: number;
   planType?: string;
@@ -34,15 +33,9 @@ interface AppointmentWidgetWithOptInProps {
   quotedCarrier?: string;
   amBestRating?: string;
   savingsPercent?: number;
-  
-  // Timezone & location
   userTimezone: string;
   userState?: string;
-  
-  // Optional prefilled contact (skips step 3 when provided)
   prefilledContact?: PrefilledContact;
-  
-  // Analytics
   visitorId?: string;
   sessionId?: string;
   onTrackEvent?: (params: TrackEventParams) => void;
@@ -925,33 +918,41 @@ export function AppointmentBookingWidgetWithOptIn({
         </div>
       )}
 
-      {/* Step Indicator - 3 steps (excludes success) */}
+      {/* Step Indicator with labels */}
       {bookingStep < 4 && !confirmedTime && (
-        <div className="flex justify-center gap-2 mb-6">
-          {[1, 2, 3].map((step) => (
-            <span
-              key={step}
-              className={`w-3 h-3 rounded-full transition-colors ${
-                bookingStep >= step ? 'bg-green-600' : 'bg-gray-200'
-              }`}
-            />
+        <div className="flex justify-center items-center gap-4 mb-6">
+          {[
+            { step: 1, label: 'Day' },
+            { step: 2, label: 'Time' },
+            { step: 3, label: 'Confirm' },
+          ].map(({ step, label }, i) => (
+            <div key={step} className="flex items-center gap-2">
+              <span
+                className={`w-3.5 h-3.5 rounded-full transition-colors ${
+                  bookingStep >= step ? 'bg-green-600' : 'bg-gray-200'
+                }`}
+              />
+              <span className={`text-sm font-medium ${bookingStep >= step ? 'text-green-700' : 'text-gray-400'}`}>
+                {label}
+              </span>
+              {i < 2 && <span className="text-gray-300 ml-2">→</span>}
+            </div>
           ))}
         </div>
       )}
 
-      {/* Heading */}
+      {/* Heading — trust-focused */}
       {bookingStep < 4 && !confirmedTime && (
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Lock In Your ${monthlySavings.toFixed(2)} Savings</h2>
-          <p className="text-gray-600 mt-1 text-sm">Medicare rates can change daily – this quote is only guaranteed once we confirm your policy</p>
+          <h2 className="text-2xl font-bold text-gray-900">Schedule Your Free Call</h2>
+          <p className="text-gray-600 mt-1 text-base">A licensed agent will review your ${monthlySavings.toFixed(2)}/mo savings — no obligation</p>
         </div>
       )}
 
       {/* Error Message */}
       {error && (
         <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-          <p className="text-red-700 text-sm">{error}</p>
+          <p className="text-red-700 text-base">{error}</p>
         </div>
       )}
 
@@ -966,24 +967,21 @@ export function AppointmentBookingWidgetWithOptIn({
       {/* Step 1: Pick a Day */}
       {bookingStep === 1 && (
         <div className="space-y-3">
-          {/* Social proof + Availability Indicator */}
+          {/* Availability Indicator — no fake social proof */}
           <div className="text-center mb-4">
-            <p className="text-sm font-medium text-green-600 mb-1">
-              🔥 12 people booked today
-            </p>
-            <p className="text-sm text-gray-600 flex items-center justify-center gap-2">
+            <p className="text-base text-gray-600 flex items-center justify-center gap-2">
               <span>📅</span>
               <span>
-                {isPreloading ? 'Checking available times...' : 'Pick a time — we\'ll call you then'}
+                {isPreloading ? 'Checking available times...' : 'Pick a day — we\'ll call you then'}
               </span>
             </p>
           </div>
 
-          {/* Show loading state if preloading and no days to show yet */}
+          {/* Loading state */}
           {isPreloading && availableWeekdays.length === 0 && (
             <div className="flex flex-col items-center justify-center py-8">
               <Loader2 className="w-8 h-8 text-green-600 animate-spin mb-3" />
-              <p className="text-gray-600">Loading available times...</p>
+              <p className="text-gray-600 text-base">Loading available times...</p>
             </div>
           )}
 
@@ -991,7 +989,7 @@ export function AppointmentBookingWidgetWithOptIn({
           {!isPreloading && availableWeekdays.length === 0 && (
             <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 text-center">
               <p className="text-amber-800 font-medium mb-2">No online appointments available soon</p>
-              <p className="text-gray-600 text-sm mb-4">Our calendar is fully booked for the next two weeks.</p>
+              <p className="text-gray-600 text-base mb-4">Our calendar is fully booked for the next two weeks.</p>
               <a 
                 href="tel:+12012988393" 
                 className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors"
@@ -999,11 +997,11 @@ export function AppointmentBookingWidgetWithOptIn({
                 <Phone className="w-5 h-5" />
                 Call Now: (201) 298-8393
               </a>
-              <p className="text-gray-500 text-xs mt-3">We can often fit you in same-day by phone</p>
+              <p className="text-gray-500 text-sm mt-3">We can often fit you in same-day by phone</p>
             </div>
           )}
 
-          {/* Day buttons - only shown days with actual availability */}
+          {/* Day buttons — larger touch targets */}
           {availableWeekdays.map((date, index) => {
             const { primary, secondary } = formatDateLabel(date, index);
             const dateStr = formatDateString(date);
@@ -1031,7 +1029,7 @@ export function AppointmentBookingWidgetWithOptIn({
                 key={date.toISOString()}
                 onClick={() => handleDaySelect(date, primary)}
                 disabled={isDisabled}
-                className={`w-full min-h-[80px] p-4 bg-white border-2 rounded-xl 
+                className={`w-full min-h-[90px] p-5 bg-white border-2 rounded-xl 
                          hover:border-green-600 hover:bg-green-50 transition-all
                          flex flex-col items-center justify-center relative
                          ${isFirstDay && !isPreloading ? 'border-green-500 animate-first-day-pulse' : 'border-gray-200'}
@@ -1043,8 +1041,8 @@ export function AppointmentBookingWidgetWithOptIn({
                     Recommended
                   </span>
                 )}
-                <span className="text-xl font-semibold text-gray-900">{primary}</span>
-                <span className="text-gray-500">{secondary}</span>
+                <span className="text-2xl font-semibold text-gray-900">{primary}</span>
+                <span className="text-base text-gray-500">{secondary}</span>
                 <span className={`text-sm mt-1 flex items-center gap-1 font-medium ${badgeColor}`}>
                   {isPreloading && <Loader2 className="w-3 h-3 animate-spin" />}
                   {availabilityBadge}
@@ -1053,80 +1051,111 @@ export function AppointmentBookingWidgetWithOptIn({
             );
           })}
 
-          {/* Call Now Alternative */}
+          {/* Call Now Alternative — softer tone */}
           <div className="mt-6 pt-4 border-t border-gray-200 text-center">
             <p className="text-gray-400 mb-3">— or —</p>
-            <div className="bg-amber-50 border-amber-200 border rounded-xl p-4">
+            <div className="bg-gray-50 border-gray-200 border rounded-xl p-4">
               <p className="font-semibold text-gray-800 flex items-center justify-center gap-1 mb-2">
-                <span>🔥</span> Want to lock this in RIGHT NOW?
+                <Phone className="w-4 h-4 text-green-600" /> Prefer to talk now?
               </p>
               <a 
                 href="tel:+12012988393" 
                 className="inline-flex items-center gap-2 text-xl font-bold text-green-700 hover:text-green-800 transition-colors"
               >
-                <Phone className="w-5 h-5" />
-                Call Us: (201) 298-8393
+                (201) 298-8393
               </a>
-              <p className="text-sm text-gray-600 mt-2">We'll quote you live in under 5 minutes</p>
+              <p className="text-base text-gray-600 mt-2">We'll quote you live in under 5 minutes</p>
             </div>
           </div>
 
           {/* Social Proof */}
-          <div className="mt-6 text-center text-sm text-gray-600 flex items-center justify-center gap-2">
+          <div className="mt-6 text-center text-base text-gray-600 flex items-center justify-center gap-2">
             <span className="text-green-600">✓</span>
             <span>{userState ? `135+ ${userState} seniors saved on Medicare this month` : '135+ seniors saved on Medicare this month'}</span>
           </div>
 
           {/* Trust Badges */}
-          <div className="mt-4 grid grid-cols-1 gap-2 text-xs text-gray-500 text-center">
+          <div className="mt-4 grid grid-cols-1 gap-2 text-sm text-gray-500 text-center">
             <span>🛡️ Licensed Medicare Agents</span>
-            <span>⚡ Compare 20+ top carriers in 10 minutes</span>
-            <span>✓ 100% free – hang up anytime</span>
+            <span>Compare 20+ top carriers in 10 minutes</span>
+            <span>✓ 100% free — hang up anytime</span>
           </div>
         </div>
       )}
 
-      {/* Step 2: Pick a Time */}
+      {/* Step 2: Pick a Time — Morning / Afternoon grouping */}
       {bookingStep === 2 && (
         <div className="space-y-3">
           <button
             onClick={handleBack}
-            className="flex items-center gap-1 text-gray-600 hover:text-gray-800 mb-4"
+            className="flex items-center gap-1 text-gray-600 hover:text-gray-800 mb-4 text-base"
           >
             <ChevronLeft className="w-5 h-5" />
             <span>Pick a different day</span>
           </button>
 
-          <p className="text-center text-gray-600 mb-4">
+          <p className="text-center text-gray-700 text-lg font-medium mb-4">
             {getSelectedDateDisplay()}
           </p>
 
-          {availableSlots.map((slot) => {
-            const isSelected = selectedSlot?.original === slot.original;
+          {(() => {
+            const morning = availableSlots.filter(s => isMorningSlot(s.original));
+            const afternoon = availableSlots.filter(s => isAfternoonSlot(s.original));
+            const other = availableSlots.filter(s => !isMorningSlot(s.original) && !isAfternoonSlot(s.original));
+            
+            const renderSlotButton = (slot: SlotData) => {
+              const isSelected = selectedSlot?.original === slot.original;
+              return (
+                <button
+                  key={slot.original}
+                  onClick={() => handleSlotSelect(slot)}
+                  disabled={isLoading}
+                  className={`min-h-[80px] p-4 border-2 rounded-xl transition-all
+                             flex items-center justify-center relative
+                             ${isSelected 
+                               ? 'bg-green-50 border-green-600' 
+                               : 'bg-white border-gray-200 hover:border-green-600 hover:bg-green-50'}
+                             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isSelected && <Check className="w-5 h-5 text-green-600 absolute left-3" />}
+                  <span className={`text-2xl font-semibold ${isSelected ? 'text-green-700' : 'text-gray-900'}`}>
+                    {slot.display}
+                  </span>
+                </button>
+              );
+            };
+
             return (
-              <button
-                key={slot.original}
-                onClick={() => handleSlotSelect(slot)}
-                disabled={isLoading}
-                className={`w-full min-h-[70px] p-4 border-2 rounded-xl transition-all
-                           flex items-center justify-center relative
-                           ${isSelected 
-                             ? 'bg-green-50 border-green-600' 
-                             : 'bg-white border-gray-200 hover:border-green-600 hover:bg-green-50'}
-                           ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isSelected && (
-                  <Check className="w-5 h-5 text-green-600 absolute left-4" />
+              <>
+                {morning.length > 0 && (
+                  <div>
+                    <h4 className="text-base font-semibold text-gray-700 mb-2">☀️ Morning</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {morning.map(renderSlotButton)}
+                    </div>
+                  </div>
                 )}
-                <span className={`text-2xl font-semibold ${isSelected ? 'text-green-700' : 'text-gray-900'}`}>
-                  {slot.display}
-                </span>
-              </button>
+                {afternoon.length > 0 && (
+                  <div className={morning.length > 0 ? 'pt-2' : ''}>
+                    <h4 className="text-base font-semibold text-gray-700 mb-2">🌤️ Afternoon</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {afternoon.map(renderSlotButton)}
+                    </div>
+                  </div>
+                )}
+                {other.length > 0 && (
+                  <div className={(morning.length > 0 || afternoon.length > 0) ? 'pt-2' : ''}>
+                    <div className="grid grid-cols-2 gap-3">
+                      {other.map(renderSlotButton)}
+                    </div>
+                  </div>
+                )}
+              </>
             );
-          })}
+          })()}
 
           {availableSlots.length === 0 && (
-            <p className="text-center text-gray-600 py-4">
+            <p className="text-center text-gray-600 py-4 text-base">
               No times available on this day. Please pick a different day.
             </p>
           )}
@@ -1146,13 +1175,13 @@ export function AppointmentBookingWidgetWithOptIn({
 
           {/* Selected Time Summary */}
           <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-4 text-center">
-            <p className="text-sm text-gray-600 mb-1">Your appointment:</p>
+            <p className="text-base text-gray-600 mb-1">Your appointment:</p>
             <p className="text-lg font-semibold text-gray-900">{getSelectedDateDisplay()}</p>
             <p className="text-2xl font-bold text-green-700">{selectedSlot.display}</p>
           </div>
 
           <h3 className="text-lg font-bold text-gray-900">Enter your information to confirm</h3>
-          <p className="text-sm text-gray-600 mb-4">Your information is 100% secure and will never be sold.</p>
+          <p className="text-base text-gray-600 mb-4">Your information is 100% secure and will never be sold.</p>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -1273,7 +1302,7 @@ export function AppointmentBookingWidgetWithOptIn({
         </div>
       )}
 
-      {/* Step 4: Success */}
+      {/* Step 4: Success — show-up optimized */}
       {bookingStep === 4 && confirmedTime && (
         <div ref={successRef} className="text-center scroll-mt-4">
           <div className="w-20 h-20 rounded-full bg-green-600 text-white flex items-center justify-center mx-auto mb-5">
@@ -1282,11 +1311,14 @@ export function AppointmentBookingWidgetWithOptIn({
 
           <h2 className="text-2xl font-bold text-gray-900 mb-2">You're All Set!</h2>
           
-          <p className="text-gray-600 mb-2">
-            {agentName ? `${agentName} will call you on` : "We'll call you on"}
+          <p className="text-lg text-gray-700 mb-1 font-medium">
+            We call YOU — no need to dial anything.
+          </p>
+          <p className="text-gray-600">
+            {agentName ? `${agentName} will call you on` : "Your agent will call you on"}
           </p>
           
-          <p className="text-xl font-bold text-gray-900">{getSelectedDateDisplay()}</p>
+          <p className="text-xl font-bold text-gray-900 mt-2">{getSelectedDateDisplay()}</p>
           <p className="text-3xl font-bold text-green-700 mt-1">
             {convertToUserTimezone(confirmedTime, userTimezone)}
           </p>
@@ -1296,9 +1328,28 @@ export function AppointmentBookingWidgetWithOptIn({
             </p>
           )}
 
-          <p className="text-sm text-gray-500 mt-3 flex items-center justify-center gap-1">
+          <p className="text-base text-gray-500 mt-3 flex items-center justify-center gap-1">
             <span>📱</span> We've sent a confirmation to your phone
           </p>
+
+          {/* What to have ready checklist */}
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-5 mt-6 text-left">
+            <p className="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-base">
+              <ClipboardList className="w-5 h-5 text-blue-600" />
+              What to Have Ready for Your Call
+            </p>
+            <ul className="space-y-3 text-base text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 font-bold mt-0.5">✓</span>
+                Your <strong>Medicare card</strong> (red, white & blue)
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 font-bold mt-0.5">✓</span>
+                Your current <strong>Medicare Supplement card</strong>
+              </li>
+            </ul>
+            <p className="text-sm text-gray-500 mt-3">That's it! Your agent handles everything else.</p>
+          </div>
 
           <div className="space-y-3 mt-6">
             <Button
@@ -1308,8 +1359,8 @@ export function AppointmentBookingWidgetWithOptIn({
               <Calendar className="w-5 h-5 mr-2 flex-shrink-0" />
               Add to Calendar
             </Button>
-            <p className="text-xs text-gray-500 text-center">
-              Don't miss your savings - rates can change daily
+            <p className="text-sm text-gray-500 text-center">
+              Add a reminder so you don't miss your call
             </p>
 
             <Button
@@ -1322,20 +1373,21 @@ export function AppointmentBookingWidgetWithOptIn({
             </Button>
           </div>
 
-          <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-4 mt-6">
+          {/* Save number — friendly phone icon */}
+          <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 mt-6">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-              <span className="font-semibold text-amber-800">Save This Number!</span>
+              <Phone className="w-5 h-5 text-green-600" />
+              <span className="font-semibold text-gray-800">Save This Number</span>
             </div>
             <p className="text-2xl font-bold text-gray-900 mb-1">(201) 298-8393</p>
-            <p className="text-sm text-gray-600">Save as "Health Helpers" so you know it's us calling!</p>
+            <p className="text-base text-gray-600">Save as "Health Helpers" so you know it's us calling</p>
           </div>
 
           <div className="bg-gray-50 rounded-xl p-4 mt-6 text-left">
-            <p className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <p className="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-base">
               <span>📋</span> What to Expect on Your Call (15-20 min)
             </p>
-            <ul className="space-y-2 text-sm text-gray-700">
+            <ul className="space-y-2 text-base text-gray-700">
               <li className="flex items-start gap-2">
                 <span className="text-green-600 font-bold">✓</span>
                 Review your current coverage
@@ -1346,7 +1398,7 @@ export function AppointmentBookingWidgetWithOptIn({
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-green-600 font-bold">✓</span>
-                Answer your questions – zero pressure
+                Answer your questions — zero pressure
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-green-600 font-bold">✓</span>
