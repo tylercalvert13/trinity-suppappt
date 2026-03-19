@@ -1401,10 +1401,10 @@ const MedicareSupplementAppointment = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 9</span>
+                  <span className="text-sm font-medium text-green-600">Almost done!</span>
                   <span className="text-sm text-muted-foreground">{getProgress()}%</span>
                 </div>
-                <Progress value={getProgress()} className="h-2" />
+                <Progress value={getProgress()} className="h-2 [&>div]:bg-green-500" />
               </div>
               
               <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 py-2 text-xs text-muted-foreground">
