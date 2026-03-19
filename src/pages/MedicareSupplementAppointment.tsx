@@ -11,8 +11,8 @@ import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 
 import { useQuoteWarmup } from '@/hooks/useQuoteWarmup';
 import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
-import { AppointmentBookingWidgetWithOptIn } from '@/components/AppointmentBookingWidgetWithOptIn';
-import { StickyBookingCTA } from '@/components/StickyBookingCTA';
+
+
 import { ExitIntentModal } from '@/components/ExitIntentModal';
 import { getStateFromZip } from '@/lib/zipToState';
 import { z } from 'zod';
@@ -530,9 +530,7 @@ const MedicareSupplementAppointment = () => {
   const [detectedState, setDetectedState] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [assignedAgent, setAssignedAgent] = useState<Agent | null>(null);
-  const bookingWidgetRef = useRef<HTMLDivElement>(null);
-  const [selectedDayLabel, setSelectedDayLabel] = useState<string | null>(null);
-  const [selectedTimeDisplay, setSelectedTimeDisplay] = useState<string | null>(null);
+  const agentCardRef = useRef<HTMLDivElement>(null);
   
   const [formData, setFormData] = useState<FormData>({
     plan: '',
@@ -564,17 +562,9 @@ const MedicareSupplementAppointment = () => {
   // Warmup the quote API to pre-cache CSG token
   useQuoteWarmup();
 
-  // Handle booking completed - fire Facebook Appointment tracking
-  const handleBookingCompleted = useCallback((contactData: { firstName: string; lastName: string; email: string; phone: string }) => {
-    trackFacebookAppointmentEvent(formData, quoteResult);
-    trackTikTokScheduleEvent(formData, quoteResult);
-    const ttEventId = generateEventId();
-    trackTikTokScheduleEventServer(formData, quoteResult, ttEventId);
-  }, [formData, quoteResult]);
-
-  // Scroll to booking widget helper
-  const scrollToBookingWidget = useCallback(() => {
-    bookingWidgetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Scroll to agent card helper
+  const scrollToAgentCard = useCallback(() => {
+    agentCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
   // Auto-scroll behavior based on step changes
@@ -594,9 +584,9 @@ const MedicareSupplementAppointment = () => {
       setTimeout(() => {
         resultsHeaderRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
       }, 50);
-      // Auto-scroll to booking widget after 5 seconds so user can read savings first
+      // Auto-scroll to agent card after 5 seconds so user can read savings first
       const autoScrollTimer = setTimeout(() => {
-        bookingWidgetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        agentCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 5000);
       return () => clearTimeout(autoScrollTimer);
     }
@@ -1649,56 +1639,39 @@ const MedicareSupplementAppointment = () => {
               </div>
 
 
-
-              {/* Appointment Booking Widget - prefilled with contact data */}
-              <div ref={bookingWidgetRef}>
-                <AppointmentBookingWidgetWithOptIn
-                  quotedPremium={quoteResult.rate}
-                  monthlySavings={quoteResult.monthlySavings}
-                  planType={formData.plan}
-                  currentPayment={parseFloat(formData.currentPayment)}
-                  age={parseInt(formData.age)}
-                  zipCode={formData.zipCode}
-                  gender={formData.gender}
-                  tobacco={formData.tobacco}
-                  spouse={formData.spouse}
-                  quotedCarrier={quoteResult.carrier}
-                  amBestRating={quoteResult.amBestRating}
-                  savingsPercent={quoteResult.savingsPercent}
-                  userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
-                  userState={getStateFromZip(formData.zipCode)}
-                  visitorId={visitorId}
-                  sessionId={sessionId}
-                  onTrackEvent={trackEvent}
-                  onBookingCompleted={handleBookingCompleted}
-                  prefilledContact={{
-                    firstName: formData.firstName,
-                    phone: formData.phone,
-                  }}
-                />
-              </div>
-
-              {/* Secondary — Agent Call Fallback */}
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden border">
-                <div className="p-6 text-center space-y-3">
-                  <p className="text-sm text-muted-foreground">Or call your assigned specialist directly</p>
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                    <Phone className="h-5 w-5 text-primary" />
+              {/* Speed-to-Lead — Agent Call Card (Primary CTA) */}
+              <div ref={agentCardRef} className="bg-white rounded-2xl shadow-sm overflow-hidden border">
+                <div className="p-6 text-center space-y-4">
+                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                    <Phone className="h-7 w-7 text-green-600" />
                   </div>
-                  <p className="text-base text-foreground leading-relaxed">
-                    Your Medicare Specialist <span className="font-bold">{assignedAgent.firstName}</span> is reviewing your savings and will call you shortly from
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-lg font-semibold text-foreground">
+                      Your specialist <span className="text-primary">{assignedAgent.firstName}</span> is reviewing your savings
+                    </p>
+                    <p className="text-base text-muted-foreground">
+                      Expect a call shortly from:
+                    </p>
+                  </div>
                   <a
                     href={assignedAgent.telLink}
-                    className="block text-2xl md:text-3xl font-bold text-primary hover:underline"
+                    className="block text-3xl md:text-4xl font-bold text-primary hover:underline py-2"
                     onClick={() => trackEvent({ eventType: 'agent_phone_clicked', metadata: { agent: assignedAgent.firstName } })}
                   >
                     {assignedAgent.phone}
                   </a>
-                  <p className="text-sm text-foreground font-bold">
+                  <p className="text-sm text-foreground font-semibold">
                     📱 Save this number so you recognize our call!
                   </p>
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col items-center gap-3 pt-2">
+                    <a
+                      href={assignedAgent.telLink}
+                      className="w-full inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold text-lg rounded-xl px-6 py-4 transition-colors"
+                      onClick={() => trackEvent({ eventType: 'call_directly_clicked', metadata: { agent: assignedAgent.firstName } })}
+                    >
+                      <Phone className="h-5 w-5" />
+                      Call {assignedAgent.firstName} Now
+                    </a>
                     <button
                       onClick={() => {
                         const vCard = `BEGIN:VCARD\nVERSION:3.0\nFN:${assignedAgent.firstName} (Health Helpers)\nORG:Health Helpers\nTEL;TYPE=CELL:${assignedAgent.phone.replace(/[^+\d]/g, '')}\nNOTE:Your Medicare Supplement Specialist\nEND:VCARD`;
@@ -1718,14 +1691,6 @@ const MedicareSupplementAppointment = () => {
                       <UserPlus className="h-4 w-4" />
                       Save {assignedAgent.firstName} to Contacts
                     </button>
-                    <a
-                      href={assignedAgent.telLink}
-                      className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold text-base rounded-xl px-6 py-3 transition-colors"
-                      onClick={() => trackEvent({ eventType: 'call_directly_clicked', metadata: { agent: assignedAgent.firstName } })}
-                    >
-                      <Phone className="h-5 w-5" />
-                      Call {assignedAgent.firstName} Now
-                    </a>
                   </div>
                 </div>
               </div>
@@ -1787,16 +1752,7 @@ const MedicareSupplementAppointment = () => {
       {step === "qualified" && quoteResult && (
         <ExitIntentModal
           monthlySavings={quoteResult.monthlySavings}
-          onBookClick={scrollToBookingWidget}
-        />
-      )}
-
-      {/* Sticky Floating CTA - mobile only, when qualified */}
-      {step === "qualified" && quoteResult && (
-        <StickyBookingCTA
-          targetRef={bookingWidgetRef}
-          selectedTime={selectedTimeDisplay || undefined}
-          dayLabel={selectedDayLabel || undefined}
+          onBookClick={scrollToAgentCard}
         />
       )}
 
