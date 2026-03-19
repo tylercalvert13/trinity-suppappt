@@ -1,4 +1,4 @@
-import { DollarSign, Users, Calendar, TrendingUp, Target, Percent } from "lucide-react";
+import { DollarSign, Users, TrendingUp, Target, Percent } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { AdsPerformanceChart } from "./AdsPerformanceChart";
 import { AdsFunnelChart } from "./AdsFunnelChart";
@@ -24,7 +24,6 @@ export function AdsTrackingTab({ adsData, salesData, loading }: AdsTrackingTabPr
 
   const totalSpend = adsData?.totalSpend ?? 0;
   const totalLeads = adsData?.totalLeads ?? 0;
-  const totalAppointments = adsData?.totalAppointments ?? 0;
 
   // Calculated metrics
   const costPerSale = approvedSales > 0 ? totalSpend / approvedSales : 0;
@@ -34,8 +33,8 @@ export function AdsTrackingTab({ adsData, salesData, loading }: AdsTrackingTabPr
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Row 1: Primary KPIs - Horizontally scrollable on mobile */}
-      <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0">
+      {/* Row 1: Primary KPIs */}
+      <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0">
         <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
           <StatCard
             title="Total Spend"
@@ -56,15 +55,6 @@ export function AdsTrackingTab({ adsData, salesData, loading }: AdsTrackingTabPr
         </div>
         <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
           <StatCard
-            title="Appointments"
-            value={loading ? null : totalAppointments}
-            icon={<Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />}
-            subtitle="Booked"
-            loading={loading}
-          />
-        </div>
-        <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
-          <StatCard
             title="Approved Sales"
             value={loading ? null : approvedSales}
             icon={<TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />}
@@ -74,23 +64,14 @@ export function AdsTrackingTab({ adsData, salesData, loading }: AdsTrackingTabPr
         </div>
       </div>
 
-      {/* Row 2: Performance KPIs - Horizontally scrollable on mobile */}
-      <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-5 sm:gap-4 sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0">
+      {/* Row 2: Performance KPIs */}
+      <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0">
         <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
           <StatCard
             title="Cost Per Lead"
             value={loading ? null : formatCurrency(avgCostPerLead)}
             icon={<Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />}
             subtitle="Avg acquisition"
-            loading={loading}
-          />
-        </div>
-        <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
-          <StatCard
-            title="Cost Per Appt"
-            value={loading ? null : formatCurrency(adsData?.avgCostPerAppointment ?? 0)}
-            icon={<Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />}
-            subtitle="Per booking"
             loading={loading}
           />
         </div>
@@ -128,7 +109,6 @@ export function AdsTrackingTab({ adsData, salesData, loading }: AdsTrackingTabPr
         <AdsPerformanceChart data={adsData?.dailyStats || []} loading={loading} />
         <AdsFunnelChart
           totalLeads={totalLeads}
-          totalAppointments={totalAppointments}
           approvedSales={approvedSales}
           loading={loading}
         />

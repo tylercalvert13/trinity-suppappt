@@ -23,7 +23,6 @@ function formatCurrency(value: number): string {
 }
 
 export function DailyAdsTable({ data, loading }: DailyAdsTableProps) {
-  // Show most recent first
   const sortedData = [...data].reverse();
 
   return (
@@ -38,38 +37,32 @@ export function DailyAdsTable({ data, loading }: DailyAdsTableProps) {
           <Skeleton className="h-[200px] sm:h-[300px] w-full" />
         ) : (
           <div className="overflow-x-auto">
-            <Table className="min-w-[500px]">
+            <Table className="min-w-[400px]">
               <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs sm:text-sm">Date</TableHead>
+                  <TableHead className="text-right text-xs sm:text-sm">Spend</TableHead>
+                  <TableHead className="text-right text-xs sm:text-sm">Leads</TableHead>
+                  <TableHead className="text-right text-xs sm:text-sm">CPL</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedData.length === 0 ? (
                   <TableRow>
-                    <TableHead className="text-xs sm:text-sm">Date</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm">Spend</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm">Leads</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm">Appts</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm">CPL</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm">CPA</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm">Conv.</TableHead>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
+                      No ads data available
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedData.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground text-xs sm:text-sm">
-                        No ads data available
+                ) : (
+                  sortedData.map((row, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-4">{row.date}</TableCell>
+                      <TableCell className="text-right text-red-600 text-xs sm:text-sm py-2 sm:py-4">
+                        {formatCurrency(row.spend)}
                       </TableCell>
+                      <TableCell className="text-right text-blue-600 text-xs sm:text-sm py-2 sm:py-4">{row.leads}</TableCell>
+                      <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{formatCurrency(row.costPerLead)}</TableCell>
                     </TableRow>
-                  ) : (
-                    sortedData.map((row, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-4">{row.date}</TableCell>
-                        <TableCell className="text-right text-red-600 text-xs sm:text-sm py-2 sm:py-4">
-                          {formatCurrency(row.spend)}
-                        </TableCell>
-                        <TableCell className="text-right text-blue-600 text-xs sm:text-sm py-2 sm:py-4">{row.leads}</TableCell>
-                        <TableCell className="text-right text-yellow-600 text-xs sm:text-sm py-2 sm:py-4">{row.appointments}</TableCell>
-                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{formatCurrency(row.costPerLead)}</TableCell>
-                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{formatCurrency(row.costPerAppointment)}</TableCell>
-                        <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-4">{row.leadToApptRate.toFixed(1)}%</TableCell>
-                      </TableRow>
                   ))
                 )}
               </TableBody>

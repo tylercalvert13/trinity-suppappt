@@ -36,56 +36,14 @@ export interface DailyAdsStats {
   date: string;
   spend: number;
   leads: number;
-  appointments: number;
   costPerLead: number;
-  costPerAppointment: number;
-  leadToApptRate: number;
 }
 
 export interface AdsData {
   totalSpend: number;
   totalLeads: number;
-  totalAppointments: number;
   avgCostPerLead: number;
-  avgCostPerAppointment: number;
   dailyStats: DailyAdsStats[];
-}
-
-export interface CombinedAdsMetrics {
-  totalSpend: number;
-  totalLeads: number;
-  totalAppointments: number;
-  avgCostPerLead: number;
-  avgCostPerAppointment: number;
-  costPerSale: number;
-  leadToApptRate: number;
-  apptToSaleRate: number;
-  leadToSaleRate: number;
-  roas: number;
-  revenuePerLead: number;
-  profit: number;
-  dailyStats: DailyAdsStats[];
-}
-
-export interface DailyAppointmentStats {
-  date: string;
-  due: number;
-  showed: number;
-  showRate: number;
-  closed: number;
-  apptToCloseRate: number;
-  showToCloseRate: number;
-}
-
-export interface AppointmentData {
-  totalDue: number;
-  totalShowed: number;
-  totalClosed: number;
-  totalNoShows: number;
-  avgShowRate: number;
-  avgCloseRate: number;
-  avgShowToCloseRate: number;
-  dailyStats: DailyAppointmentStats[];
 }
 
 export interface DashboardData {
