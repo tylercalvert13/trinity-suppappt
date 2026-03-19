@@ -530,9 +530,7 @@ const MedicareSupplementAppointment = () => {
   const [detectedState, setDetectedState] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [assignedAgent, setAssignedAgent] = useState<Agent | null>(null);
-  const bookingWidgetRef = useRef<HTMLDivElement>(null);
-  const [selectedDayLabel, setSelectedDayLabel] = useState<string | null>(null);
-  const [selectedTimeDisplay, setSelectedTimeDisplay] = useState<string | null>(null);
+  const agentCardRef = useRef<HTMLDivElement>(null);
   
   const [formData, setFormData] = useState<FormData>({
     plan: '',
