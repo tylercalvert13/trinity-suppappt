@@ -1639,56 +1639,39 @@ const MedicareSupplementAppointment = () => {
               </div>
 
 
-
-              {/* Appointment Booking Widget - prefilled with contact data */}
-              <div ref={bookingWidgetRef}>
-                <AppointmentBookingWidgetWithOptIn
-                  quotedPremium={quoteResult.rate}
-                  monthlySavings={quoteResult.monthlySavings}
-                  planType={formData.plan}
-                  currentPayment={parseFloat(formData.currentPayment)}
-                  age={parseInt(formData.age)}
-                  zipCode={formData.zipCode}
-                  gender={formData.gender}
-                  tobacco={formData.tobacco}
-                  spouse={formData.spouse}
-                  quotedCarrier={quoteResult.carrier}
-                  amBestRating={quoteResult.amBestRating}
-                  savingsPercent={quoteResult.savingsPercent}
-                  userTimezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
-                  userState={getStateFromZip(formData.zipCode)}
-                  visitorId={visitorId}
-                  sessionId={sessionId}
-                  onTrackEvent={trackEvent}
-                  onBookingCompleted={handleBookingCompleted}
-                  prefilledContact={{
-                    firstName: formData.firstName,
-                    phone: formData.phone,
-                  }}
-                />
-              </div>
-
-              {/* Secondary — Agent Call Fallback */}
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden border">
-                <div className="p-6 text-center space-y-3">
-                  <p className="text-sm text-muted-foreground">Or call your assigned specialist directly</p>
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                    <Phone className="h-5 w-5 text-primary" />
+              {/* Speed-to-Lead — Agent Call Card (Primary CTA) */}
+              <div ref={agentCardRef} className="bg-white rounded-2xl shadow-sm overflow-hidden border">
+                <div className="p-6 text-center space-y-4">
+                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                    <Phone className="h-7 w-7 text-green-600" />
                   </div>
-                  <p className="text-base text-foreground leading-relaxed">
-                    Your Medicare Specialist <span className="font-bold">{assignedAgent.firstName}</span> is reviewing your savings and will call you shortly from
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-lg font-semibold text-foreground">
+                      Your specialist <span className="text-primary">{assignedAgent.firstName}</span> is reviewing your savings
+                    </p>
+                    <p className="text-base text-muted-foreground">
+                      Expect a call shortly from:
+                    </p>
+                  </div>
                   <a
                     href={assignedAgent.telLink}
-                    className="block text-2xl md:text-3xl font-bold text-primary hover:underline"
+                    className="block text-3xl md:text-4xl font-bold text-primary hover:underline py-2"
                     onClick={() => trackEvent({ eventType: 'agent_phone_clicked', metadata: { agent: assignedAgent.firstName } })}
                   >
                     {assignedAgent.phone}
                   </a>
-                  <p className="text-sm text-foreground font-bold">
+                  <p className="text-sm text-foreground font-semibold">
                     📱 Save this number so you recognize our call!
                   </p>
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col items-center gap-3 pt-2">
+                    <a
+                      href={assignedAgent.telLink}
+                      className="w-full inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold text-lg rounded-xl px-6 py-4 transition-colors"
+                      onClick={() => trackEvent({ eventType: 'call_directly_clicked', metadata: { agent: assignedAgent.firstName } })}
+                    >
+                      <Phone className="h-5 w-5" />
+                      Call {assignedAgent.firstName} Now
+                    </a>
                     <button
                       onClick={() => {
                         const vCard = `BEGIN:VCARD\nVERSION:3.0\nFN:${assignedAgent.firstName} (Health Helpers)\nORG:Health Helpers\nTEL;TYPE=CELL:${assignedAgent.phone.replace(/[^+\d]/g, '')}\nNOTE:Your Medicare Supplement Specialist\nEND:VCARD`;
@@ -1708,14 +1691,6 @@ const MedicareSupplementAppointment = () => {
                       <UserPlus className="h-4 w-4" />
                       Save {assignedAgent.firstName} to Contacts
                     </button>
-                    <a
-                      href={assignedAgent.telLink}
-                      className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold text-base rounded-xl px-6 py-3 transition-colors"
-                      onClick={() => trackEvent({ eventType: 'call_directly_clicked', metadata: { agent: assignedAgent.firstName } })}
-                    >
-                      <Phone className="h-5 w-5" />
-                      Call {assignedAgent.firstName} Now
-                    </a>
                   </div>
                 </div>
               </div>
