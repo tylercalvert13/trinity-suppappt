@@ -1,33 +1,38 @@
 
 
-# Conversion Optimization for /suppappt — Revised Plan
+# Senior-Friendly Booking Widget UI Improvements
 
-## Changes to implement
+## Summary
+Update `AppointmentBookingWidgetWithOptIn.tsx` to be more senior-accessible, trust-focused, and designed to improve show-up rates.
 
-### 1. Auto-scroll to booking widget after qualification (5-second delay)
-Add a `setTimeout` that scrolls to the booking widget 5 seconds after the qualified screen renders — enough time to read the savings card.
+## Changes
 
-### 2. Remove email field from contact form
-Drop from 4 fields to 3 (first name, last name, phone). Update the contact submit handler and webhook payload to omit email.
+### `src/components/AppointmentBookingWidgetWithOptIn.tsx`
 
-### 3. Compress the qualified screen
-Remove the intermediate "Book My Free Call Now" button and the amber "Rate Reserved" urgency block. Layout becomes:
-- Results card (rate + savings)
-- Booking widget immediately
-- Agent fallback card (smaller)
-- 1 testimonial (keep existing copy — it's trust-focused and relevant to the appointment model)
+**Copy & Tone (remove pressure, build trust)**
+- Heading: "Lock In Your $X Savings" → "Schedule Your Free Call" with subtitle "A licensed agent will review your savings — no obligation"
+- Remove "🔥 12 people booked today" fake social proof
+- "Want to lock this in RIGHT NOW?" → "Prefer to talk now?" with softer styling
+- Clean up fire emoji language from bottom trust badges
 
-### 4. Progress bar — "Almost done!" at late steps
-At step 8+ (zip/contact), replace the step counter text with "Almost done!" and turn the progress bar green.
+**Typography & Touch Targets**
+- Day buttons: bump text to `text-2xl`, min-height to 90px
+- Time slot buttons: bump text to `text-3xl`, min-height to 80px
+- Body text: `text-sm` → `text-base` for instructions/labels
+- Step indicator dots: larger (w-3.5 h-3.5) with labels "Day → Time → Confirm"
 
-### Files
-- **`src/pages/MedicareSupplementAppointment.tsx`** — all changes above
+**Time Slot Organization**
+- Group slots into "Morning" and "Afternoon" sections with clear headers (helpers `isMorningSlot`/`isAfternoonSlot` already exist in the file)
 
-### What's NOT changing
-- Funnel step count stays at 9 (no combining gender/tobacco/spouse)
-- Existing testimonial copy stays as-is
-- No "savings expires" scarcity messaging
-- All conversion tracking unchanged
-- Agent assignment + call fallback unchanged
-- Exit intent modal, social proof popup, sticky CTA unchanged
+**Success Screen (show-up rate)**
+- Add "What to have ready" checklist: **Medicare card** and **current Medicare Supplement card** (not medications — nothing about their plan changes except carrier and price)
+- Replace `AlertTriangle` icon with friendly phone icon for the "save number" section
+- Make "Add to Calendar" more prominent with text: "Add a reminder so you don't miss your call"
+- Emphasize: **"We call YOU — no need to dial anything"**
+
+### What stays the same
+- Step flow (day → time → contact/confirm → success)
+- All API logic, slot fetching, contact creation
+- Prefilled contact shortcut
+- "Call Us" fallback option (just softer copy)
 
