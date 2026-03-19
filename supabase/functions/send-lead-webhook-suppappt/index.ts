@@ -17,8 +17,8 @@ serve(async (req) => {
     const data = await req.json();
     console.log("Received lead data (suppappt):", JSON.stringify(data));
 
-    // Validate required fields
-    if (!data.firstName || !data.lastName || !data.email || !data.phone) {
+    // Validate required fields — email is now optional (removed from /suppappt form)
+    if (!data.firstName || !data.lastName || !data.phone) {
       return new Response(
         JSON.stringify({ error: "Missing required contact fields" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -39,7 +39,7 @@ serve(async (req) => {
       firstName: data.firstName,
       lastName: data.lastName,
       name: `${data.firstName} ${data.lastName}`,
-      email: data.email,
+      email: data.email || '',
       phone: data.phone,
       
       // Demographics
