@@ -597,10 +597,13 @@ const MedicareSupplementAppointment = () => {
       setTimeout(() => {
         resultsHeaderRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
       }, 50);
+      // Auto-scroll to booking widget after 5 seconds so user can read savings first
+      const autoScrollTimer = setTimeout(() => {
+        bookingWidgetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 5000);
+      return () => clearTimeout(autoScrollTimer);
     }
   }, [step]);
-
-  // No auto-scroll or urgency toast — agent calls the lead directly
 
   // Detect user's state via IP geolocation on mount
   useEffect(() => {
