@@ -562,17 +562,9 @@ const MedicareSupplementAppointment = () => {
   // Warmup the quote API to pre-cache CSG token
   useQuoteWarmup();
 
-  // Handle booking completed - fire Facebook Appointment tracking
-  const handleBookingCompleted = useCallback((contactData: { firstName: string; lastName: string; email: string; phone: string }) => {
-    trackFacebookAppointmentEvent(formData, quoteResult);
-    trackTikTokScheduleEvent(formData, quoteResult);
-    const ttEventId = generateEventId();
-    trackTikTokScheduleEventServer(formData, quoteResult, ttEventId);
-  }, [formData, quoteResult]);
-
-  // Scroll to booking widget helper
-  const scrollToBookingWidget = useCallback(() => {
-    bookingWidgetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Scroll to agent card helper
+  const scrollToAgentCard = useCallback(() => {
+    agentCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
   // Auto-scroll behavior based on step changes
