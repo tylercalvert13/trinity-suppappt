@@ -1649,42 +1649,7 @@ const MedicareSupplementAppointment = () => {
                 </div>
               </div>
 
-              {/* Primary CTA — Book a Call */}
-              <Button
-                onClick={() => {
-                  scrollToBookingWidget();
-                  trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'header_book_now_clicked' } });
-                }}
-                className="w-full min-h-[60px] bg-green-600 hover:bg-green-700 text-white text-xl font-semibold rounded-xl"
-              >
-                Book My Free Call Now
-              </Button>
 
-              {/* Lock In Rate CTA */}
-              <button
-                onClick={() => {
-                  scrollToBookingWidget();
-                  trackEvent({ eventType: 'conversion_trigger', metadata: { trigger: 'amber_cta_clicked' } });
-                }}
-                className="w-full bg-amber-50 border-2 border-amber-200 rounded-xl p-5 text-center cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-2 text-amber-800 mb-3">
-                  <Clock className="h-5 w-5" />
-                  <span className="font-semibold">Rate Reserved — 15 Minutes</span>
-                </div>
-                <div className="mb-3">
-                  <p className="text-2xl font-bold text-amber-700">
-                    ${quoteResult.monthlySavings.toFixed(2)}/month
-                  </p>
-                  <p className="text-sm text-muted-foreground">in savings</p>
-                </div>
-                <p className="text-base text-foreground">
-                  Tap to book your call →
-                </p>
-                <div className="mt-3 flex justify-center">
-                  <ChevronDown className="h-6 w-6 text-amber-600 animate-bounce" />
-                </div>
-              </button>
 
               {/* Appointment Booking Widget - prefilled with contact data */}
               <div ref={bookingWidgetRef}>
