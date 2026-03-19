@@ -146,7 +146,6 @@ interface FormData {
   zipCode: string;
   firstName: string;
   lastName: string;
-  email: string;
   phone: string;
 }
 
