@@ -14,26 +14,21 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AdsFunnelChartProps {
   totalLeads: number;
-  totalAppointments: number;
   approvedSales: number;
   loading?: boolean;
 }
 
 export function AdsFunnelChart({
   totalLeads,
-  totalAppointments,
   approvedSales,
   loading,
 }: AdsFunnelChartProps) {
   const isMobile = useIsMobile();
-  const leadToApptRate = totalLeads > 0 ? (totalAppointments / totalLeads) * 100 : 0;
-  const apptToSaleRate = totalAppointments > 0 ? (approvedSales / totalAppointments) * 100 : 0;
   const leadToSaleRate = totalLeads > 0 ? (approvedSales / totalLeads) * 100 : 0;
 
   const funnelData = [
-    { name: isMobile ? "Leads" : "Leads", value: totalLeads, rate: 100, fill: "#3b82f6" },
-    { name: isMobile ? "Appts" : "Appointments", value: totalAppointments, rate: leadToApptRate, fill: "#f59e0b" },
-    { name: "Sales", value: approvedSales, rate: leadToSaleRate, fill: "#22c55e" },
+    { name: "Leads", value: totalLeads, fill: "#3b82f6" },
+    { name: "Sales", value: approvedSales, fill: "#22c55e" },
   ];
 
   return (
@@ -48,16 +43,16 @@ export function AdsFunnelChart({
           <Skeleton className="h-[160px] sm:h-[200px] w-full" />
         ) : (
           <div className="space-y-3 sm:space-y-4">
-            <ResponsiveContainer width="100%" height={isMobile ? 140 : 180}>
-              <BarChart 
-                data={funnelData} 
-                layout="vertical" 
+            <ResponsiveContainer width="100%" height={isMobile ? 120 : 140}>
+              <BarChart
+                data={funnelData}
+                layout="vertical"
                 margin={{ left: isMobile ? 0 : 10, right: isMobile ? 40 : 60 }}
               >
                 <XAxis type="number" hide />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
+                <YAxis
+                  type="category"
+                  dataKey="name"
                   width={isMobile ? 50 : 90}
                   tick={{ fontSize: isMobile ? 10 : 12 }}
                 />
@@ -83,17 +78,9 @@ export function AdsFunnelChart({
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-center">
-              <div className="bg-blue-50 rounded-lg p-1.5 sm:p-2">
-                <div className="text-blue-600 font-semibold text-xs sm:text-sm">{leadToApptRate.toFixed(1)}%</div>
-                <div className="text-muted-foreground text-[10px] sm:text-xs">Lead → Appt</div>
-              </div>
-              <div className="bg-yellow-50 rounded-lg p-1.5 sm:p-2">
-                <div className="text-yellow-600 font-semibold text-xs sm:text-sm">{apptToSaleRate.toFixed(1)}%</div>
-                <div className="text-muted-foreground text-[10px] sm:text-xs">Appt → Sale</div>
-              </div>
-              <div className="bg-green-50 rounded-lg p-1.5 sm:p-2">
-                <div className="text-green-600 font-semibold text-xs sm:text-sm">{leadToSaleRate.toFixed(1)}%</div>
+            <div className="flex justify-center">
+              <div className="bg-green-50 rounded-lg p-2 sm:p-3 text-center min-w-[120px]">
+                <div className="text-green-600 font-semibold text-sm sm:text-base">{leadToSaleRate.toFixed(1)}%</div>
                 <div className="text-muted-foreground text-[10px] sm:text-xs">Lead → Sale</div>
               </div>
             </div>

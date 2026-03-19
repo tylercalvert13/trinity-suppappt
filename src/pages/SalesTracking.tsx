@@ -5,29 +5,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw, TrendingUp, DollarSign, CheckCircle, Clock, XCircle } from "lucide-react";
 import { useSalesData, formatCurrency } from "@/hooks/useSalesData";
 import { useAdsData } from "@/hooks/useAdsData";
-import { useAppointmentData } from "@/hooks/useAppointmentData";
 import { StatCard } from "@/components/sales/StatCard";
 import { DailySalesChart } from "@/components/sales/DailySalesChart";
 import { CarrierChart } from "@/components/sales/CarrierChart";
 import { AgentTable } from "@/components/sales/AgentTable";
 import { RecentSubmissionsTable } from "@/components/sales/RecentSubmissionsTable";
 import { AdsTrackingTab } from "@/components/sales/AdsTrackingTab";
-import { AppointmentsTrackingTab } from "@/components/sales/AppointmentsTrackingTab";
 import { DateRangeFilter, type DateRangeValue } from "@/components/sales/DateRangeFilter";
 
 export default function SalesTracking() {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ from: null, to: null });
   const { data: salesData, loading: salesLoading, error: salesError, lastUpdated, refetch: refetchSales } = useSalesData(dateRange);
   const { data: adsData, loading: adsLoading, error: adsError, refetch: refetchAds } = useAdsData(dateRange);
-  const { data: appointmentData, loading: appointmentLoading, error: appointmentError, refetch: refetchAppointments } = useAppointmentData(dateRange);
 
-  const loading = salesLoading || adsLoading || appointmentLoading;
-  const error = salesError || adsError || appointmentError;
+  const loading = salesLoading || adsLoading;
+  const error = salesError || adsError;
 
   const handleRefresh = () => {
     refetchSales();
     refetchAds();
-    refetchAppointments();
   };
 
   if (error) {
@@ -75,20 +71,17 @@ export default function SalesTracking() {
 
         {/* Tabs */}
         <Tabs defaultValue="sales" className="w-full">
-          <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-white/10 h-11 sm:h-10">
+          <TabsList className="grid w-full max-w-lg mx-auto grid-cols-2 bg-white/10 h-11 sm:h-10">
             <TabsTrigger value="sales" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white text-xs sm:text-sm min-h-[40px]">
               Sales
             </TabsTrigger>
             <TabsTrigger value="ads" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white text-xs sm:text-sm min-h-[40px]">
               Ads
             </TabsTrigger>
-            <TabsTrigger value="appointments" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white text-xs sm:text-sm min-h-[40px]">
-              Appointments
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="sales" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
-            {/* Stats Grid - 6 Cards - Horizontally scrollable on mobile */}
+            {/* Stats Grid */}
             <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:gap-4 sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0">
               <div className="min-w-[140px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
                 <StatCard
@@ -184,13 +177,6 @@ export default function SalesTracking() {
               adsData={adsData}
               salesData={salesData}
               loading={loading}
-            />
-          </TabsContent>
-
-          <TabsContent value="appointments" className="mt-6">
-            <AppointmentsTrackingTab
-              data={appointmentData}
-              loading={appointmentLoading}
             />
           </TabsContent>
         </Tabs>
