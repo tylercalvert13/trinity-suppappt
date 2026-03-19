@@ -774,7 +774,6 @@ const MedicareSupplementAppointment = () => {
     const validationResult = contactSchema.safeParse({
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
-      email: formData.email.trim(),
       phone: formData.phone,
     });
 
@@ -788,13 +787,12 @@ const MedicareSupplementAppointment = () => {
       return;
     }
 
-    // Step 2: Server-side API validation
+    // Step 2: Server-side API validation (phone only)
     setIsValidating(true);
     
     try {
       const { data: validationData, error: validationError } = await supabase.functions.invoke('validate-contact', {
         body: {
-          email: formData.email.trim(),
           phone: formData.phone.replace(/\D/g, ''),
         }
       });
@@ -803,15 +801,7 @@ const MedicareSupplementAppointment = () => {
         console.error("Validation API error:", validationError);
         // Continue anyway - fail open
       } else if (validationData && !validationData.valid) {
-        // Check which field failed
         const errors: ValidationErrors = {};
-        if (!validationData.email?.valid) {
-          if (validationData.email?.disposable) {
-            errors.email = "Please use a permanent email address (no temporary emails)";
-          } else {
-            errors.email = "We couldn't verify this email. Please check it and try again.";
-          }
-        }
         if (!validationData.phone?.valid) {
           errors.phone = "This phone number doesn't appear to be valid. Please double-check it.";
         }
