@@ -1,35 +1,33 @@
 
 
-# Add Calendar Booking Widget to /suppappt Funnel
+# Conversion Optimization for /suppappt — Revised Plan
 
-## Summary
-Not hard at all. The suppappt funnel already collects contact info before showing results, so we just need to add the booking widget below the existing agent assignment card on the qualified screen. We'll use `AppointmentBookingWidgetWithOptIn` (like suppappt2) since it handles contact creation internally — we just prefill the contact data.
+## Changes to implement
 
-## Changes
+### 1. Auto-scroll to booking widget after qualification (5-second delay)
+Add a `setTimeout` that scrolls to the booking widget 5 seconds after the qualified screen renders — enough time to read the savings card.
 
-### `src/pages/MedicareSupplementAppointment.tsx`
+### 2. Remove email field from contact form
+Drop from 4 fields to 3 (first name, last name, phone). Update the contact submit handler and webhook payload to omit email.
 
-1. **Add imports**: `AppointmentBookingWidgetWithOptIn`, `useCalendarWarmup`, `StickyBookingCTA`, `ExitIntentModal`, plus `Clock` and `ChevronDown` icons.
+### 3. Compress the qualified screen
+Remove the intermediate "Book My Free Call Now" button and the amber "Rate Reserved" urgency block. Layout becomes:
+- Results card (rate + savings)
+- Booking widget immediately
+- Agent fallback card (smaller)
+- 1 testimonial (keep existing copy — it's trust-focused and relevant to the appointment model)
 
-2. **Add state/refs**: `bookingWidgetRef` for scroll targeting, `selectedTimeDisplay` and `selectedDayLabel` for the sticky CTA.
+### 4. Progress bar — "Almost done!" at late steps
+At step 8+ (zip/contact), replace the step counter text with "Almost done!" and turn the progress bar green.
 
-3. **Add `useCalendarWarmup()`** call (replace the "no calendar warmup needed" comment).
+### Files
+- **`src/pages/MedicareSupplementAppointment.tsx`** — all changes above
 
-4. **Add `handleBookingCompleted` callback** to fire Facebook appointment tracking (similar to suppappt2).
-
-5. **Add `scrollToBookingWidget` helper** function.
-
-6. **Update the qualified screen** (lines ~1597-1742): After the existing agent assignment card, add:
-   - A "Book My Free Call Now" button that scrolls to the widget
-   - A "Rate Reserved — 15 Minutes" urgency CTA
-   - The `AppointmentBookingWidgetWithOptIn` component, prefilled with the user's name, email, phone, zip, quote data
-   - Keep existing agent card + testimonials + trust badges
-
-7. **Add overlays**: `ExitIntentModal`, `StickyBookingCTA` when qualified (same pattern as suppappt2).
-
-### What stays the same
-- The speed-to-lead agent assignment still happens and displays
-- All existing conversion tracking (Facebook, TikTok, Google, Bing, Vibe) stays
-- The "Call directly" CTA remains as a fallback
-- The booking widget is an **addition**, not a replacement — users can either call the assigned agent or book a time slot
+### What's NOT changing
+- Funnel step count stays at 9 (no combining gender/tobacco/spouse)
+- Existing testimonial copy stays as-is
+- No "savings expires" scarcity messaging
+- All conversion tracking unchanged
+- Agent assignment + call fallback unchanged
+- Exit intent modal, social proof popup, sticky CTA unchanged
 
