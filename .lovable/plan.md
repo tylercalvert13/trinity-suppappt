@@ -1,16 +1,34 @@
 
 
-# Add More Space Between Form and Footer on /suppappt
+# Remove Appointments, Simplify Ads Tab for Dial-Only Model
 
-## Problem
-The footer disclaimers are too close to the form on the `/suppappt` page. Users may be reading the disclaimer text while filling out the funnel, which could be hurting conversion on both A/B variants.
+## Summary
+Since you're no longer booking appointments and just dialing leads, we'll remove the Appointments tab entirely and strip appointment-related metrics from the Ads tab. The funnel becomes **Leads → Sales** instead of **Leads → Appointments → Sales**.
 
-## Solution
-Increase the spacer between the form section and the footer from `h-16` (64px) to `h-64` (256px) on mobile and even more on desktop. This pushes the footer well below the fold so users stay focused on the form.
+## Changes
 
-## Technical Change
+### 1. Remove Appointments tab from SalesTracking page
+- **`src/pages/SalesTracking.tsx`**: Remove `useAppointmentData` import/hook, remove the Appointments `TabsTrigger` and `TabsContent`, change tabs from 3-column to 2-column grid. Remove `appointmentLoading`/`appointmentError`/`refetchAppointments` from loading/error/refresh logic.
 
-**File: `src/pages/MedicareSupplementAppointment.tsx`**
-- Line 1917: Change `<div className="h-16"></div>` to `<div className="h-64 md:h-96"></div>` (256px mobile, 384px desktop)
+### 2. Strip appointment metrics from Ads tab
+- **`src/components/sales/AdsTrackingTab.tsx`**: Remove the "Appointments" KPI card from row 1, remove "Cost Per Appt" from row 2. Update the funnel chart to pass only Leads → Sales (remove `totalAppointments`). The row 1 grid goes from 4 → 3 columns, row 2 from 5 → 4 columns.
 
-One line change, no logic affected.
+### 3. Simplify the Ads funnel chart
+- **`src/components/sales/AdsFunnelChart.tsx`**: Remove `totalAppointments` prop. The funnel becomes 2 bars (Leads, Sales) with one conversion rate pill: Lead → Sale. Remove Lead→Appt and Appt→Sale rate calculations.
+
+### 4. Clean up daily ads table
+- **`src/components/sales/DailyAdsTable.tsx`**: Remove the "Appts", "CPA", and "Conv." (lead-to-appt rate) columns. Keep Date, Spend, Leads, CPL.
+
+### 5. Update types
+- **`src/types/salesTracking.ts`**: Remove `appointments`, `costPerAppointment`, `leadToApptRate` from `DailyAdsStats`. Remove `totalAppointments`, `avgCostPerAppointment` from `AdsData`. Remove the entire `CombinedAdsMetrics` interface (unused). Remove `AppointmentData`, `DailyAppointmentStats` types.
+
+### 6. Update ads data hook
+- **`src/hooks/useAdsData.ts`**: Stop parsing appointments/costPerAppointment/leadToApptRate columns. Remove those fields from the returned data.
+
+### Files no longer needed (can leave or delete)
+- `src/components/sales/AppointmentsTrackingTab.tsx`
+- `src/components/sales/AppointmentsTrendChart.tsx`
+- `src/components/sales/AppointmentsFunnelChart.tsx`
+- `src/components/sales/DailyAppointmentsTable.tsx`
+- `src/hooks/useAppointmentData.ts`
+
