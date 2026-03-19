@@ -1550,7 +1550,7 @@ const MedicareSupplementAppointment = () => {
                 <Button
                   type="submit"
                   className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto rounded-xl mt-4"
-                  disabled={isSubmitting || isValidating || !formData.firstName || !formData.lastName || !formData.email || !formData.phone}
+                  disabled={isSubmitting || isValidating || !formData.firstName || !formData.lastName || !formData.phone}
                   data-tf-element-role="submit"
                 >
                   {isValidating ? (
