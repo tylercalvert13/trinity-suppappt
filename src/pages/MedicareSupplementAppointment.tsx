@@ -96,7 +96,6 @@ async function getNextAgent(stateName?: string): Promise<Agent> {
 const contactSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name is too long"),
   lastName: z.string().min(1, "Last name is required").max(50, "Last name is too long"),
-  email: z.string().email("Please enter a valid email address").max(255, "Email is too long"),
   phone: z.string()
     .transform(val => val.replace(/\D/g, ''))
     .refine(val => val.length === 10, "Phone must be 10 digits")
@@ -115,7 +114,6 @@ const formatPhoneNumber = (value: string): string => {
 interface ValidationErrors {
   firstName?: string;
   lastName?: string;
-  email?: string;
   phone?: string;
 }
 
