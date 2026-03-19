@@ -1777,16 +1777,7 @@ const MedicareSupplementAppointment = () => {
       {step === "qualified" && quoteResult && (
         <ExitIntentModal
           monthlySavings={quoteResult.monthlySavings}
-          onBookClick={scrollToBookingWidget}
-        />
-      )}
-
-      {/* Sticky Floating CTA - mobile only, when qualified */}
-      {step === "qualified" && quoteResult && (
-        <StickyBookingCTA
-          targetRef={bookingWidgetRef}
-          selectedTime={selectedTimeDisplay || undefined}
-          dayLabel={selectedDayLabel || undefined}
+          onBookClick={scrollToAgentCard}
         />
       )}
 
