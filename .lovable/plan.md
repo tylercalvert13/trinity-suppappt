@@ -1,38 +1,30 @@
 
 
-# Senior-Friendly Booking Widget UI Improvements
+# Switch /suppappt Back to Speed-to-Lead Model
 
 ## Summary
-Update `AppointmentBookingWidgetWithOptIn.tsx` to be more senior-accessible, trust-focused, and designed to improve show-up rates.
+Remove the booking widget from the /suppappt results screen and make the assigned agent + phone number the primary CTA. Keep the simplified copy tone, keep email off, and leave the `AppointmentBookingWidgetWithOptIn` component itself untouched.
 
-## Changes
+## Changes in `src/pages/MedicareSupplementAppointment.tsx`
 
-### `src/components/AppointmentBookingWidgetWithOptIn.tsx`
+### Results screen (lines ~1650-1731)
+1. **Remove the `AppointmentBookingWidgetWithOptIn`** block (lines 1653-1679) entirely — the agent card becomes the primary CTA
+2. **Promote the agent call card** (currently lines 1682-1731) to be immediately after the savings card — make it the hero action:
+   - Larger phone number and "Call Now" button
+   - Keep "Save to Contacts" vCard download
+   - Keep the friendly copy: "Your Medicare Specialist **{name}** is reviewing your savings and will call you shortly"
+3. **Remove booking-widget-related refs and state** that are no longer needed (`bookingWidgetRef`, `selectedTimeDisplay`, `selectedDayLabel`, `scrollToBookingWidget`)
+4. **Remove the `AppointmentBookingWidgetWithOptIn` import**
 
-**Copy & Tone (remove pressure, build trust)**
-- Heading: "Lock In Your $X Savings" → "Schedule Your Free Call" with subtitle "A licensed agent will review your savings — no obligation"
-- Remove "🔥 12 people booked today" fake social proof
-- "Want to lock this in RIGHT NOW?" → "Prefer to talk now?" with softer styling
-- Clean up fire emoji language from bottom trust badges
-
-**Typography & Touch Targets**
-- Day buttons: bump text to `text-2xl`, min-height to 90px
-- Time slot buttons: bump text to `text-3xl`, min-height to 80px
-- Body text: `text-sm` → `text-base` for instructions/labels
-- Step indicator dots: larger (w-3.5 h-3.5) with labels "Day → Time → Confirm"
-
-**Time Slot Organization**
-- Group slots into "Morning" and "Afternoon" sections with clear headers (helpers `isMorningSlot`/`isAfternoonSlot` already exist in the file)
-
-**Success Screen (show-up rate)**
-- Add "What to have ready" checklist: **Medicare card** and **current Medicare Supplement card** (not medications — nothing about their plan changes except carrier and price)
-- Replace `AlertTriangle` icon with friendly phone icon for the "save number" section
-- Make "Add to Calendar" more prominent with text: "Add a reminder so you don't miss your call"
-- Emphasize: **"We call YOU — no need to dial anything"**
+### Bottom overlays (lines ~1786-1801)
+5. **Update `ExitIntentModal`** `onBookClick` — change from `scrollToBookingWidget` to scroll to the agent card or trigger a `tel:` link
+6. **Update `StickyBookingCTA`** — replace with a simple sticky "Call {Agent} Now" bar on mobile instead of the booking-widget-targeted CTA, or remove it and rely on the prominent agent card
 
 ### What stays the same
-- Step flow (day → time → contact/confirm → success)
-- All API logic, slot fetching, contact creation
-- Prefilled contact shortcut
-- "Call Us" fallback option (just softer copy)
+- All funnel steps (plan → payment → health → contact → loading)
+- Agent round-robin assignment logic (`getNextAgent`)
+- Webhook to GHL with agent assignment data
+- Email removed from contact form
+- All conversion tracking (FB, Google, Bing, TikTok, Vibe)
+- The `AppointmentBookingWidgetWithOptIn` component file itself (unchanged)
 
