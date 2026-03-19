@@ -250,7 +250,7 @@ const trackFacebookAppointmentEvent = async (
         event_id: eventId,
         first_name: formData.firstName,
         last_name: formData.lastName,
-        email: formData.email ?? "",
+        email: '' as string,
         phone: formData.phone,
         zip_code: formData.zipCode,
         value: conversionValue,
@@ -275,7 +275,7 @@ const trackFacebookSubmissionEvent = async (
     
     // Initialize Advanced Matching with user data (re-init is idempotent)
     initAdvancedMatching({
-      email: formData.email ?? "",
+      email: '' as string,
       firstName: formData.firstName,
       lastName: formData.lastName,
       phone: formData.phone,
@@ -297,7 +297,7 @@ const trackFacebookSubmissionEvent = async (
         event_id: eventId,
         first_name: formData.firstName,
         last_name: formData.lastName,
-        email: formData.email ?? "",
+        email: '' as string,
         phone: formData.phone,
         zip_code: formData.zipCode,
         value: conversionValue,
@@ -331,7 +331,7 @@ const trackBingSubmissionEvent = (formData: FormData) => {
     }
     
     // Normalize email per Microsoft spec
-    const normalizedEmail = normalizeEmailForBing(formData.email ?? "");
+    const normalizedEmail = normalizeEmailForBing('' as string);
     
     // Format phone to E.164 (add +1 for US)
     const phoneDigits = formData.phone.replace(/\D/g, '');
@@ -419,7 +419,7 @@ const trackTikTokLeadEvent = async (formData: FormData, quoteResult: QuoteResult
   try {
     if (!window.ttq) return;
     window.ttq.identify({
-      email: await hashSHA256(formData.email ?? ""),
+      email: await hashSHA256('' as string),
       phone_number: await hashSHA256(formData.phone.replace(/\D/g, '')),
       external_id: await hashSHA256(getVisitorIdForTracking()),
     });
@@ -446,7 +446,7 @@ const trackTikTokLeadEventServer = async (formData: FormData, quoteResult: Quote
         event: 'Lead',
         event_id: eventId,
         event_source_url: window.location.href,
-        email: formData.email ?? "",
+        email: '' as string,
         phone: formData.phone,
         external_id: getVisitorIdForTracking(),
         ttclid,
@@ -469,7 +469,7 @@ const trackTikTokScheduleEvent = async (formData: FormData, quoteResult: QuoteRe
   try {
     if (!window.ttq) return;
     window.ttq.identify({
-      email: await hashSHA256(formData.email ?? ""),
+      email: await hashSHA256('' as string),
       phone_number: await hashSHA256(formData.phone.replace(/\D/g, '')),
       external_id: await hashSHA256(getVisitorIdForTracking()),
     });
@@ -496,7 +496,7 @@ const trackTikTokScheduleEventServer = async (formData: FormData, quoteResult: Q
         event: 'Schedule',
         event_id: eventId,
         event_source_url: window.location.href,
-        email: formData.email ?? "",
+        email: '' as string,
         phone: formData.phone,
         external_id: getVisitorIdForTracking(),
         ttclid,
@@ -1004,7 +1004,7 @@ const MedicareSupplementAppointment = () => {
         zip_code: formData.zipCode,
         first_name: formData.firstName,
         last_name: formData.lastName,
-        email: formData.email ?? "",
+        email: '' as string,
         phone: formData.phone,
         submission_type: submissionType,
         disqualification_reason: disqualificationReason || null,
