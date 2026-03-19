@@ -10,6 +10,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useFunnelAnalytics } from '@/hooks/useFunnelAnalytics';
 
 import { useQuoteWarmup } from '@/hooks/useQuoteWarmup';
+import { useCalendarWarmup } from '@/hooks/useCalendarWarmup';
+import { AppointmentBookingWidgetWithOptIn } from '@/components/AppointmentBookingWidgetWithOptIn';
+import { StickyBookingCTA } from '@/components/StickyBookingCTA';
+import { ExitIntentModal } from '@/components/ExitIntentModal';
+import { getStateFromZip } from '@/lib/zipToState';
 import { z } from 'zod';
 import { getStateFromZip } from '@/lib/zipToState';
 import { SocialProofPopup } from '@/components/SocialProofPopup';
