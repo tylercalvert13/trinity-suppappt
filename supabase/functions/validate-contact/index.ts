@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface ValidationRequest {
-  email: string;
+  email?: string;
   phone: string;
 }
 
@@ -92,9 +92,10 @@ serve(async (req) => {
   try {
     const { email, phone }: ValidationRequest = await req.json();
     
-    if (!email || !phone) {
+    // Phone is required; email is optional
+    if (!phone) {
       return new Response(
-        JSON.stringify({ error: "Email and phone are required" }),
+        JSON.stringify({ error: "Phone is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
