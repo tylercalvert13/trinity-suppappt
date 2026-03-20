@@ -761,6 +761,7 @@ const MedicareSupplementAppointment = () => {
     const validationResult = contactSchema.safeParse({
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
+      email: formData.email.trim(),
       phone: formData.phone,
     });
 
