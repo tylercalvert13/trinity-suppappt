@@ -583,15 +583,11 @@ const MedicareSupplementAppointment = () => {
         loadingRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
       }, 50);
     } else if (step === "qualified") {
-      // Scroll to results header ("Great news")
+      // Scroll to results header
       setTimeout(() => {
         resultsHeaderRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
       }, 50);
-      // Auto-scroll to agent card after 5 seconds so user can read savings first
-      const autoScrollTimer = setTimeout(() => {
-        agentCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 5000);
-      return () => clearTimeout(autoScrollTimer);
+    }
     }
   }, [step]);
 
