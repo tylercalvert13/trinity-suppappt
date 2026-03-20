@@ -101,7 +101,7 @@ export function ExitIntentModal({ onBookClick }: ExitIntentModalProps) {
             <Clock className="h-8 w-8 text-amber-600" />
           </div>
           <DialogTitle className="text-2xl font-bold text-foreground">
-            Wait! Your ${monthlySavings.toFixed(2)}/month savings expires soon.
+            Wait! Don't miss your personalized savings.
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
