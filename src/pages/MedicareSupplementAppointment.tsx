@@ -115,6 +115,7 @@ const formatPhoneNumber = (value: string): string => {
 interface ValidationErrors {
   firstName?: string;
   lastName?: string;
+  email?: string;
   phone?: string;
 }
 
