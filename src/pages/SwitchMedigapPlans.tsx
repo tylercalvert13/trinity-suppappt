@@ -21,14 +21,42 @@ const SwitchMedigapPlans = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": "How to Switch Medicare Supplement Plans Without Losing Coverage",
+          "description": "Step-by-step guide to switching Medigap carriers. Keep your Plan G, F, or N coverage while paying less.",
+          "author": { "@type": "Organization", "name": "Health Helpers", "url": "https://healthhelpers.co" },
+          "publisher": { "@type": "Organization", "name": "Health Helpers", "logo": { "@type": "ImageObject", "url": "https://healthhelpers.co/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" } },
+          "datePublished": "2025-02-02",
+          "dateModified": "2026-03-20",
+          "mainEntityOfPage": "https://healthhelpers.co/switch-medigap-plans"
+        })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://healthhelpers.co/" },
+            { "@type": "ListItem", "position": 2, "name": "Medicare Supplement Plans", "item": "https://healthhelpers.co/" },
+            { "@type": "ListItem", "position": 3, "name": "How to Switch Medigap Plans", "item": "https://healthhelpers.co/switch-medigap-plans" }
+          ]
+        })}</script>
+      </Helmet>
       <Header />
       
       <article className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Hero Section */}
         <header className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6">
-            <Shield className="h-4 w-4" />
-            <span className="text-sm font-medium">Coverage Guide</span>
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full">
+              <Shield className="h-4 w-4" />
+              <span className="text-sm font-medium">Coverage Guide</span>
+            </div>
+            <div className="inline-flex items-center gap-2 text-muted-foreground text-sm">
+              <Calendar className="h-4 w-4" />
+              <span>Updated March 2026</span>
+            </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
             How to Switch Medicare Supplement Carriers Without Losing Coverage

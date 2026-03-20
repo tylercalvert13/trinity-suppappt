@@ -21,14 +21,42 @@ const CheapestPlanGRates = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": "Find the Cheapest Plan G Rates in Your Area",
+          "description": "Plan G rates vary by $50-150/month between carriers for identical coverage. Find the lowest rates from A-rated carriers.",
+          "author": { "@type": "Organization", "name": "Health Helpers", "url": "https://healthhelpers.co" },
+          "publisher": { "@type": "Organization", "name": "Health Helpers", "logo": { "@type": "ImageObject", "url": "https://healthhelpers.co/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" } },
+          "datePublished": "2025-02-02",
+          "dateModified": "2026-03-20",
+          "mainEntityOfPage": "https://healthhelpers.co/cheapest-plan-g-rates"
+        })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://healthhelpers.co/" },
+            { "@type": "ListItem", "position": 2, "name": "Medicare Supplement Plans", "item": "https://healthhelpers.co/" },
+            { "@type": "ListItem", "position": 3, "name": "Cheapest Plan G Rates", "item": "https://healthhelpers.co/cheapest-plan-g-rates" }
+          ]
+        })}</script>
+      </Helmet>
       <Header />
       
       <article className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Hero Section */}
         <header className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full mb-6">
-            <DollarSign className="h-4 w-4" />
-            <span className="text-sm font-medium">Rate Guide</span>
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full">
+              <DollarSign className="h-4 w-4" />
+              <span className="text-sm font-medium">Rate Guide</span>
+            </div>
+            <div className="inline-flex items-center gap-2 text-muted-foreground text-sm">
+              <Calendar className="h-4 w-4" />
+              <span>Updated March 2026</span>
+            </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
             Is Your Plan G Too Expensive? Find the Lowest Rate
