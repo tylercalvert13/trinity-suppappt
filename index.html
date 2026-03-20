@@ -70,13 +70,42 @@
       "description": "Medicare Supplement insurance rate comparison service helping seniors find lower prices on Plan G, F, and N Medigap coverage from A+ rated carriers.",
       "telephone": "+1-201-298-8393",
       "email": "support@healthhelpers.co",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "US"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+1-201-298-8393",
+        "contactType": "customer service",
+        "availableLanguage": ["English"],
+        "areaServed": "US"
+      },
       "areaServed": {
         "@type": "Country",
         "name": "United States"
       },
       "serviceType": ["Medicare Supplement Insurance", "Medigap Plan Comparison", "Medicare Supplement Rate Comparison"],
       "priceRange": "Free rate comparison",
-      "sameAs": []
+      "sameAs": [
+        "https://www.facebook.com/healthhelpers",
+        "https://www.linkedin.com/company/healthhelpers"
+      ],
+      "knowsAbout": ["Medicare Supplement Insurance", "Medigap Plans", "Plan G", "Plan F", "Plan N", "Medicare rate comparison"],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Medicare Supplement Rate Comparison",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Free Medicare Supplement Rate Comparison",
+              "url": "https://healthhelpers.co/suppappt"
+            }
+          }
+        ]
+      }
     }
     </script>
 
@@ -126,7 +155,11 @@
             "text": "Plan F offers 100% coverage of Medicare gaps but is only available if you became eligible for Medicare before January 1, 2020. Plan G is the most popular choice today—it covers everything except the annual Part B deductible ($240 in 2024). Plan N has lower premiums but includes small copays for some office visits ($20) and emergency room visits ($50). All three plans let you see any doctor who accepts Medicare, with no referrals needed."
           }
         }
-      ]
+      ],
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "cssSelector": [".faq-answer", "meta[name='description']"]
+      }
     }
     </script>
   </head>
