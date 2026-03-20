@@ -9,12 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Clock } from 'lucide-react';
 
 interface ExitIntentModalProps {
-  monthlySavings: number;
   onBookClick: () => void;
   onTrackEvent?: (params: { eventType: string; metadata?: Record<string, string> }) => void;
 }
 
-export function ExitIntentModal({ monthlySavings, onBookClick }: ExitIntentModalProps) {
+export function ExitIntentModal({ onBookClick }: ExitIntentModalProps) {
   const [showModal, setShowModal] = useState(false);
   const [hasShown, setHasShown] = useState(false);
 
@@ -102,7 +101,7 @@ export function ExitIntentModal({ monthlySavings, onBookClick }: ExitIntentModal
             <Clock className="h-8 w-8 text-amber-600" />
           </div>
           <DialogTitle className="text-2xl font-bold text-foreground">
-            Wait! Your ${monthlySavings.toFixed(2)}/month savings expires soon.
+            Wait! Don't miss your personalized savings.
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">

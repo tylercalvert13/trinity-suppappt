@@ -1034,7 +1034,7 @@ const MedicareSupplementChat = () => {
 
       {/* Exit Intent Modal */}
       {(chatStep === 'pick-day' || chatStep === 'pick-time') && quoteResult && (
-        <ExitIntentModal monthlySavings={quoteResult.monthlySavings} onBookClick={() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })} />
+        <ExitIntentModal onBookClick={() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })} />
       )}
 
       {/* Social Proof Popup */}

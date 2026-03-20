@@ -1315,7 +1315,6 @@ const MedicareSupplementAppointment2 = () => {
       {/* Exit Intent Modal - only show when qualified */}
       {step === "qualified" && quoteResult && (
         <ExitIntentModal
-          monthlySavings={quoteResult.monthlySavings}
           onBookClick={scrollToBookingWidget}
         />
       )}
