@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, DollarSign, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
+import { TrendingUp, DollarSign, AlertTriangle, CheckCircle, ArrowRight, Calendar } from "lucide-react";
 import RelatedArticles from "@/components/RelatedArticles";
 
 const WhyMedigapRatesIncrease = () => {
@@ -20,14 +21,42 @@ const WhyMedigapRatesIncrease = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": "Why Your Medicare Supplement Rate Keeps Going Up",
+          "description": "Discover why your Medigap premium increases every year and how switching carriers can save you $50-150/month on the same Plan G, F, or N coverage.",
+          "author": { "@type": "Organization", "name": "Health Helpers", "url": "https://healthhelpers.co" },
+          "publisher": { "@type": "Organization", "name": "Health Helpers", "logo": { "@type": "ImageObject", "url": "https://healthhelpers.co/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" } },
+          "datePublished": "2025-02-02",
+          "dateModified": "2026-03-20",
+          "mainEntityOfPage": "https://healthhelpers.co/why-medigap-rates-increase"
+        })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://healthhelpers.co/" },
+            { "@type": "ListItem", "position": 2, "name": "Medicare Supplement Plans", "item": "https://healthhelpers.co/" },
+            { "@type": "ListItem", "position": 3, "name": "Why Medigap Rates Increase", "item": "https://healthhelpers.co/why-medigap-rates-increase" }
+          ]
+        })}</script>
+      </Helmet>
       <Header />
       
       <article className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Hero Section */}
         <header className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-destructive/10 text-destructive px-4 py-2 rounded-full mb-6">
-            <TrendingUp className="h-4 w-4" />
-            <span className="text-sm font-medium">Rate Increase Alert</span>
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="inline-flex items-center gap-2 bg-destructive/10 text-destructive px-4 py-2 rounded-full">
+              <TrendingUp className="h-4 w-4" />
+              <span className="text-sm font-medium">Rate Increase Alert</span>
+            </div>
+            <div className="inline-flex items-center gap-2 text-muted-foreground text-sm">
+              <Calendar className="h-4 w-4" />
+              <span>Updated March 2026</span>
+            </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
             Why Your Medicare Supplement Rate Keeps Going Up
