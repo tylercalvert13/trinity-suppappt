@@ -1601,98 +1601,64 @@ const MedicareSupplementAppointment = () => {
           {/* Qualified/Results Screen */}
           {step === "qualified" && quoteResult && assignedAgent && (
             <div className="space-y-6">
-              {/* Success + Rate + Savings Card */}
+              {/* Thank You + Agent Info Card */}
               <div ref={resultsHeaderRef} className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                <div className="p-6 md:p-8 text-center">
-                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
+                <div className="p-6 md:p-8">
+                  <div className="text-center mb-6">
+                    <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                      Thank You, {formData.firstName}!
+                    </h1>
                   </div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-                    Great News, {formData.firstName}!
-                  </h1>
-                  <p className="text-base text-muted-foreground mb-1">
-                    You qualify for {formData.plan} at
-                  </p>
-                  <p className="text-3xl md:text-4xl font-bold text-green-600 mb-3">
-                    ${quoteResult.rate.toFixed(2)}<span className="text-lg font-normal text-muted-foreground">/month</span>
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    You're paying <span className="line-through">${parseFloat(formData.currentPayment).toFixed(2)}</span> → <span className="font-semibold text-green-600">${quoteResult.rate.toFixed(2)}/mo</span>
-                  </p>
 
-                  {/* Savings Row */}
-                  <div className="flex justify-center gap-6 mt-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Monthly Savings</p>
-                      <p className="text-2xl md:text-3xl font-bold text-green-600">${quoteResult.monthlySavings.toFixed(2)}</p>
-                    </div>
-                    <div className="w-px bg-border"></div>
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Annual Savings</p>
-                      <p className="text-2xl md:text-3xl font-bold text-green-600">${quoteResult.annualSavings.toFixed(2)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="h-px bg-border mx-6"></div>
-
-                {/* Trust Badges */}
-                <div className="p-5">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      <span>Licensed Medicare agents</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      <span>No obligation consultation</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      <span>Same coverage, lower price</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      <span>Free comparison of all carriers</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-
-              {/* Speed-to-Lead — Agent Call Card (Primary CTA) */}
-              <div ref={agentCardRef} className="bg-white rounded-2xl shadow-sm overflow-hidden border">
-                <div className="p-6 text-center space-y-4">
-                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                    <Phone className="h-7 w-7 text-green-600" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-lg font-semibold text-foreground">
-                      Your specialist <span className="text-primary">{assignedAgent.firstName}</span> is reviewing your savings
+                  <div className="space-y-4 text-base text-foreground leading-relaxed">
+                    <p>
+                      <span className="font-semibold">{assignedAgent.name}</span> is looking into your Medicare Supplement rates right now.
                     </p>
-                    <p className="text-base text-muted-foreground">
-                      Expect a call shortly from:
+                    <p>
+                      We compare plans from top-rated carriers to make sure you're not paying more than you need to.{' '}
+                      <span className="font-semibold">{assignedAgent.firstName}</span> will text you shortly from{' '}
+                      <a 
+                        href={assignedAgent.telLink} 
+                        className="font-semibold text-primary hover:underline"
+                        onClick={() => trackEvent({ eventType: 'agent_phone_clicked', metadata: { agent: assignedAgent.firstName } })}
+                      >
+                        {assignedAgent.phone}
+                      </a>{' '}
+                      with what they find.
                     </p>
                   </div>
-                  <a
-                    href={assignedAgent.telLink}
-                    className="block text-3xl md:text-4xl font-bold text-primary hover:underline py-2"
-                    onClick={() => trackEvent({ eventType: 'agent_phone_clicked', metadata: { agent: assignedAgent.firstName } })}
-                  >
-                    {assignedAgent.phone}
-                  </a>
-                  <p className="text-sm text-foreground font-semibold">
-                    📱 Save this number so you recognize our call!
+
+                  {/* What to expect */}
+                  <div className="mt-6 bg-muted/50 rounded-xl p-5">
+                    <h2 className="font-semibold text-foreground mb-3">What to expect:</h2>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span>A text from <span className="font-semibold">{assignedAgent.firstName}</span> with your personalized savings</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span>No pressure, no obligation — just the numbers</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span>If it makes sense, <span className="font-semibold">{assignedAgent.firstName}</span> can walk you through everything in a quick phone call</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <p className="mt-6 text-center text-base font-semibold text-foreground">
+                    Most of our members save $100–$200/month with the same exact coverage.
                   </p>
-                  <div className="flex flex-col items-center gap-3 pt-2">
-                    <a
-                      href={assignedAgent.telLink}
-                      className="w-full inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold text-lg rounded-xl px-6 py-4 transition-colors"
-                      onClick={() => trackEvent({ eventType: 'call_directly_clicked', metadata: { agent: assignedAgent.firstName } })}
-                    >
-                      <Phone className="h-5 w-5" />
-                      Call {assignedAgent.firstName} Now
-                    </a>
+
+                  {/* Save Contact CTA */}
+                  <div ref={agentCardRef} className="mt-6 flex flex-col items-center gap-3">
+                    <p className="text-sm text-muted-foreground font-medium">
+                      📱 Save {assignedAgent.firstName}'s number so you recognize the text!
+                    </p>
                     <button
                       onClick={() => {
                         const vCard = `BEGIN:VCARD\nVERSION:3.0\nFN:${assignedAgent.firstName} (Health Helpers)\nORG:Health Helpers\nTEL;TYPE=CELL:${assignedAgent.phone.replace(/[^+\d]/g, '')}\nNOTE:Your Medicare Supplement Specialist\nEND:VCARD`;
@@ -1716,15 +1682,29 @@ const MedicareSupplementAppointment = () => {
                 </div>
               </div>
 
-              {/* Testimonial */}
-              <div className="bg-white rounded-xl p-4 border">
-                <div className="flex items-center gap-1 mb-2">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <Star key={j} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-sm text-foreground italic mb-2">"I was nervous to share my info, but they called me right on time and saved me $89/month."</p>
-                <p className="text-xs text-muted-foreground font-medium">— Robert K., TX · Saved $89/mo</p>
+              {/* Testimonials */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-foreground text-center">What Our Members Are Saying</h3>
+                {[
+                  { quote: "I was paying $220/mo and they got me the exact same Plan G for $134. Easiest switch I've ever made.", name: "Patricia M.", state: "FL", savings: "$86/mo" },
+                  { quote: "My agent called me within 5 minutes. No pressure, just showed me my options. Saved $89/month.", name: "Robert K.", state: "TX", savings: "$89/mo" },
+                  { quote: "I didn't think I could save anything — turns out I was overpaying by $156/month for the same coverage.", name: "Mary S.", state: "OH", savings: "$156/mo" },
+                  { quote: "The whole process took 10 minutes. Same Plan G, same benefits, just $112 less per month.", name: "James W.", state: "AZ", savings: "$112/mo" },
+                  { quote: "I was skeptical but my agent was so patient. Ended up saving over $1,100 a year.", name: "Linda P.", state: "PA", savings: "$92/mo" },
+                  { quote: "They found me a rate $94/month cheaper. I wish I'd done this sooner.", name: "William T.", state: "CA", savings: "$94/mo" },
+                  { quote: "My neighbor told me about this. Saved $137/month — I tell everyone now.", name: "Barbara R.", state: "MI", savings: "$137/mo" },
+                  { quote: "I've been overpaying for 3 years. In 5 minutes they showed me I could save $168/month.", name: "Richard H.", state: "GA", savings: "$168/mo" },
+                ].map((testimonial, i) => (
+                  <div key={i} className="bg-white rounded-xl p-4 border">
+                    <div className="flex items-center gap-1 mb-2">
+                      {Array.from({ length: 5 }).map((_, j) => (
+                        <Star key={j} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                    <p className="text-sm text-foreground italic mb-2">"{testimonial.quote}"</p>
+                    <p className="text-xs text-muted-foreground font-medium">— {testimonial.name}, {testimonial.state} · Saved {testimonial.savings}</p>
+                  </div>
+                ))}
               </div>
 
               {/* Disclaimer */}
