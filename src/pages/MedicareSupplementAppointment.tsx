@@ -1518,6 +1518,24 @@ const MedicareSupplementAppointment = () => {
                   </div>
                 </div>
                 <div>
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, email: e.target.value }));
+                      if (validationErrors.email) setValidationErrors(prev => ({ ...prev, email: undefined }));
+                    }}
+                    placeholder="john@email.com"
+                    className={`h-12 rounded-xl ${validationErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                    required
+                  />
+                  {validationErrors.email && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                  )}
+                </div>
+                <div>
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
