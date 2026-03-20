@@ -1,51 +1,55 @@
 
 
-# Update /suppappt Results Page — New Copy, Email Back, Testimonials
+# GEO Audit Fixes — Safe Changes (No Funnel Impact)
 
-## Summary
-Replace the current results screen with the approved copy-driven confirmation (no rate shown), add email back to the contact form, and add a carousel of testimonials below the main content.
+## What we CAN fix in code (won't touch the funnel)
 
-## Changes in `src/pages/MedicareSupplementAppointment.tsx`
+The audit flagged many issues. Some require external work (YouTube, Reddit, BBB listings, SSR migration). Here's what we can fix right now without touching any lead funnel logic:
 
-### 1. Add email back to contact form
-- Add `email` field to Zod `contactSchema` and `formData` state
-- Insert email input between name fields and phone field
-- Include email in submit disabled check and webhook payload
+### 1. Create `public/llms.txt`
+New file that tells AI crawlers what the site is about and lists key pages. Zero impact on users — only AI bots read this.
 
-### 2. Replace results screen (lines ~1580-1713)
-Remove the rate/savings card and agent call card. New layout:
+### 2. Update `public/robots.txt` with AI crawler directives
+Add explicit `User-agent` entries for GPTBot, ClaudeBot, PerplexityBot, ChatGPT-User, Google-Extended, and Bingbot crawlers.
 
-**Thank You card:**
-- Green check icon + "Thank You, {firstName}! ✓"
-- "{Agent Name} is looking into your Medicare Supplement rates right now."
-- "We compare plans from top-rated carriers to make sure you're not paying more than you need to. {Agent First Name} will text you shortly from {Agent Phone} with what they find."
-- **What to expect** (checkmark list):
-  - A text from {Agent First Name} with your personalized savings
-  - No pressure, no obligation — just the numbers
-  - If it makes sense, {Agent First Name} can walk you through everything in a quick phone call
-- "Most of our members save $100–$200/month with the same exact coverage."
-- Keep "Save to Contacts" button
+### 3. Populate `sameAs` array in Organization schema (`index.html`)
+Fill in the empty `"sameAs": []` with any existing social profiles (LinkedIn, Facebook, etc.). I'll add placeholder URLs you can swap with real ones. Also add `ContactPoint` and physical address fields to the schema.
 
-### 3. Add testimonials section
-Add 6-8 rotating testimonials below the main card, each with 5 stars, quote, name/state/savings:
+### 4. Add `speakable` property to FAQPage schema (`index.html`)
+Helps voice assistants and AI models identify which FAQ answers to read aloud.
 
-- "I was paying $220/mo and they got me the exact same Plan G for $134. Easiest switch I've ever made." — Patricia M., FL
-- "My agent called me within 5 minutes. No pressure, just showed me my options. Saved $89/month." — Robert K., TX
-- "I didn't think I could save anything — turns out I was overpaying by $156/month for the same coverage." — Mary S., OH
-- "The whole process took 10 minutes. Same Plan G, same benefits, just $112 less per month." — James W., AZ
-- "I was skeptical but my agent was so patient. Ended up saving over $1,100 a year." — Linda P., PA
-- "They found me a rate $94/month cheaper. I wish I'd done this sooner." — William T., CA
-- "My neighbor told me about this. Saved $137/month — I tell everyone now." — Barbara R., MI
-- "I've been overpaying for 3 years. In 5 minutes they showed me I could save $168/month." — Richard H., GA
+### 5. Add Article schema to blog pages
+Add JSON-LD `Article` schema with `datePublished`, `dateModified`, and author info to the 4 blog pages (Plan G vs F vs N, Cheapest Plan G Rates, Why Rates Increase, Switch Medigap Plans).
 
-Display as a stacked list of cards (2-3 visible, rest scrollable) for social proof reinforcement.
+### 6. Add visible "Last Updated" dates to blog pages
+Show "Last Updated: March 2026" on each article page for freshness signals.
 
-### 4. Update ExitIntentModal
-- Point to the main content card ref instead of booking widget
+### 7. Add `BreadcrumbList` schema to blog pages
+Structured breadcrumb data (Home > Medicare Supplement Plans > [Article Title]).
 
-### What stays the same
-- All funnel steps, quote fetching, agent round-robin, webhook payload
-- All conversion tracking (FB, Google, Bing, TikTok, Vibe)
-- TrustedForm, database submissions
-- Agent assignment logic
+### 8. Link Privacy Policy and Terms of Service in Organization schema
+Add `"url"` references so AI models can find compliance pages. (These pages already exist.)
+
+### 9. Update `public/sitemap.xml`
+Add the privacy policy and terms of service URLs, update `lastmod` dates to current.
+
+## What we CANNOT fix in Lovable (needs external work)
+- **SSR/prerendering** — Vite SPA architecture, would need Next.js migration or a prerendering service (biggest impact item, but major architectural change)
+- **CSP / X-Frame-Options headers** — These are server/CDN-level configs, not controllable from app code
+- **Social profiles** — You need to actually create LinkedIn, Facebook, Google Business profiles
+- **Wikipedia, BBB, Trustpilot, Reddit** — External platform work
+- **YouTube channel** — Content creation
+- **IndexNow** — Needs server-side API key hosting
+
+## Files changed
+- `public/llms.txt` (new)
+- `public/robots.txt` (updated)
+- `public/sitemap.xml` (updated)
+- `index.html` (schema updates)
+- `src/pages/PlanGvsFvsN.tsx` (Article schema + date)
+- `src/pages/CheapestPlanGRates.tsx` (Article schema + date)
+- `src/pages/WhyMedigapRatesIncrease.tsx` (Article schema + date)
+- `src/pages/SwitchMedigapPlans.tsx` (Article schema + date)
+
+No funnel pages touched. No webhook, tracking, or lead logic changed.
 
