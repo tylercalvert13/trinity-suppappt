@@ -588,7 +588,6 @@ const MedicareSupplementAppointment = () => {
         resultsHeaderRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
       }, 50);
     }
-    }
   }, [step]);
 
   // Detect user's state via IP geolocation on mount
