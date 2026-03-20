@@ -548,7 +548,7 @@ const MedicareSupplementAppointment = () => {
     zipCode: '',
     firstName: '',
     lastName: '',
-    
+    email: '',
     phone: '',
   });
 
