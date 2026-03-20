@@ -9,12 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Clock } from 'lucide-react';
 
 interface ExitIntentModalProps {
-  monthlySavings: number;
   onBookClick: () => void;
   onTrackEvent?: (params: { eventType: string; metadata?: Record<string, string> }) => void;
 }
 
-export function ExitIntentModal({ monthlySavings, onBookClick }: ExitIntentModalProps) {
+export function ExitIntentModal({ onBookClick }: ExitIntentModalProps) {
   const [showModal, setShowModal] = useState(false);
   const [hasShown, setHasShown] = useState(false);
 
