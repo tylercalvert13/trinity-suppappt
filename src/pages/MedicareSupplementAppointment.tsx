@@ -49,7 +49,7 @@ const AGENTS: Agent[] = [
   { name: 'Jerome Hinds', firstName: 'Jerome', phone: '(908) 681-8962', telLink: 'tel:+19086818962', ghlUserId: 'nVHKSQneg56OHykfIvi8', states: ['AR','AZ','FL','GA','MO','NC','NE','NJ','OH','OK','SC','TN','TX'] },
   { name: 'Rosa Silva', firstName: 'Rosa', phone: '(908) 829-9820', telLink: 'tel:+19088299820', ghlUserId: 'GHG8mhKx8321E3EzVNQj', states: ['AL','AR','AZ','DE','IA','IL','KY','LA','MO','MS','NC','NE','NJ','NM','OH','OK','PA','SC','TN','TX','WI'] },
   { name: 'Tiyanna Alexander', firstName: 'Tiyanna', phone: '(908) 830-3039', telLink: 'tel:+19088303039', ghlUserId: 'y48XmZvsa1HGzQv4ewXW', states: ['AL','AR','AZ','DE','FL','GA','IA','KY','MI','MO','MS','NC','NE','NJ','OH','OK','PA','SC','TN','TX'] },
-  { name: 'Jay Ortega', firstName: 'Jay', phone: '(908) 987-2783', telLink: 'tel:+19089872783', ghlUserId: 'dXRwG0TzNKEnlkY9RuzO', states: ['NJ','OH','TX'] },
+  
   { name: 'Joey Jimenez', firstName: 'Joey', phone: '(908) 829-6944', telLink: 'tel:+19088296944', ghlUserId: '6nCN3NDWyUugUCGz22hD', states: ['AL','AZ','GA','LA','NC','NJ','OH','PA','SC','TN','TX','VA'] },
 ];
 
