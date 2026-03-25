@@ -1406,13 +1406,8 @@ const MedicareSupplementAppointmentRefund = () => {
               </form>
 
               <p className="text-xs text-muted-foreground text-center mt-4 leading-relaxed">
-                By clicking "See What I Qualify For," I consent to receive calls, text messages, and emails 
-                from Health Helpers and its partners regarding my Medicare inquiry. I understand these 
-                communications may be made using automated telephone dialing systems, artificial intelligence, 
-                and/or prerecorded messages. Message frequency varies. Message and data rates may apply. 
-                I can opt out at any time by texting STOP or calling directly. This consent is not required 
-                to receive a quote. I agree to the{' '}
-                <Link to="/terms-of-service" className="underline hover:text-foreground">Terms of Service</Link>
+                By clicking "See What I Qualify For," I expressly consent to receive marketing calls, text messages, and emails from Health Helpers Insurance Agency and its licensed insurance agents regarding Medicare and related insurance products, including through the use of an automatic telephone dialing system, artificial or prerecorded voice messages, and AI technologies. Message and data rates may apply. Message frequency varies. Consent is not a condition of purchase. You may opt out at any time by replying STOP to text messages. By submitting this form, you agree to the{' '}
+                <Link to="/terms-of-service" className="underline hover:text-foreground">Terms and Conditions</Link>
                 {' '}and{' '}
                 <Link to="/privacy-policy" className="underline hover:text-foreground">Privacy Policy</Link>.
               </p>

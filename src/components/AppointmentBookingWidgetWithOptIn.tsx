@@ -1289,13 +1289,8 @@ export function AppointmentBookingWidgetWithOptIn({
           </div>
 
           <p className="text-xs text-gray-500 text-center mt-4 leading-relaxed">
-            By clicking "Book My Call," I consent to receive calls, text messages, and emails 
-            from Health Helpers and its partners regarding my Medicare inquiry. I understand these 
-            communications may be made using automated telephone dialing systems, artificial intelligence, 
-            and/or prerecorded messages. Message frequency varies. Message and data rates may apply. 
-            I can opt out at any time by texting STOP or calling directly. This consent is not required 
-            to receive a quote. I agree to the{' '}
-            <Link to="/terms-of-service" className="underline hover:text-gray-700">Terms of Service</Link>
+            By clicking "Book My Call," I expressly consent to receive marketing calls, text messages, and emails from Health Helpers Insurance Agency and its licensed insurance agents regarding Medicare and related insurance products, including through the use of an automatic telephone dialing system, artificial or prerecorded voice messages, and AI technologies. Message and data rates may apply. Message frequency varies. Consent is not a condition of purchase. You may opt out at any time by replying STOP to text messages. By submitting this form, you agree to the{' '}
+            <Link to="/terms-of-service" className="underline hover:text-gray-700">Terms and Conditions</Link>
             {' '}and{' '}
             <Link to="/privacy-policy" className="underline hover:text-gray-700">Privacy Policy</Link>.
           </p>
