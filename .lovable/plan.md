@@ -1,45 +1,31 @@
 
 
-# Redesign /suppappt Landing Page Layout
+# Quick Layout & Copy Fixes for /suppappt
 
 ## Summary
-Update the hero section copy, add a "Real Results" cards section between hero and form, add a stats/carriers section below the form, and update the footer disclaimer. No changes to the 9-step form, webhook, agent logic, or tracking.
+Restructure the page flow to: Hero (with savings cards + CTA integrated) → Form → Stats section. Update subhead copy for clarity. Fix carrier heading visibility. Ensure clean mobile stacking.
 
 ## Changes in `src/pages/MedicareSupplementAppointment.tsx`
 
-### 1. Hero Section Rewrite (lines ~1018-1063)
-- Badge text → "Trusted by 10,000+ Seniors Since 2021"
-- Headline → "Your Medicare Supplement Rate Went Up. We Find You a Lower One for the Same Coverage."
-- Subhead → "Plan G, F, and N rates increase every year, but not equally across carriers. We compare rates from 15+ A-rated carriers in your area — for free. Takes 2 minutes. No obligation."
-- Remove the second paragraph of copy
-- CTA button text → "Check My Rate — Free, 2 Minutes"
-- Trust bar → "✅ US Licensed Agents · ✅ 195 Switches This Quarter · ✅ 100% Free · ✅ No Obligation"
+### 1. Move savings cards ABOVE the CTA button, inside the hero section (~lines 1035-1075)
+- Remove the separate "Real Results Cards" `<section>` (lines 1055-1075)
+- Insert the 3 savings cards grid inside the hero section, right before the CTA button
+- Tighten spacing: `mb-6` after cards, then CTA button, then trust bar
+- Flow becomes: badge → headline → subhead → savings cards → CTA → trust bar
 
-### 2. Add Real Results Cards (new section between hero and funnel, ~line 1064)
-3 white cards in a horizontal row (stacked on mobile), each showing:
-- **Eddie, TX** — **$252/mo** saved — switched from Mutual of Omaha
-- **Alice, OH** — **$235/mo** saved — switched from Mutual of Omaha
-- **Vera, TX** — **$150/mo** saved — switched from Cigna
+### 2. Update subhead copy (line 1031-1033)
+Replace with: "Plan G, F, and N rates go up every year. But some carriers charge way less than others for the exact same coverage. We'll find you the lowest one — free, 2 minutes."
 
-Savings amount in large teal text. Below cards: italic disclaimer about individual results.
+### 3. Fix "Top Carriers Switched From" heading (line 1740)
+- Increase text size from `text-sm` to `text-base font-semibold` and darken to `text-slate-700`
 
-### 3. Add Stats + Carriers Section (replace spacer div at line ~1713)
-Light gray background section with heading "Real Numbers From Real Clients" and 4 stat blocks:
-- "195" / Approved Switches
-- "$109" / Avg Monthly Savings
-- "$1,308" / Avg Annual Savings
-- "$25–$252" / Monthly Savings Range
-
-Below: "Top Carriers Switched From" with pill badges:
-Mutual of Omaha (52) · Aetna (53) · Cigna (28) · AARP/UHC (34) · Humana (9)
-
-### 4. Footer Update (lines ~1716-1738)
-Add line: "Savings data reflects actual Health Helpers client results from Jan–Mar 2026. Past results do not guarantee future savings."
+### 4. Mobile stacking verification
+- Savings cards already use `grid-cols-1 md:grid-cols-3` — correct
+- Stat boxes use `grid-cols-2 md:grid-cols-4` — already stacks to 2x2 on mobile, clean for the audience
+- No changes needed, just confirming
 
 ### What stays the same
-- All 9 form steps, their questions, and validation
-- Agent round-robin, GHL webhook, all conversion tracking
-- Results/qualified page, testimonials section
-- ExitIntentModal, SocialProofPopup
-- TrustedForm, TCPA consent, database submissions
+- 9-step form, all questions, validation, webhook
+- Stats section stays below the form (but cards move up into hero)
+- Agent round-robin, all tracking, footer, testimonials on results page
 
