@@ -1021,18 +1021,15 @@ const MedicareSupplementAppointment = () => {
           {/* Trust Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 mb-6">
             <Shield className="w-4 h-4" />
-            <span className="text-sm font-semibold">Free Medicare Savings Check</span>
+            <span className="text-sm font-semibold">Trusted by 10,000+ Seniors Since 2021</span>
           </div>
 
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight text-slate-800">
-            See How Much You Can Save on Your Medicare Supplement in Under 2 Minutes
+            Your Medicare Supplement Rate Went Up. We Find You a Lower One for the Same Coverage.
           </h1>
           
-          <p className="text-lg md:text-xl text-slate-600 mb-4 max-w-2xl mx-auto">
-            Plan G, F, and N rates increase every year —  If you're not checking for the best rates in your area every year, you're likely paying more for the exact same coverage.
-          </p>
-          <p className="text-base text-slate-500 mb-8 max-w-2xl mx-auto">
-            We can check this for you now and we check this  for our clients so they always have the best price for their medicare supplement in their geographical area every year.
+          <p className="text-lg md:text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
+            Plan G, F, and N rates increase every year, but not equally across carriers. We compare rates from 15+ A-rated carriers in your area — for free. Takes 2 minutes. No obligation.
           </p>
 
           {step === "landing" && (
@@ -1041,25 +1038,39 @@ const MedicareSupplementAppointment = () => {
               size="lg"
               className="bg-teal-600 hover:bg-teal-700 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
             >
-              See How Much I Can Save
+              Check My Rate — Free, 2 Minutes
             </Button>
           )}
 
-          {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-6 mt-8">
-            <div className="flex items-center gap-2 text-slate-500">
-              <Shield className="h-5 w-5" />
-              <span className="text-sm">US Based Licensed Agents</span>
-            </div>
-            <div className="flex items-center gap-2 text-slate-500">
-              <Users className="h-5 w-5" />
-              <span className="text-sm">10,000+ Seniors Helped</span>
-            </div>
-            <div className="flex items-center gap-2 text-slate-500">
-              <FileCheck className="h-5 w-5" />
-              <span className="text-sm">100% Free Service</span>
-            </div>
+          {/* Trust Bar */}
+          <div className="flex flex-wrap justify-center gap-4 md:gap-6 mt-8 text-slate-600">
+            <span className="text-sm">✅ US Licensed Agents</span>
+            <span className="text-sm">✅ 195 Switches This Quarter</span>
+            <span className="text-sm">✅ 100% Free</span>
+            <span className="text-sm">✅ No Obligation</span>
           </div>
+        </div>
+      </section>
+
+      {/* Real Results Cards */}
+      <section className="py-8 md:py-10 bg-white">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            {[
+              { name: "Eddie", state: "TX", saved: "$252", carrier: "Mutual of Omaha" },
+              { name: "Alice", state: "OH", saved: "$235", carrier: "Mutual of Omaha" },
+              { name: "Vera", state: "TX", saved: "$150", carrier: "Cigna" },
+            ].map((result, i) => (
+              <div key={i} className="bg-white rounded-xl border shadow-sm p-5 text-center">
+                <p className="font-bold text-slate-800 text-lg">{result.name}, {result.state}</p>
+                <p className="text-3xl font-bold text-teal-600 my-2">Saved {result.saved}/mo</p>
+                <p className="text-sm text-slate-400">Switched from {result.carrier}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400 text-center mt-4 italic">
+            Savings based on actual client rate comparisons. Individual results vary by state, age, and carrier.
+          </p>
         </div>
       </section>
 
@@ -1709,8 +1720,39 @@ const MedicareSupplementAppointment = () => {
         </div>
       </section>
 
-      {/* Spacer */}
-      <div className="h-64 md:h-96"></div>
+      {/* Stats Section */}
+      <section className="py-10 md:py-14 bg-slate-100">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-8">Real Numbers From Real Clients</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+            {[
+              { value: "195", label: "Approved Switches" },
+              { value: "$109", label: "Avg Monthly Savings" },
+              { value: "$1,308", label: "Avg Annual Savings" },
+              { value: "$25–$252", label: "Monthly Savings Range" },
+            ].map((stat, i) => (
+              <div key={i} className="bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                <p className="text-2xl md:text-3xl font-bold text-teal-600">{stat.value}</p>
+                <p className="text-xs md:text-sm text-slate-500 mt-1">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-sm text-slate-500 mb-3">Top Carriers Switched From</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {[
+              "Mutual of Omaha (52)",
+              "Aetna (53)",
+              "Cigna (28)",
+              "AARP/UHC (34)",
+              "Humana (9)",
+            ].map((carrier, i) => (
+              <span key={i} className="inline-flex items-center px-3 py-1 rounded-full bg-white border text-xs text-slate-600 shadow-sm">
+                {carrier}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="py-8 md:py-12 bg-gray-50">
@@ -1724,6 +1766,9 @@ const MedicareSupplementAppointment = () => {
             </p>
             <p>
               Quoted rates are estimates based on the information provided. Actual rates may vary based on underwriting approval and other factors.
+            </p>
+            <p>
+              Savings data reflects actual Health Helpers client results from Jan–Mar 2026. Past results do not guarantee future savings.
             </p>
             <div className="pt-4 border-t flex flex-col items-center gap-2">
               <div className="flex items-center gap-4">
