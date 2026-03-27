@@ -1716,7 +1716,8 @@ const MedicareSupplementAppointment = () => {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Stats Section — only on landing and results */}
+      {(step === "landing" || step === "qualified") && (
       <section className="py-10 md:py-14 bg-slate-100">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-8">Real Numbers From Real Clients</h2>
@@ -1749,6 +1750,7 @@ const MedicareSupplementAppointment = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* Footer */}
       <footer className="py-8 md:py-12 bg-gray-50">
