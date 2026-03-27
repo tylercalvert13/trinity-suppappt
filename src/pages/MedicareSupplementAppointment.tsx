@@ -1032,8 +1032,18 @@ const MedicareSupplementAppointment = () => {
             Plan G, F, and N rates go up every year. But some carriers charge way less than others for the exact same coverage. We'll find you the lowest one — free, 2 minutes.
           </p>
 
-          {/* Real Results Cards — inside hero for trust before CTA */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto mb-6">
+          {step === "landing" && (
+            <Button
+              onClick={scrollToFunnel}
+              size="lg"
+              className="bg-teal-600 hover:bg-teal-700 text-white text-lg md:text-xl py-6 px-6 md:py-8 md:px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all w-full md:w-auto"
+            >
+              Check My Rate — Free, 2 Minutes
+            </Button>
+          )}
+
+          {/* Real Results Cards — proof below CTA */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto mt-8">
             {[
               { name: "Eddie", state: "TX", saved: "$252", carrier: "Mutual of Omaha" },
               { name: "Alice", state: "OH", saved: "$235", carrier: "Mutual of Omaha" },
@@ -1046,19 +1056,9 @@ const MedicareSupplementAppointment = () => {
               </div>
             ))}
           </div>
-          <p className="text-xs text-slate-400 text-center mb-6 italic">
+          <p className="text-xs text-slate-400 text-center mt-4 italic">
             Savings based on actual client rate comparisons. Individual results vary by state, age, and carrier.
           </p>
-
-          {step === "landing" && (
-            <Button
-              onClick={scrollToFunnel}
-              size="lg"
-              className="bg-teal-600 hover:bg-teal-700 text-white text-lg md:text-xl py-6 px-6 md:py-8 md:px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all w-full md:w-auto"
-            >
-              Check My Rate — Free, 2 Minutes
-            </Button>
-          )}
 
           {/* Trust Bar */}
           <div className="flex flex-wrap justify-center gap-4 md:gap-6 mt-8 text-slate-600">
