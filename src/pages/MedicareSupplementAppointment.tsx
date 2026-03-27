@@ -1752,6 +1752,11 @@ const MedicareSupplementAppointment = () => {
       </section>
       )}
 
+      {/* Spacer to push footer off-screen during form steps */}
+      {step !== "landing" && step !== "qualified" && (
+        <div className="h-[60vh] md:h-96 bg-gray-50" />
+      )}
+
       {/* Footer */}
       <footer className="py-8 md:py-12 bg-gray-50">
         <div className="max-w-3xl mx-auto px-4">
