@@ -671,8 +671,8 @@ const MedicareSupplementAppointment = () => {
     setStep("plan");
     trackStepChange("plan");
     setTimeout(() => {
-      funnelRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
   };
 
   const getProgress = (): number => {
@@ -1015,7 +1015,8 @@ const MedicareSupplementAppointment = () => {
         <img src="https://api.trustedform.com/ns.gif" height="1" width="1" style={{ display: 'none' }} alt="" />
       </noscript>
 
-      {/* Hero Section */}
+      {/* Hero Section — only visible on landing */}
+      {step === "landing" && (
       <section className="bg-gradient-to-b from-slate-50 to-blue-50 py-8 md:py-12">
         <div className="max-w-4xl mx-auto px-4 text-center">
           {/* Trust Badge */}
@@ -1032,15 +1033,13 @@ const MedicareSupplementAppointment = () => {
             Plan G, F, and N rates go up every year. But some carriers charge way less than others for the exact same coverage. We'll find you the lowest one — free, 2 minutes.
           </p>
 
-          {step === "landing" && (
-            <Button
-              onClick={scrollToFunnel}
-              size="lg"
-              className="bg-teal-600 hover:bg-teal-700 text-white text-lg md:text-xl py-6 px-6 md:py-8 md:px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all w-full md:w-auto"
-            >
-              Check My Rate — Free, 2 Minutes
-            </Button>
-          )}
+          <Button
+            onClick={scrollToFunnel}
+            size="lg"
+            className="bg-teal-600 hover:bg-teal-700 text-white text-lg md:text-xl py-6 px-6 md:py-8 md:px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all w-full md:w-auto"
+          >
+            Check My Rate — Free, 2 Minutes
+          </Button>
 
           {/* Real Results Cards — proof below CTA */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto mt-8">
@@ -1069,6 +1068,7 @@ const MedicareSupplementAppointment = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* Funnel Section */}
       <section ref={funnelRef} className="py-8 md:py-12 bg-gray-50">
