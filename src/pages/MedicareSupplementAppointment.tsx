@@ -1790,12 +1790,6 @@ const MedicareSupplementAppointment = () => {
         <SocialProofPopup delayMs={5000} visibleMs={4000} />
       )}
 
-      {/* Exit Intent Modal - only show when qualified */}
-      {step === "qualified" && quoteResult && (
-        <ExitIntentModal
-          onBookClick={scrollToAgentCard}
-        />
-      )}
 
     </div>
   );
