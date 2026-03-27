@@ -1029,7 +1029,25 @@ const MedicareSupplementAppointment = () => {
           </h1>
           
           <p className="text-lg md:text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
-            Plan G, F, and N rates increase every year, but not equally across carriers. We compare rates from 15+ A-rated carriers in your area — for free. Takes 2 minutes. No obligation.
+            Plan G, F, and N rates go up every year. But some carriers charge way less than others for the exact same coverage. We'll find you the lowest one — free, 2 minutes.
+          </p>
+
+          {/* Real Results Cards — inside hero for trust before CTA */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto mb-6">
+            {[
+              { name: "Eddie", state: "TX", saved: "$252", carrier: "Mutual of Omaha" },
+              { name: "Alice", state: "OH", saved: "$235", carrier: "Mutual of Omaha" },
+              { name: "Vera", state: "TX", saved: "$150", carrier: "Cigna" },
+            ].map((result, i) => (
+              <div key={i} className="bg-white rounded-xl border shadow-sm p-5 text-center">
+                <p className="font-bold text-slate-800 text-lg">{result.name}, {result.state}</p>
+                <p className="text-3xl font-bold text-teal-600 my-2">Saved {result.saved}/mo</p>
+                <p className="text-sm text-slate-400">Switched from {result.carrier}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400 text-center mb-6 italic">
+            Savings based on actual client rate comparisons. Individual results vary by state, age, and carrier.
           </p>
 
           {step === "landing" && (
@@ -1049,28 +1067,6 @@ const MedicareSupplementAppointment = () => {
             <span className="text-sm">✅ 100% Free</span>
             <span className="text-sm">✅ No Obligation</span>
           </div>
-        </div>
-      </section>
-
-      {/* Real Results Cards */}
-      <section className="py-8 md:py-10 bg-white">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            {[
-              { name: "Eddie", state: "TX", saved: "$252", carrier: "Mutual of Omaha" },
-              { name: "Alice", state: "OH", saved: "$235", carrier: "Mutual of Omaha" },
-              { name: "Vera", state: "TX", saved: "$150", carrier: "Cigna" },
-            ].map((result, i) => (
-              <div key={i} className="bg-white rounded-xl border shadow-sm p-5 text-center">
-                <p className="font-bold text-slate-800 text-lg">{result.name}, {result.state}</p>
-                <p className="text-3xl font-bold text-teal-600 my-2">Saved {result.saved}/mo</p>
-                <p className="text-sm text-slate-400">Switched from {result.carrier}</p>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-slate-400 text-center mt-4 italic">
-            Savings based on actual client rate comparisons. Individual results vary by state, age, and carrier.
-          </p>
         </div>
       </section>
 
@@ -1737,7 +1733,7 @@ const MedicareSupplementAppointment = () => {
               </div>
             ))}
           </div>
-          <p className="text-sm text-slate-500 mb-3">Top Carriers Switched From</p>
+          <p className="text-base font-semibold text-slate-700 mb-3">Top Carriers Switched From</p>
           <div className="flex flex-wrap justify-center gap-2">
             {[
               "Mutual of Omaha (52)",
