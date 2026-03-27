@@ -1054,7 +1054,7 @@ const MedicareSupplementAppointment = () => {
             <Button
               onClick={scrollToFunnel}
               size="lg"
-              className="bg-teal-600 hover:bg-teal-700 text-white text-xl py-8 px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all"
+              className="bg-teal-600 hover:bg-teal-700 text-white text-lg md:text-xl py-6 px-6 md:py-8 md:px-12 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all w-full md:w-auto"
             >
               Check My Rate — Free, 2 Minutes
             </Button>
