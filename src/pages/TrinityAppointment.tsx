@@ -44,7 +44,7 @@ interface Agent {
 }
 
 const AGENTS: Agent[] = [
-  { name: 'Joe McElwee', firstName: 'Joe', phone: '(561) 839-6057', telLink: 'tel:+15618396057', ghlUserId: '902v9xFN3c1GidD38xnk', states: [] },
+  { name: 'Joe McElwee', firstName: 'Joe', phone: '(402) 581-9221', telLink: 'tel:+14025819221', ghlUserId: '902v9xFN3c1GidD38xnk', states: [] },
 ];
 
 // Map full state names to abbreviations for agent filtering
@@ -148,8 +148,7 @@ const downloadContactCard = () => {
 VERSION:3.0
 FN:Trinity Health & Wealth
 ORG:Trinity Health & Wealth
-TEL;TYPE=WORK,VOICE:+12014269898
-TEL;TYPE=WORK,VOICE:+12012988393
+TEL;TYPE=WORK,VOICE:+14025819221
 NOTE:Medicare Supplement Quote Team - Save this contact so you know it's us calling!
 END:VCARD`;
 
@@ -1443,7 +1442,7 @@ const MedicareSupplementAppointment = () => {
                   <div>
                     <p className="text-red-800">{error}</p>
                     <a href="tel:+19082245410" className="text-red-600 hover:underline font-medium">
-                      Call (561) 839-6057 for immediate assistance
+                      Call (402) 581-9221 for immediate assistance
                     </a>
                   </div>
                 </div>
