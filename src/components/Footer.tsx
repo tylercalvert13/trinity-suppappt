@@ -10,7 +10,7 @@ const Footer = () => {
             <a href="/" className="flex items-center space-x-3 mb-4">
               <img 
                 src="/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" 
-                alt="Health Helpers Logo" 
+                alt="Trinity Health & Wealth Logo" 
                 className="h-10 w-auto"
               />
             </a>
@@ -25,7 +25,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-2 text-sm">
                 <Mail className="h-4 w-4" />
-                <span>support@healthhelpers.co</span>
+                <span>support@trinityhealthandwealth.com</span>
               </div>
               <div className="flex items-center space-x-2 text-sm">
                 <MapPin className="h-4 w-4" />
@@ -62,7 +62,7 @@ const Footer = () => {
         <div className="border-t border-primary-foreground/20 pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-primary-foreground/60">
-              © 2025 Health Helpers. All rights reserved. Licensed insurance agency.
+              © 2025 Trinity Health & Wealth. All rights reserved. Licensed insurance agency.
             </p>
             <p className="text-sm text-primary-foreground/60 mt-2 md:mt-0">
               Medicare Supplement insurance is underwritten by participating carriers. Limitations and exclusions may apply.

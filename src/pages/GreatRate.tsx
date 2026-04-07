@@ -8,7 +8,7 @@ const PHONE_TEL = "tel:+18885251179";
 
 const GreatRate = () => {
   useEffect(() => {
-    document.title = "Great News About Your Rate | Health Helpers";
+    document.title = "Great News About Your Rate | Trinity Health & Wealth";
     
     let robotsMeta = document.querySelector('meta[name="robots"]');
     if (!robotsMeta) {
@@ -19,7 +19,7 @@ const GreatRate = () => {
     robotsMeta.setAttribute('content', 'noindex, nofollow');
 
     return () => {
-      document.title = "Medicare Self-Enrollment Online | Health Helpers";
+      document.title = "Medicare Self-Enrollment Online | Trinity Health & Wealth";
       if (robotsMeta) {
         robotsMeta.setAttribute('content', 'index, follow');
       }
@@ -143,7 +143,7 @@ const GreatRate = () => {
               This is a free rate comparison service. We do not charge fees.
             </p>
             <p>
-              Health Helpers is not connected with or endorsed by the U.S. government or the federal Medicare program.
+              Trinity Health & Wealth is not connected with or endorsed by the U.S. government or the federal Medicare program.
             </p>
             <div className="pt-4 border-t flex flex-col items-center gap-2">
               <div className="flex items-center gap-4">
@@ -151,7 +151,7 @@ const GreatRate = () => {
                 <span>•</span>
                 <Link to="/terms-of-service" className="hover:underline">Terms of Service</Link>
               </div>
-              <p>© {new Date().getFullYear()} Health Helpers. All rights reserved.</p>
+              <p>© {new Date().getFullYear()} Trinity Health & Wealth. All rights reserved.</p>
             </div>
           </div>
         </div>

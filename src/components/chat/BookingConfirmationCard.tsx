@@ -17,19 +17,19 @@ function generateIcsContent(appointmentDate: string, firstName: string, lastName
   const formatIcsDate = (date: Date): string => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
   return `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Health Helpers//Medicare Consultation//EN
+PRODID:-//Trinity Health & Wealth//Medicare Consultation//EN
 BEGIN:VEVENT
-UID:${Date.now()}@healthhelpers.com
+UID:${Date.now()}@trinityhealthandwealth.comm
 DTSTAMP:${formatIcsDate(new Date())}
 DTSTART:${formatIcsDate(startDate)}
 DTEND:${formatIcsDate(endDate)}
-SUMMARY:Health Helpers Medicare Consultation
+SUMMARY:Trinity Health & Wealth Medicare Consultation
 DESCRIPTION:Phone consultation about your Medicare Supplement quote. We will call you at your scheduled time.
 LOCATION:Phone Call
 BEGIN:VALARM
 TRIGGER:-PT15M
 ACTION:DISPLAY
-DESCRIPTION:Health Helpers calling in 15 minutes
+DESCRIPTION:Trinity Health & Wealth calling in 15 minutes
 END:VALARM
 END:VEVENT
 END:VCALENDAR`;
@@ -41,7 +41,7 @@ function downloadIcsFile(appointmentDate: string, firstName: string, lastName: s
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'health-helpers-appointment.ics';
+  a.download = 'trinity-health-appointment.ics';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -51,17 +51,17 @@ function downloadIcsFile(appointmentDate: string, firstName: string, lastName: s
 function downloadContactCard() {
   const vCard = `BEGIN:VCARD
 VERSION:3.0
-FN:Health Helpers Team
-ORG:Health Helpers
-TEL;TYPE=WORK,VOICE:+12012988393
-TEL;TYPE=WORK,VOICE:+12014269898
+FN:Trinity Health & Wealth Team
+ORG:Trinity Health & Wealth
+TEL;TYPE=WORK,VOICE:+14025819221
+TEL;TYPE=WORK,VOICE:+14025819221
 NOTE:Medicare Supplement Specialists - Save this contact to recognize our calls!
 END:VCARD`;
   const blob = new Blob([vCard], { type: 'text/vcard' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'Health-Helpers.vcf';
+  a.download = 'Trinity-Health.vcf';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

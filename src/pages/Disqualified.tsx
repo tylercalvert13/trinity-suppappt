@@ -50,7 +50,7 @@ const Disqualified = () => {
   const { title, message, subtext } = getReasonMessage(reason);
 
   useEffect(() => {
-    document.title = "Thank You | Health Helpers";
+    document.title = "Thank You | Trinity Health & Wealth";
     
     let robotsMeta = document.querySelector('meta[name="robots"]');
     if (!robotsMeta) {
@@ -61,7 +61,7 @@ const Disqualified = () => {
     robotsMeta.setAttribute('content', 'noindex, nofollow');
 
     return () => {
-      document.title = "Medicare Self-Enrollment Online | Health Helpers";
+      document.title = "Medicare Self-Enrollment Online | Trinity Health & Wealth";
       if (robotsMeta) {
         robotsMeta.setAttribute('content', 'index, follow');
       }
@@ -109,7 +109,7 @@ const Disqualified = () => {
         <div className="max-w-3xl mx-auto px-4">
           <div className="text-center text-xs text-muted-foreground space-y-4">
             <p>
-              Health Helpers is not connected with or endorsed by the U.S. government or the federal Medicare program.
+              Trinity Health & Wealth is not connected with or endorsed by the U.S. government or the federal Medicare program.
             </p>
             <div className="pt-4 border-t flex flex-col items-center gap-2">
               <div className="flex items-center gap-4">
@@ -117,7 +117,7 @@ const Disqualified = () => {
                 <span>•</span>
                 <Link to="/terms-of-service" className="hover:underline">Terms of Service</Link>
               </div>
-              <p>© {new Date().getFullYear()} Health Helpers. All rights reserved.</p>
+              <p>© {new Date().getFullYear()} Trinity Health & Wealth. All rights reserved.</p>
             </div>
           </div>
         </div>

@@ -48,7 +48,7 @@ const Header = () => {
           <a href="/" className="flex items-center space-x-3">
             <img 
               src="/lovable-uploads/ca6f16cd-26c7-4533-8061-a6c96ccb0eeb.png" 
-              alt="Health Helpers Logo" 
+              alt="Trinity Health & Wealth Logo" 
               className="h-12 w-auto"
             />
           </a>

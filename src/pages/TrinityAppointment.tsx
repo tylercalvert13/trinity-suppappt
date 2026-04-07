@@ -156,7 +156,7 @@ END:VCARD`;
   const downloadUrl = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = downloadUrl;
-  a.download = 'Health-Helpers.vcf';
+  a.download = 'Trinity-Health.vcf';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1640,7 +1640,7 @@ const MedicareSupplementAppointment = () => {
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = `${assignedAgent.firstName}-Health-Helpers.vcf`;
+                        a.download = `${assignedAgent.firstName}-Trinity-Health.vcf`;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);

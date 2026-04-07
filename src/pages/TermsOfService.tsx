@@ -11,7 +11,7 @@ const TermsOfService = () => {
         
         <div className="prose prose-lg mx-auto space-y-8">
           <section>
-            <h2 className="text-3xl font-semibold mb-6 text-center">Health Helpers Insurance Agency LLC</h2>
+            <h2 className="text-3xl font-semibold mb-6 text-center">Trinity Health & Wealth Insurance Agency LLC</h2>
             
             <h3 className="text-2xl font-semibold mb-4">Appointment Reminder & Confirmation Texts</h3>
             
@@ -24,7 +24,7 @@ const TermsOfService = () => {
               
               <p>
                 If you experience issues with the messaging program, reply with the keyword HELP for more assistance, 
-                or reach out directly to <a href="mailto:support@healthhelpers.co" className="text-primary hover:underline">support@healthhelpers.co</a>.
+                or reach out directly to <a href="mailto:support@trinityhealthandwealth.com" className="text-primary hover:underline">support@trinityhealthandwealth.com</a>.
               </p>
               
               <p>
@@ -38,7 +38,7 @@ const TermsOfService = () => {
               </p>
               
               <p>
-                For privacy-related inquiries, please refer to our privacy policy: <a href="/privacy-policy" className="text-primary hover:underline">https://healthhelpers.co/privacy-policy</a>.
+                For privacy-related inquiries, please refer to our privacy policy: <a href="/privacy-policy" className="text-primary hover:underline">https://trinityhealthandwealth.com/privacy-policy</a>.
               </p>
             </div>
           </section>

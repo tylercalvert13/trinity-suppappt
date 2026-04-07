@@ -90,7 +90,7 @@ const ChatContactForm = ({ onSubmit, isSubmitting = false, isValidating = false,
         </div>
 
         <p className="text-[10px] text-gray-500 leading-relaxed" data-tf-element-role="consent-language">
-          By tapping "<span data-tf-element-role="submit-text">See My Rate</span>," I expressly consent to receive marketing calls, text messages, and emails from <span data-tf-element-role="consent-advertiser-name">Health Helpers Insurance Agency</span> and its licensed insurance agents regarding Medicare and related insurance products, including through the use of an automatic telephone dialing system, artificial or prerecorded voice messages, and AI technologies. Message and data rates may apply. Message frequency varies. Consent is not a condition of purchase. You may opt out at any time by replying STOP to text messages. By submitting this form, you agree to the{' '}
+          By tapping "<span data-tf-element-role="submit-text">See My Rate</span>," I expressly consent to receive marketing calls, text messages, and emails from <span data-tf-element-role="consent-advertiser-name">Trinity Health & Wealth Insurance Agency</span> and its licensed insurance agents regarding Medicare and related insurance products, including through the use of an automatic telephone dialing system, artificial or prerecorded voice messages, and AI technologies. Message and data rates may apply. Message frequency varies. Consent is not a condition of purchase. You may opt out at any time by replying STOP to text messages. By submitting this form, you agree to the{' '}
           <Link to="/terms-of-service" className="underline">Terms and Conditions</Link>
           {' '}and{' '}
           <Link to="/privacy-policy" className="underline">Privacy Policy</Link>.

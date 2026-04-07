@@ -16,7 +16,7 @@ const PrivacyPolicy = () => {
             </p>
             
             <p className="text-lg leading-relaxed">
-              Health Helpers is committed to protecting your privacy and ensuring compliance with all applicable laws, 
+              Trinity Health & Wealth is committed to protecting your privacy and ensuring compliance with all applicable laws, 
               including the Telephone Consumer Protection Act (TCPA) and Centers for Medicare & Medicaid Services (CMS) regulations.
             </p>
           </section>
@@ -51,7 +51,7 @@ const PrivacyPolicy = () => {
             <div className="bg-muted p-6 rounded-lg">
               <p className="font-semibold mb-3">Important Notice About Communications:</p>
               <ul className="list-disc pl-6 space-y-2">
-                <li>By providing your phone number, you consent to receive calls and text messages from Health Helpers regarding your Medicare enrollment</li>
+                <li>By providing your phone number, you consent to receive calls and text messages from Trinity Health & Wealth regarding your Medicare enrollment</li>
                 <li>These communications may be made using an automatic telephone dialing system or prerecorded messages</li>
                 <li>You may receive up to 8 text messages per month related to your enrollment process</li>
                 <li>Message and data rates may apply</li>
@@ -136,7 +136,7 @@ const PrivacyPolicy = () => {
               <p className="mb-3">If you have questions about this Privacy Policy or wish to exercise your rights, please contact us:</p>
               <div className="space-y-2">
                 <p><strong>Phone:</strong> (201) 589-1901</p>
-                <p><strong>Email:</strong> privacy@healthhelpers.com</p>
+                <p><strong>Email:</strong> support@trinityhealthandwealth.comm</p>
                 <p><strong>Address:</strong> [Your Business Address]</p>
               </div>
               <p className="mt-4 text-sm text-muted-foreground">

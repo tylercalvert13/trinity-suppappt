@@ -19,7 +19,7 @@ const About = () => {
               Specializing in Medicare Supplement Plans
             </h2>
             <p className="text-lg text-muted-foreground mb-6">
-              At Health Helpers, we focus on one thing: helping seniors find the best rates on 
+              At Trinity Health & Wealth, we focus on one thing: helping seniors find the best rates on 
               Medicare Supplement insurance. Many policyholders don't realize they're overpaying 
               because insurers quietly raise premiums on loyal customers year after year.
             </p>

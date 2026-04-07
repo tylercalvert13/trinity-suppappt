@@ -207,19 +207,19 @@ function generateIcsContent(appointmentDate: string, firstName: string, lastName
   
   return `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Health Helpers//Medicare Consultation//EN
+PRODID:-//Trinity Health & Wealth//Medicare Consultation//EN
 BEGIN:VEVENT
-UID:${Date.now()}@healthhelpers.com
+UID:${Date.now()}@trinityhealthandwealth.comm
 DTSTAMP:${formatIcsDate(new Date())}
 DTSTART:${formatIcsDate(startDate)}
 DTEND:${formatIcsDate(endDate)}
-SUMMARY:Health Helpers Medicare Consultation
+SUMMARY:Trinity Health & Wealth Medicare Consultation
 DESCRIPTION:Phone consultation about your Medicare Supplement quote. We will call you at your scheduled time.
 LOCATION:Phone Call
 BEGIN:VALARM
 TRIGGER:-PT15M
 ACTION:DISPLAY
-DESCRIPTION:Health Helpers calling in 15 minutes
+DESCRIPTION:Trinity Health & Wealth calling in 15 minutes
 END:VALARM
 END:VEVENT
 END:VCALENDAR`;
@@ -231,7 +231,7 @@ function downloadIcsFile(appointmentDate: string, firstName: string, lastName: s
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'health-helpers-appointment.ics';
+  a.download = 'trinity-health-appointment.ics';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -241,10 +241,10 @@ function downloadIcsFile(appointmentDate: string, firstName: string, lastName: s
 function downloadContactCard() {
   const vCard = `BEGIN:VCARD
 VERSION:3.0
-FN:Health Helpers Team
-ORG:Health Helpers
-TEL;TYPE=WORK,VOICE:+12012988393
-TEL;TYPE=WORK,VOICE:+12014269898
+FN:Trinity Health & Wealth Team
+ORG:Trinity Health & Wealth
+TEL;TYPE=WORK,VOICE:+14025819221
+TEL;TYPE=WORK,VOICE:+14025819221
 NOTE:Medicare Supplement Specialists - Save this contact to recognize our calls!
 END:VCARD`;
 
@@ -252,7 +252,7 @@ END:VCARD`;
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'Health-Helpers.vcf';
+  a.download = 'Trinity-Health.vcf';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -991,7 +991,7 @@ export function AppointmentBookingWidgetWithOptIn({
               <p className="text-amber-800 font-medium mb-2">No online appointments available soon</p>
               <p className="text-gray-600 text-base mb-4">Our calendar is fully booked for the next two weeks.</p>
               <a 
-                href="tel:+12012988393" 
+                href="tel:+14025819221" 
                 className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors"
               >
                 <Phone className="w-5 h-5" />
@@ -1059,7 +1059,7 @@ export function AppointmentBookingWidgetWithOptIn({
                 <Phone className="w-4 h-4 text-green-600" /> Prefer to talk now?
               </p>
               <a 
-                href="tel:+12012988393" 
+                href="tel:+14025819221" 
                 className="inline-flex items-center gap-2 text-xl font-bold text-green-700 hover:text-green-800 transition-colors"
               >
                 (201) 298-8393
@@ -1289,7 +1289,7 @@ export function AppointmentBookingWidgetWithOptIn({
           </div>
 
           <p className="text-xs text-gray-500 text-center mt-4 leading-relaxed">
-            By clicking "Book My Call," I expressly consent to receive marketing calls, text messages, and emails from Health Helpers Insurance Agency and its licensed insurance agents regarding Medicare and related insurance products, including through the use of an automatic telephone dialing system, artificial or prerecorded voice messages, and AI technologies. Message and data rates may apply. Message frequency varies. Consent is not a condition of purchase. You may opt out at any time by replying STOP to text messages. By submitting this form, you agree to the{' '}
+            By clicking "Book My Call," I expressly consent to receive marketing calls, text messages, and emails from Trinity Health & Wealth Insurance Agency and its licensed insurance agents regarding Medicare and related insurance products, including through the use of an automatic telephone dialing system, artificial or prerecorded voice messages, and AI technologies. Message and data rates may apply. Message frequency varies. Consent is not a condition of purchase. You may opt out at any time by replying STOP to text messages. By submitting this form, you agree to the{' '}
             <Link to="/terms-of-service" className="underline hover:text-gray-700">Terms and Conditions</Link>
             {' '}and{' '}
             <Link to="/privacy-policy" className="underline hover:text-gray-700">Privacy Policy</Link>.
@@ -1375,7 +1375,7 @@ export function AppointmentBookingWidgetWithOptIn({
               <span className="font-semibold text-gray-800">Save This Number</span>
             </div>
             <p className="text-2xl font-bold text-gray-900 mb-1">(201) 298-8393</p>
-            <p className="text-base text-gray-600">Save as "Health Helpers" so you know it's us calling</p>
+            <p className="text-base text-gray-600">Save as "Trinity Health & Wealth" so you know it's us calling</p>
           </div>
 
           <div className="bg-gray-50 rounded-xl p-4 mt-6 text-left">
