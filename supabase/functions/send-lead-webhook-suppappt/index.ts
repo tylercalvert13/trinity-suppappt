@@ -72,8 +72,8 @@ serve(async (req) => {
       
       // Metadata
       timestamp: new Date().toISOString(),
-      source: "Health Helpers Quote Funnel",
-      page: data.page || "suppappt",
+      source: data.source || "Trinity Quote Funnel",
+      page: data.page || "trinity-suppappt",
       
       // Session tracking (if available)
       visitorId: data.visitorId,
