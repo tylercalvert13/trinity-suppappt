@@ -260,13 +260,13 @@ const trackFacebookSubmissionEvent = async (
     });
     
     // Browser-side pixel event (deduplicates with CAPI via eventID)
-    trackPixelEvent('Lead', eventId, conversionValue);
+    trackPixelEvent('Submission', eventId, conversionValue);
     
     // CAPI server-side event
-    console.log('[FB CAPI] Sending submission event (suppappt)...');
+    console.log('[FB CAPI] Sending Submission event (suppappt)...');
     await supabase.functions.invoke('fb-conversion', {
       body: {
-        event_name: 'submission',
+        event_name: 'Submission',
         event_source_url: window.location.href,
         external_id: getVisitorIdForTracking(),
         fbc,
