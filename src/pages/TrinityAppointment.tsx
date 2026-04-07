@@ -1583,9 +1583,9 @@ const MedicareSupplementAppointment = () => {
                   data-tf-element-role="consent-language"
                 >
                   By clicking "<span data-tf-element-role="submit-text">See My New Rate</span>," I expressly consent to receive marketing calls, text messages, and emails from <span data-tf-element-role="consent-advertiser-name">Trinity Health & Wealth Insurance Agency</span> and its licensed insurance agents regarding Medicare and related insurance products, including through the use of an automatic telephone dialing system, artificial or prerecorded voice messages, and AI technologies. Message and data rates may apply. Message frequency varies. Consent is not a condition of purchase. You may opt out at any time by replying STOP to text messages. By submitting this form, you agree to the{' '}
-                  <Link to="/terms-of-service" className="underline hover:text-foreground">Terms and Conditions</Link>
+                  <a href="https://trinityhealthandwealth.com/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Terms and Conditions</a>
                   {' '}and{' '}
-                  <Link to="/privacy-policy" className="underline hover:text-foreground">Privacy Policy</Link>.
+                  <a href="https://trinityhealthandwealth.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Privacy Policy</a>.
                 </p>
               </form>
             </div>
@@ -1775,9 +1775,9 @@ const MedicareSupplementAppointment = () => {
             </p>
             <div className="pt-4 border-t flex flex-col items-center gap-2">
               <div className="flex items-center gap-4">
-                <Link to="/privacy-policy" className="hover:underline">Privacy Policy</Link>
+                <a href="https://trinityhealthandwealth.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:underline">Privacy Policy</a>
                 <span>•</span>
-                <Link to="/terms-of-service" className="hover:underline">Terms of Service</Link>
+                <a href="https://trinityhealthandwealth.com/terms-of-service" target="_blank" rel="noopener noreferrer" className="hover:underline">Terms of Service</a>
               </div>
               <p>© {new Date().getFullYear()} Trinity Health & Wealth. All rights reserved.</p>
             </div>
