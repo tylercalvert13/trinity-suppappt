@@ -44,12 +44,7 @@ interface Agent {
 }
 
 const AGENTS: Agent[] = [
-  { name: 'Maria Castro', firstName: 'Maria', phone: '(561) 839-6057', telLink: 'tel:+19082245410', ghlUserId: 'xh3zAJstdrOjv6G60sR6', states: ['AR','AZ','DE','GA','IA','KY','LA','MO','NC','NE','NJ','OH','OK','PA','SC','TN','TX'] },
-  { name: 'Claude Washington', firstName: 'Claude', phone: '(561) 839-6057', telLink: 'tel:+19084989806', ghlUserId: 'ABUX6hMZHC1sxkTg33T8', states: ['AL','AR','AZ','DE','FL','GA','IA','IL','KY','LA','ME','MI','MO','MS','NC','NE','NJ','NM','NV','OH','OK','PA','SC','TN','TX','WI','WV'] },
-  { name: 'Jerome Hinds', firstName: 'Jerome', phone: '(561) 839-6057', telLink: 'tel:+19086818962', ghlUserId: 'nVHKSQneg56OHykfIvi8', states: ['AR','AZ','FL','GA','IL','MO','NC','NE','NJ','OH','OK','SC','TN','TX'] },
-  { name: 'Rosa Silva', firstName: 'Rosa', phone: '(561) 839-6057', telLink: 'tel:+19088299820', ghlUserId: 'GHG8mhKx8321E3EzVNQj', states: ['AL','AR','AZ','DE','IA','IL','KY','LA','MO','MS','NC','NE','NJ','NM','OH','OK','PA','SC','TN','TX','WI'] },
-  
-  
+  { name: 'Joe McElwee', firstName: 'Joe', phone: '(561) 839-6057', telLink: 'tel:+15618396057', ghlUserId: '902v9xFN3c1GidD38xnk', states: [] },
 ];
 
 // Map full state names to abbreviations for agent filtering
@@ -67,28 +62,8 @@ const STATE_NAME_TO_ABBREV: Record<string, string> = {
   "Wyoming": "WY",
 };
 
-async function getNextAgent(stateName?: string): Promise<Agent> {
-  const stateAbbrev = stateName ? STATE_NAME_TO_ABBREV[stateName] : undefined;
-  const eligible = stateAbbrev
-    ? AGENTS.filter(a => a.states.includes(stateAbbrev))
-    : [];
-  const pool = eligible.length > 0 ? eligible : AGENTS;
-  const funnelId = eligible.length > 0 ? `suppappt-${stateAbbrev}` : 'suppappt';
-
-  try {
-    const { data, error } = await supabase.rpc('get_next_agent_index', {
-      funnel_id: funnelId,
-      agent_count: pool.length,
-    });
-    if (error || data === null || data === undefined) {
-      console.error('Round-robin RPC error, falling back to random:', error);
-      return pool[Math.floor(Math.random() * pool.length)];
-    }
-    return pool[data % pool.length];
-  } catch (err) {
-    console.error('Round-robin fetch failed, falling back to random:', err);
-    return pool[Math.floor(Math.random() * pool.length)];
-  }
+async function getNextAgent(_stateName?: string): Promise<Agent> {
+  return AGENTS[0];
 }
 
 // Contact form validation schema
