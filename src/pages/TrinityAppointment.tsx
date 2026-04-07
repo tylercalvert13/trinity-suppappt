@@ -44,10 +44,10 @@ interface Agent {
 }
 
 const AGENTS: Agent[] = [
-  { name: 'Maria Castro', firstName: 'Maria', phone: '(908) 224-5410', telLink: 'tel:+19082245410', ghlUserId: 'xh3zAJstdrOjv6G60sR6', states: ['AR','AZ','DE','GA','IA','KY','LA','MO','NC','NE','NJ','OH','OK','PA','SC','TN','TX'] },
-  { name: 'Claude Washington', firstName: 'Claude', phone: '(908) 498-9806', telLink: 'tel:+19084989806', ghlUserId: 'ABUX6hMZHC1sxkTg33T8', states: ['AL','AR','AZ','DE','FL','GA','IA','IL','KY','LA','ME','MI','MO','MS','NC','NE','NJ','NM','NV','OH','OK','PA','SC','TN','TX','WI','WV'] },
-  { name: 'Jerome Hinds', firstName: 'Jerome', phone: '(908) 681-8962', telLink: 'tel:+19086818962', ghlUserId: 'nVHKSQneg56OHykfIvi8', states: ['AR','AZ','FL','GA','IL','MO','NC','NE','NJ','OH','OK','SC','TN','TX'] },
-  { name: 'Rosa Silva', firstName: 'Rosa', phone: '(908) 829-9820', telLink: 'tel:+19088299820', ghlUserId: 'GHG8mhKx8321E3EzVNQj', states: ['AL','AR','AZ','DE','IA','IL','KY','LA','MO','MS','NC','NE','NJ','NM','OH','OK','PA','SC','TN','TX','WI'] },
+  { name: 'Maria Castro', firstName: 'Maria', phone: '(561) 839-6057', telLink: 'tel:+19082245410', ghlUserId: 'xh3zAJstdrOjv6G60sR6', states: ['AR','AZ','DE','GA','IA','KY','LA','MO','NC','NE','NJ','OH','OK','PA','SC','TN','TX'] },
+  { name: 'Claude Washington', firstName: 'Claude', phone: '(561) 839-6057', telLink: 'tel:+19084989806', ghlUserId: 'ABUX6hMZHC1sxkTg33T8', states: ['AL','AR','AZ','DE','FL','GA','IA','IL','KY','LA','ME','MI','MO','MS','NC','NE','NJ','NM','NV','OH','OK','PA','SC','TN','TX','WI','WV'] },
+  { name: 'Jerome Hinds', firstName: 'Jerome', phone: '(561) 839-6057', telLink: 'tel:+19086818962', ghlUserId: 'nVHKSQneg56OHykfIvi8', states: ['AR','AZ','FL','GA','IL','MO','NC','NE','NJ','OH','OK','SC','TN','TX'] },
+  { name: 'Rosa Silva', firstName: 'Rosa', phone: '(561) 839-6057', telLink: 'tel:+19088299820', ghlUserId: 'GHG8mhKx8321E3EzVNQj', states: ['AL','AR','AZ','DE','IA','IL','KY','LA','MO','MS','NC','NE','NJ','NM','OH','OK','PA','SC','TN','TX','WI'] },
   
   
 ];
@@ -171,8 +171,8 @@ const generateApplicationNumber = (): string => {
 const downloadContactCard = () => {
   const vcardString = `BEGIN:VCARD
 VERSION:3.0
-FN:Health Helpers
-ORG:Health Helpers
+FN:Trinity Health & Wealth
+ORG:Trinity Health & Wealth
 TEL;TYPE=WORK,VOICE:+12014269898
 TEL;TYPE=WORK,VOICE:+12012988393
 NOTE:Medicare Supplement Quote Team - Save this contact so you know it's us calling!
@@ -641,7 +641,7 @@ const MedicareSupplementAppointment = () => {
 
   // SEO meta tags
   useEffect(() => {
-    document.title = "Medicare Supplement Appointment | Health Helpers";
+    document.title = "Medicare Supplement Appointment | Trinity Health & Wealth";
     
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
@@ -657,7 +657,7 @@ const MedicareSupplementAppointment = () => {
     robotsMeta.setAttribute('content', 'noindex, nofollow');
 
     return () => {
-      document.title = "Medicare Self-Enrollment Online | Health Helpers";
+      document.title = "Medicare Self-Enrollment Online | Trinity Health & Wealth";
       if (metaDescription) {
         metaDescription.setAttribute('content', 'Enroll in Medicare plans online by yourself. No phone calls, no meetings.');
       }
@@ -1468,7 +1468,7 @@ const MedicareSupplementAppointment = () => {
                   <div>
                     <p className="text-red-800">{error}</p>
                     <a href="tel:+19082245410" className="text-red-600 hover:underline font-medium">
-                      Call (908) 224-5410 for immediate assistance
+                      Call (561) 839-6057 for immediate assistance
                     </a>
                   </div>
                 </div>
@@ -1582,7 +1582,7 @@ const MedicareSupplementAppointment = () => {
                   className="text-[10px] text-muted-foreground text-center mt-3 leading-relaxed"
                   data-tf-element-role="consent-language"
                 >
-                  By clicking "<span data-tf-element-role="submit-text">See My New Rate</span>," I expressly consent to receive marketing calls, text messages, and emails from <span data-tf-element-role="consent-advertiser-name">Health Helpers Insurance Agency</span> and its licensed insurance agents regarding Medicare and related insurance products, including through the use of an automatic telephone dialing system, artificial or prerecorded voice messages, and AI technologies. Message and data rates may apply. Message frequency varies. Consent is not a condition of purchase. You may opt out at any time by replying STOP to text messages. By submitting this form, you agree to the{' '}
+                  By clicking "<span data-tf-element-role="submit-text">See My New Rate</span>," I expressly consent to receive marketing calls, text messages, and emails from <span data-tf-element-role="consent-advertiser-name">Trinity Health & Wealth Insurance Agency</span> and its licensed insurance agents regarding Medicare and related insurance products, including through the use of an automatic telephone dialing system, artificial or prerecorded voice messages, and AI technologies. Message and data rates may apply. Message frequency varies. Consent is not a condition of purchase. You may opt out at any time by replying STOP to text messages. By submitting this form, you agree to the{' '}
                   <Link to="/terms-of-service" className="underline hover:text-foreground">Terms and Conditions</Link>
                   {' '}and{' '}
                   <Link to="/privacy-policy" className="underline hover:text-foreground">Privacy Policy</Link>.
@@ -1661,7 +1661,7 @@ const MedicareSupplementAppointment = () => {
                     </p>
                     <button
                       onClick={() => {
-                        const vCard = `BEGIN:VCARD\nVERSION:3.0\nFN:${assignedAgent.firstName} (Health Helpers)\nORG:Health Helpers\nTEL;TYPE=CELL:${assignedAgent.phone.replace(/[^+\d]/g, '')}\nNOTE:Your Medicare Supplement Specialist\nEND:VCARD`;
+                        const vCard = `BEGIN:VCARD\nVERSION:3.0\nFN:${assignedAgent.firstName} (Trinity Health & Wealth)\nORG:Trinity Health & Wealth\nTEL;TYPE=CELL:${assignedAgent.phone.replace(/[^+\d]/g, '')}\nNOTE:Your Medicare Supplement Specialist\nEND:VCARD`;
                         const blob = new Blob([vCard], { type: 'text/vcard' });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
@@ -1765,13 +1765,13 @@ const MedicareSupplementAppointment = () => {
               This is a free rate comparison service. We do not charge fees. By calling, you consent to speak with a licensed insurance agent about Medicare Supplement insurance.
             </p>
             <p>
-              Health Helpers is not connected with or endorsed by the U.S. government or the federal Medicare program. Medicare Supplement insurance is sold by private insurance companies.
+              Trinity Health & Wealth is not connected with or endorsed by the U.S. government or the federal Medicare program. Medicare Supplement insurance is sold by private insurance companies.
             </p>
             <p>
               Quoted rates are estimates based on the information provided. Actual rates may vary based on underwriting approval and other factors.
             </p>
             <p>
-              Savings data reflects actual Health Helpers client results from Jan–Mar 2026. Past results do not guarantee future savings.
+              Savings data reflects actual Trinity Health & Wealth client results from Jan–Mar 2026. Past results do not guarantee future savings.
             </p>
             <div className="pt-4 border-t flex flex-col items-center gap-2">
               <div className="flex items-center gap-4">
@@ -1779,7 +1779,7 @@ const MedicareSupplementAppointment = () => {
                 <span>•</span>
                 <Link to="/terms-of-service" className="hover:underline">Terms of Service</Link>
               </div>
-              <p>© {new Date().getFullYear()} Health Helpers. All rights reserved.</p>
+              <p>© {new Date().getFullYear()} Trinity Health & Wealth. All rights reserved.</p>
             </div>
           </div>
         </div>

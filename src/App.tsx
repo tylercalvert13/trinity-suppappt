@@ -10,35 +10,13 @@ import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { Button } from "@/components/ui/button";
 
-// Lazy load all pages with retry logic for resilience
-const Index = lazyWithRetry(() => import("./pages/Index"));
+// Lazy load pages
+const TrinityAppointment = lazyWithRetry(() => import("./pages/TrinityAppointment"));
+const Disqualified = lazyWithRetry(() => import("./pages/Disqualified"));
+const GreatRate = lazyWithRetry(() => import("./pages/GreatRate"));
 const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazyWithRetry(() => import("./pages/TermsOfService"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
-const WhyMedigapRatesIncrease = lazyWithRetry(() => import("./pages/WhyMedigapRatesIncrease"));
-const SwitchMedigapPlans = lazyWithRetry(() => import("./pages/SwitchMedigapPlans"));
-const PlanGvsFvsN = lazyWithRetry(() => import("./pages/PlanGvsFvsN"));
-const CheapestPlanGRates = lazyWithRetry(() => import("./pages/CheapestPlanGRates"));
-const MedicareSupplementLP = lazyWithRetry(() => import("./pages/MedicareSupplementLP"));
-const MedicareSupplementLP1 = lazyWithRetry(() => import("./pages/MedicareSupplementLP1"));
-const MedicareSupplementQuote = lazyWithRetry(() => import("./pages/MedicareSupplementQuote"));
-const MedicareSupplementAppointment = lazyWithRetry(() => import("./pages/MedicareSupplementAppointment"));
-const MedicareSupplementAppointment1 = lazyWithRetry(() => import("./pages/MedicareSupplementAppointment1"));
-const MedicareSupplementAppointment2 = lazyWithRetry(() => import("./pages/MedicareSupplementAppointment2"));
-const MedicareSupplementAppointmentRefund = lazyWithRetry(() => import("./pages/MedicareSupplementAppointmentRefund"));
-const Disqualified = lazyWithRetry(() => import("./pages/Disqualified"));
-const GreatRate = lazyWithRetry(() => import("./pages/GreatRate"));
-const Analytics = lazyWithRetry(() => import("./pages/Analytics"));
-const AnalyticsLogin = lazyWithRetry(() => import("./pages/AnalyticsLogin"));
-const ContactCard = lazyWithRetry(() => import("./pages/ContactCard"));
-const StandaloneBooking = lazyWithRetry(() => import("./pages/StandaloneBooking"));
-const SalesTracking = lazyWithRetry(() => import("./pages/SalesTracking"));
-const AgentLeaderboard = lazyWithRetry(() => import("./pages/AgentLeaderboard"));
-const MedicareSupplementChat = lazyWithRetry(() => import("./pages/MedicareSupplementChat"));
-const MedicareAdvantage = lazyWithRetry(() => import("./pages/MedicareAdvantage"));
-const MedicareSupplementReport = lazyWithRetry(() => import("./pages/MedicareSupplementReport"));
-const MedicareLeadForm = lazyWithRetry(() => import("./pages/MedicareLeadForm"));
-const TextSUPP = lazyWithRetry(() => import("./pages/TextSUPP"));
 
 const queryClient = new QueryClient();
 
@@ -49,7 +27,7 @@ const PageLoader = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowTimeoutMessage(true);
-    }, 10000); // 10 seconds
+    }, 10000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -85,34 +63,12 @@ const App = () => (
         <AppErrorBoundary>
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
-              <Route path="/why-medigap-rates-increase" element={<WhyMedigapRatesIncrease />} />
-              <Route path="/switch-medigap-plans" element={<SwitchMedigapPlans />} />
-              <Route path="/plan-g-vs-f-vs-n" element={<PlanGvsFvsN />} />
-              <Route path="/cheapest-plan-g-rates" element={<CheapestPlanGRates />} />
-              <Route path="/supp" element={<MedicareSupplementLP />} />
-              <Route path="/supp1" element={<MedicareSupplementLP1 />} />
-              <Route path="/suppquote" element={<MedicareSupplementQuote />} />
-              <Route path="/suppappt" element={<MedicareSupplementAppointment />} />
-              <Route path="/suppappt1" element={<MedicareSupplementAppointment1 />} />
-              <Route path="/suppappt2" element={<MedicareSupplementAppointment2 />} />
-              <Route path="/suppappt-refund" element={<MedicareSupplementAppointmentRefund />} />
+              <Route path="/" element={<TrinityAppointment />} />
+              <Route path="/trinity" element={<TrinityAppointment />} />
               <Route path="/disqualified" element={<Disqualified />} />
               <Route path="/great-rate" element={<GreatRate />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/analytics-login" element={<AnalyticsLogin />} />
-              <Route path="/contactcard" element={<ContactCard />} />
-              <Route path="/booking" element={<StandaloneBooking />} />
-              <Route path="/salestracking" element={<SalesTracking />} />
-              <Route path="/leaderboard" element={<AgentLeaderboard />} />
-              <Route path="/suppchat" element={<MedicareSupplementChat />} />
-              <Route path="/advantage" element={<MedicareAdvantage />} />
-              <Route path="/report" element={<MedicareSupplementReport />} />
-              <Route path="/form" element={<MedicareLeadForm />} />
-              <Route path="/text" element={<TextSUPP />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
