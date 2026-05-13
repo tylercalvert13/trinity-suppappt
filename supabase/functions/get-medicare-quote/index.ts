@@ -11,10 +11,12 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const CSG_API_KEY = Deno.env.get('CSG_API_KEY')!;
 
-// Preferred carriers with their NAIC codes - Medico and AFLAC only
+// Preferred carriers with their NAIC codes
 const PREFERRED_CARRIERS: Record<string, string[]> = {
   "Aflac": ["60380"],
   "Medico": ["65641", "79987", "31119"],
+  "Bankers Fidelity": ["71919", "17393"],
+  "Cigna HealthSpring": ["65269", "61727"],
 };
 
 const PREFERRED_NAIC_CODES = new Set(Object.values(PREFERRED_CARRIERS).flat());

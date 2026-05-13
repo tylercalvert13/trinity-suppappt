@@ -14,6 +14,8 @@ const GHL_WEBHOOK_URL = Deno.env.get('GHL_WEBHOOK_URL_CRM_QUOTE')!;
 const PREFERRED_CARRIERS: Record<string, string[]> = {
   "Aflac": ["60380"],
   "Medico": ["65641", "79987", "31119"],
+  "Bankers Fidelity": ["71919", "17393"],
+  "Cigna HealthSpring": ["65269", "61727"],
 };
 const PREFERRED_NAIC_CODES = new Set(Object.values(PREFERRED_CARRIERS).flat());
 
