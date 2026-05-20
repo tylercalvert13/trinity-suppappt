@@ -15,7 +15,6 @@ const CSG_API_KEY = Deno.env.get('CSG_API_KEY')!;
 const PREFERRED_CARRIERS: Record<string, string[]> = {
   "Aflac": ["60380"],
   "Medico": ["65641", "79987", "31119"],
-  "Cigna HealthSpring": ["65269", "61727"],
 };
 
 const PREFERRED_NAIC_CODES = new Set(Object.values(PREFERRED_CARRIERS).flat());
