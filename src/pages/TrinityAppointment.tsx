@@ -45,6 +45,8 @@ interface Agent {
 
 const AGENTS: Agent[] = [
   { name: 'Joe McElwee', firstName: 'Joe', phone: '(402) 581-9221', telLink: 'tel:+14025819221', ghlUserId: '902v9xFN3c1GidD38xnk', states: [] },
+  { name: 'Andrew Falck', firstName: 'Andrew', phone: '(402) 581-9221', telLink: 'tel:+14025819221', ghlUserId: '4JQasAGN8nFXeGZZATWx', states: [] },
+  { name: 'Dave', firstName: 'Dave', phone: '(402) 581-9221', telLink: 'tel:+14025819221', ghlUserId: '61suVlSLIwXiZrfyoYGE', states: [] },
 ];
 
 // Map full state names to abbreviations for agent filtering
@@ -63,7 +65,15 @@ const STATE_NAME_TO_ABBREV: Record<string, string> = {
 };
 
 async function getNextAgent(_stateName?: string): Promise<Agent> {
-  return AGENTS[0];
+  try {
+    const { data, error } = await supabase.rpc('increment_lead_counter', { counter_name: 'trinity_suppappt' });
+    if (error) throw error;
+    const idx = ((data as number) - 1) % AGENTS.length;
+    return AGENTS[idx];
+  } catch {
+    // Fallback to random selection if RPC fails
+    return AGENTS[Math.floor(Math.random() * AGENTS.length)];
+  }
 }
 
 // Contact form validation schema
@@ -1594,11 +1604,11 @@ const MedicareSupplementAppointment = () => {
                     </p>
                     <p>
                       We compare plans from top-rated carriers to make sure you're not paying more than you need to.{' '}
-                      <span className="font-semibold">{assignedAgent.firstName}</span> will text you shortly from{' '}
+                      One of our licensed agents will text you shortly from{' '}
                       <a 
                         href={assignedAgent.telLink} 
                         className="font-semibold text-primary hover:underline"
-                        onClick={() => trackEvent({ eventType: 'agent_phone_clicked', metadata: { agent: assignedAgent.firstName } })}
+                        onClick={() => trackEvent({ eventType: 'agent_phone_clicked', metadata: { agent: 'licensed_agent' } })}
                       >
                         {assignedAgent.phone}
                       </a>{' '}
@@ -1612,7 +1622,7 @@ const MedicareSupplementAppointment = () => {
                     <ul className="space-y-3">
                       <li className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        <span>A text from <span className="font-semibold">{assignedAgent.firstName}</span> with your personalized savings</span>
+                        <span>A text from one of our licensed agents with your personalized savings</span>
                       </li>
                       <li className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1620,7 +1630,7 @@ const MedicareSupplementAppointment = () => {
                       </li>
                       <li className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        <span>If it makes sense, <span className="font-semibold">{assignedAgent.firstName}</span> can walk you through everything in a quick phone call</span>
+                        <span>If it makes sense, one of our licensed agents can walk you through everything in a quick phone call</span>
                       </li>
                     </ul>
                   </div>
@@ -1632,26 +1642,26 @@ const MedicareSupplementAppointment = () => {
                   {/* Save Contact CTA */}
                   <div ref={agentCardRef} className="mt-6 flex flex-col items-center gap-3">
                     <p className="text-sm text-muted-foreground font-medium">
-                      📱 Save {assignedAgent.firstName}'s number so you recognize the text!
+                      📱 Save the number so you recognize the text!
                     </p>
                     <button
                       onClick={() => {
-                        const vCard = `BEGIN:VCARD\nVERSION:3.0\nFN:${assignedAgent.firstName} (Trinity Health & Wealth)\nORG:Trinity Health & Wealth\nTEL;TYPE=CELL:${assignedAgent.phone.replace(/[^+\d]/g, '')}\nNOTE:Your Medicare Supplement Specialist\nEND:VCARD`;
+                        const vCard = `BEGIN:VCARD\nVERSION:3.0\nFN:Trinity Health & Wealth Agent\nORG:Trinity Health & Wealth\nTEL;TYPE=CELL:${assignedAgent.phone.replace(/[^+\d]/g, '')}\nNOTE:Your Medicare Supplement Specialist\nEND:VCARD`;
                         const blob = new Blob([vCard], { type: 'text/vcard' });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = `${assignedAgent.firstName}-Trinity-Health.vcf`;
+                        a.download = `Trinity-Health-Agent.vcf`;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
                         URL.revokeObjectURL(url);
-                        trackEvent({ eventType: 'save_contact_clicked', metadata: { agent: assignedAgent.firstName } });
+                        trackEvent({ eventType: 'save_contact_clicked', metadata: { agent: 'licensed_agent' } });
                       }}
                       className="inline-flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-sm rounded-xl px-5 py-2.5 transition-colors"
                     >
                       <UserPlus className="h-4 w-4" />
-                      Save {assignedAgent.firstName} to Contacts
+                      Save to Contacts
                     </button>
                   </div>
                 </div>
