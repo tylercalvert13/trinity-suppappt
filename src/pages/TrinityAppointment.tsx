@@ -1600,19 +1600,21 @@ const MedicareSupplementAppointment = () => {
 
                   <div className="space-y-4 text-base text-foreground leading-relaxed">
                     <p>
-                      <span className="font-semibold">{assignedAgent.name}</span> is looking into your Medicare Supplement rates right now.
+                      We're checking your Medicare Supplement rates right now to see how much we can save you.
                     </p>
                     <p>
-                      We compare plans from top-rated carriers to make sure you're not paying more than you need to.{' '}
-                      One of our licensed agents will text you shortly from{' '}
-                      <a 
-                        href={assignedAgent.telLink} 
+                      A licensed agent will give you a call in the next{' '}
+                      <span className="font-semibold">5–15 minutes</span> if we can save you money on your current plan. We compare top-rated carriers so you're not paying more than you need to.
+                    </p>
+                    <p>
+                      You'll hear from us at{' '}
+                      <a
+                        href={assignedAgent.telLink}
                         className="font-semibold text-primary hover:underline"
-                        onClick={() => trackEvent({ eventType: 'agent_phone_clicked', metadata: { agent: 'licensed_agent' } })}
+                        onClick={() => trackEvent({ eventType: 'agent_phone_clicked' })}
                       >
                         {assignedAgent.phone}
-                      </a>{' '}
-                      with what they find.
+                      </a>.
                     </p>
                   </div>
 
@@ -1622,7 +1624,7 @@ const MedicareSupplementAppointment = () => {
                     <ul className="space-y-3">
                       <li className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        <span>A text from one of our licensed agents with your personalized savings</span>
+                        <span>A call from a licensed agent with your personalized savings</span>
                       </li>
                       <li className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1630,7 +1632,7 @@ const MedicareSupplementAppointment = () => {
                       </li>
                       <li className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        <span>If it makes sense, one of our licensed agents can walk you through everything in a quick phone call</span>
+                        <span>If it makes sense, we'll walk you through everything on the call</span>
                       </li>
                     </ul>
                   </div>
@@ -1642,7 +1644,7 @@ const MedicareSupplementAppointment = () => {
                   {/* Save Contact CTA */}
                   <div ref={agentCardRef} className="mt-6 flex flex-col items-center gap-3">
                     <p className="text-sm text-muted-foreground font-medium">
-                      📱 Save the number so you recognize the text!
+                      📱 Save our number so you recognize the call.
                     </p>
                     <button
                       onClick={() => {
